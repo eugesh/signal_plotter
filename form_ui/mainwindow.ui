@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="windowModality">
+   <enum>Qt::ApplicationModal</enum>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>720</width>
+    <height>523</height>
+   </rect>
+  </property>
+  <property name="acceptDrops">
+   <bool>false</bool>
+  </property>
+  <property name="windowTitle">
+   <string>Расчет элементов внутреннего ориентирования</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QCustomPlot" name="customPlot" native="true"/>
+    </item>
+    <item row="1" column="0">
+     <widget class="QSlider" name="horizontalSlider">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>720</width>
+     <height>18</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_Open">
+    <property name="title">
+     <string>Файл</string>
+    </property>
+    <addaction name="action_OpenImage"/>
+    <addaction name="actionLoad_Project"/>
+    <addaction name="separator"/>
+    <addaction name="action_Quit"/>
+   </widget>
+   <widget class="QMenu" name="menuCursor">
+    <property name="title">
+     <string>Курсор</string>
+    </property>
+    <addaction name="actionCross"/>
+    <addaction name="actionHand"/>
+    <addaction name="actionRubber_2"/>
+   </widget>
+   <addaction name="menu_Open"/>
+   <addaction name="menuCursor"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="action_OpenImage">
+   <property name="text">
+    <string>Загрузить изображение(Ctrl+L)</string>
+   </property>
+  </action>
+  <action name="action_SavePoints">
+   <property name="text">
+    <string>Сохранить точки(Ctrl+S)</string>
+   </property>
+  </action>
+  <action name="action_camera1">
+   <property name="text">
+    <string>+</string>
+   </property>
+  </action>
+  <action name="action_camera2">
+   <property name="text">
+    <string>x</string>
+   </property>
+  </action>
+  <action name="action_Quit">
+   <property name="text">
+    <string>Выход</string>
+   </property>
+   <property name="whatsThis">
+    <string>Quit</string>
+   </property>
+  </action>
+  <action name="action_Delete">
+   <property name="text">
+    <string>Удалить</string>
+   </property>
+  </action>
+  <action name="action_X">
+   <property name="text">
+    <string>-X</string>
+   </property>
+  </action>
+  <action name="action_X_2">
+   <property name="text">
+    <string>+X</string>
+   </property>
+  </action>
+  <action name="action_Y">
+   <property name="text">
+    <string>-Y</string>
+   </property>
+  </action>
+  <action name="action_RX">
+   <property name="text">
+    <string>+X</string>
+   </property>
+  </action>
+  <action name="action_DY">
+   <property name="text">
+    <string>-Y</string>
+   </property>
+  </action>
+  <action name="action_UY">
+   <property name="text">
+    <string>+Y</string>
+   </property>
+  </action>
+  <action name="action_LX">
+   <property name="text">
+    <string>-X</string>
+   </property>
+  </action>
+  <action name="actionCross">
+   <property name="text">
+    <string>Крест</string>
+   </property>
+  </action>
+  <action name="actionHand">
+   <property name="text">
+    <string>Рука</string>
+   </property>
+  </action>
+  <action name="actionRubber">
+   <property name="text">
+    <string>резиновый прямоугольник</string>
+   </property>
+  </action>
+  <action name="actionRectangle">
+   <property name="text">
+    <string>Рамка</string>
+   </property>
+  </action>
+  <action name="actionCut">
+   <property name="text">
+    <string>Задать рабочую область</string>
+   </property>
+  </action>
+  <action name="actionOpenPoints">
+   <property name="text">
+    <string>Загрузить точки(Ctrl+P)</string>
+   </property>
+  </action>
+  <action name="actionSavePointsAs">
+   <property name="text">
+    <string>Сохранить точки как</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
+  <action name="actionEndCut">
+   <property name="text">
+    <string>Закончить</string>
+   </property>
+  </action>
+  <action name="actionCtrlZ_Cut">
+   <property name="text">
+    <string>Отменить</string>
+   </property>
+  </action>
+  <action name="actionCtrlZ_AllCut">
+   <property name="text">
+    <string>Отменить последнее</string>
+   </property>
+  </action>
+  <action name="actionPickAllKrest">
+   <property name="text">
+    <string>Выделить все(Ctrl+A)</string>
+   </property>
+  </action>
+  <action name="actionTransform">
+   <property name="text">
+    <string>Трансформировать</string>
+   </property>
+  </action>
+  <action name="action_save_tr_as">
+   <property name="text">
+    <string>Задать имя и путь файла</string>
+   </property>
+  </action>
+  <action name="action_save_tr">
+   <property name="text">
+    <string>Сохранить</string>
+   </property>
+  </action>
+  <action name="action_sizeFrMm">
+   <property name="text">
+    <string>задать размер</string>
+   </property>
+  </action>
+  <action name="action_sizePxMm">
+   <property name="text">
+    <string>задать размер</string>
+   </property>
+  </action>
+  <action name="action_sizeFrPx_2">
+   <property name="text">
+    <string>задать размер</string>
+   </property>
+  </action>
+  <action name="actionRectangle_2">
+   <property name="text">
+    <string>Отобразить рамку</string>
+   </property>
+  </action>
+  <action name="actionEndCut_2">
+   <property name="text">
+    <string>Скрыть рамку</string>
+   </property>
+  </action>
+  <action name="actionRubber_2">
+   <property name="text">
+    <string>Резиновая лента</string>
+   </property>
+  </action>
+  <action name="actionLoad_Project">
+   <property name="text">
+    <string>Загрузить проект HS5</string>
+   </property>
+  </action>
+  <action name="action_stop_sound_gen">
+   <property name="text">
+    <string>Стоп</string>
+   </property>
+  </action>
+  <action name="action_start_sound_gen">
+   <property name="text">
+    <string>Старт</string>
+   </property>
+  </action>
+  <action name="action_set_delay">
+   <property name="text">
+    <string>Задать значение</string>
+   </property>
+  </action>
+  <action name="action_OutImage_2">
+   <property name="text">
+    <string>Задать путь выходного файла(Ctrl+S)</string>
+   </property>
+  </action>
+  <action name="actionSet_path_to_shared_tiff">
+   <property name="text">
+    <string>Set path to shared.tiff</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QCustomPlot</class>
+   <extends>QWidget</extends>
+   <header location="global">../custom_plot/qcustomplot.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
