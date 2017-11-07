@@ -62,7 +62,7 @@
    <addaction name="menu_Open"/>
    <addaction name="menuCursor"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QStatusBar" name="statusBar"/>
   <action name="action_OpenImage">
    <property name="text">
     <string>Загрузить изображение(Ctrl+L)</string>

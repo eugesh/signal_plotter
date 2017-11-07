@@ -25,6 +25,11 @@ public:;
   ~MainWindow();
 
 private slots:;
+  void titleDoubleClick(QMouseEvent *event);
+  void axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart part);
+  void legendDoubleClick(QCPLegend* legend, QCPAbstractLegendItem* item);
+  void selectionChanged();
+  void graphClicked(QCPAbstractPlottable *plottable, int dataIndex);
   void mousePress();
   void mouseWheel();
 
