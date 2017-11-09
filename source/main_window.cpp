@@ -23,7 +23,6 @@ MainWindow::MainWindow(QWidget *parent) :
                        ui(new Ui::MainWindow)
 {
   ui->setupUi(this);
-  // setupUi(this);
 
   ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes |
                                   QCP::iSelectLegend | QCP::iSelectPlottables);
@@ -58,19 +57,108 @@ MainWindow::MainWindow(QWidget *parent) :
   connect(ui->customPlot->yAxis, SIGNAL(rangeChanged(QCPRange)), ui->customPlot->yAxis2, SLOT(setRange(QCPRange)));
 
   // connect some interaction slots:
-  connect(ui->customPlot, SIGNAL(axisDoubleClick(QCPAxis*,QCPAxis::SelectablePart,QMouseEvent*)), this, SLOT(axisLabelDoubleClick(QCPAxis*,QCPAxis::SelectablePart)));
-  connect(ui->customPlot, SIGNAL(legendDoubleClick(QCPLegend*,QCPAbstractLegendItem*,QMouseEvent*)), this, SLOT(legendDoubleClick(QCPLegend*,QCPAbstractLegendItem*)));
+  connect(ui->customPlot, SIGNAL(axisDoubleClick(QCPAxis*, QCPAxis::SelectablePart, QMouseEvent*)), this, SLOT(axisLabelDoubleClick(QCPAxis*, QCPAxis::SelectablePart)));
+  connect(ui->customPlot, SIGNAL(legendDoubleClick(QCPLegend*, QCPAbstractLegendItem*, QMouseEvent*)), this, SLOT(legendDoubleClick(QCPLegend*, QCPAbstractLegendItem*)));
   connect(title, SIGNAL(doubleClicked(QMouseEvent*)), this, SLOT(titleDoubleClick(QMouseEvent*)));
 
 
   // setup policy and connect slot for context menu popup:
   ui->customPlot->setContextMenuPolicy(Qt::CustomContextMenu);
-  connect(ui->customPlot, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextMenuRequest(QPoint)));
+  // connect(ui->customPlot, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextMenuRequest(QPoint)));
+
+  connect(ui->action_OpenImage, SIGNAL(triggered()), this, SLOT(open_image()));
+  connect(ui->actionLoad_Project, SIGNAL(triggered()), this, SLOT(open_side_scan_proj()));
+
+  connect(ui->horizontalSlider, SIGNAL(valueChanged()), this, SLOT(updateGraph()));
 }
 
 MainWindow::~MainWindow()
 {
   delete ui;
+}
+
+/**
+ * Reaction on button click.
+ */
+void MainWindow::open_image() {
+  path_to_data = QFileDialog::getOpenFileName(this, tr("Укажите путь к изображению"), "/home/evgeny/data", tr("Images (*.png *.xpm *.jpg *.bmp *.jpeg)"));
+
+  if(!path_to_data.isEmpty ()) {
+      load_image();
+  } else {
+    QMessageBox::information(this, tr("SignalPlotter"),
+           tr("Файл не был открыт."));
+           // tr("Файл не был открыт %1.").arg(path_to_data));
+  }
+}
+
+/**
+ * Physical data load.
+ */
+void MainWindow::load_image() {
+  // It is loaded from open_image slot so it is always image.
+  QImage img = QImage(path_to_data);
+
+  // Fill out samples.
+  for (int i = 0; i < img.height(); ++i ) {
+    QVector<float> scan_line;
+    for (int j =0 ; j < img.width(); ++j) {
+        scan_line.push_back((float) qGray(img.pixel(j, i)));
+    }
+    samples.push_back(scan_line);
+  }
+}
+
+/**
+ * Reaction on button click.
+ */
+void MainWindow::open_side_scan_proj() {
+
+}
+
+/**
+ * Physical data load.
+ */
+void MainWindow::load_side_scan_project() {
+
+}
+
+/**
+ * Add graph.
+ */
+void MainWindow::addGraph()
+{
+  int n = 50; // number of points in graph
+  double xScale = (rand()/(double)RAND_MAX + 0.5)*2;
+  double yScale = (rand()/(double)RAND_MAX + 0.5)*2;
+  double xOffset = (rand()/(double)RAND_MAX - 0.5)*4;
+  double yOffset = (rand()/(double)RAND_MAX - 0.5)*10;
+  double r1 = (rand()/(double)RAND_MAX - 0.5)*2;
+  double r2 = (rand()/(double)RAND_MAX - 0.5)*2;
+  double r3 = (rand()/(double)RAND_MAX - 0.5)*2;
+  double r4 = (rand()/(double)RAND_MAX - 0.5)*2;
+  QVector<double> x(n), y(n);
+  for (int i=0; i<n; i++)
+  {
+    x[i] = (i / (double)n - 0.5) * 10.0 * xScale + xOffset;
+    y[i] = (qSin(x[i]*r1*5)*qSin(qCos(x[i]*r2)*r4*3)+r3*qCos(qSin(x[i])*r4*2))*yScale + yOffset;
+  }
+
+  ui->customPlot->addGraph();
+  ui->customPlot->graph()->setName(QString("New graph %1").arg(ui->customPlot->graphCount() - 1));
+  ui->customPlot->graph()->setData(x, y);
+  ui->customPlot->graph()->setLineStyle((QCPGraph::LineStyle)(rand() % 5 + 1));
+  if (rand() % 100 > 50)
+    ui->customPlot->graph()->setScatterStyle(QCPScatterStyle((QCPScatterStyle::ScatterShape)(rand() % 14 + 1)));
+  QPen graphPen;
+  graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
+  graphPen.setWidthF(rand()/(double)RAND_MAX*2+1);
+  ui->customPlot->graph()->setPen(graphPen);
+  ui->customPlot->replot();
+}
+
+void MainWindow::updateGraph() {
+
 }
 
 void MainWindow::titleDoubleClick(QMouseEvent* event)
@@ -197,6 +285,21 @@ void MainWindow::graphClicked(QCPAbstractPlottable *plottable, int dataIndex)
   double dataValue = plottable->interface1D()->dataMainValue(dataIndex);
   QString message = QString("Clicked on graph '%1' at data point #%2 with value %3.").arg(plottable->name()).arg(dataIndex).arg(dataValue);
   ui->statusBar->showMessage(message, 2500);
+}
+
+void MainWindow::removeSelectedGraph()
+{
+  if (ui->customPlot->selectedGraphs().size() > 0)
+  {
+    ui->customPlot->removeGraph(ui->customPlot->selectedGraphs().first());
+    ui->customPlot->replot();
+  }
+}
+
+void MainWindow::removeAllGraphs()
+{
+  ui->customPlot->clearGraphs();
+  ui->customPlot->replot();
 }
 
 #endif

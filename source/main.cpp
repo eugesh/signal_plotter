@@ -1,7 +1,5 @@
 #include <stdio.h>
-
 #include <math.h>
-
 #include <QApplication>
 #include <QTextCodec>
 #include <QTime>
