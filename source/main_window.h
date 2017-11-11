@@ -44,7 +44,7 @@ private slots:;
   void selectionChanged();
   void graphClicked(QCPAbstractPlottable *plottable, int dataIndex);
   void addGraph();
-  void updateGraph();
+  void updateGraph(int value);
   void removeSelectedGraph();
   void removeAllGraphs();
   void mousePress();

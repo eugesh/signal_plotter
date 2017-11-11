@@ -69,7 +69,7 @@ MainWindow::MainWindow(QWidget *parent) :
   connect(ui->action_OpenImage, SIGNAL(triggered()), this, SLOT(open_image()));
   connect(ui->actionLoad_Project, SIGNAL(triggered()), this, SLOT(open_side_scan_proj()));
 
-  connect(ui->horizontalSlider, SIGNAL(valueChanged()), this, SLOT(updateGraph()));
+  connect(ui->horizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(updateGraph(int)));
 }
 
 MainWindow::~MainWindow()
@@ -107,6 +107,11 @@ void MainWindow::load_image() {
     }
     samples.push_back(scan_line);
   }
+
+  // ui->horizontalSlider->setMinimum(0);
+  // Set maximum sliding value via the first line.
+  // ui->horizontalSlider->setMaximum(samples[0].size());
+  ui->horizontalSlider->setRange(0, samples[0].size());
 }
 
 /**
@@ -128,11 +133,23 @@ void MainWindow::load_side_scan_project() {
  */
 void MainWindow::addGraph()
 {
+  // Get current slider position.
+  int curPos = ui->horizontalSlider->sliderPosition();
+
+  // Determine size of current plot.
+  if (curPos < samples.size())
+    int curSize = this->samples[curPos].size();
+  else {
+    std::cout << "Error MainWindow::addGraph: invalid slide window position." << std::cout;
+    return ;
+  }
+
   int n = 50; // number of points in graph
   double xScale = (rand()/(double)RAND_MAX + 0.5)*2;
   double yScale = (rand()/(double)RAND_MAX + 0.5)*2;
-  double xOffset = (rand()/(double)RAND_MAX - 0.5)*4;
-  double yOffset = (rand()/(double)RAND_MAX - 0.5)*10;
+  // X and Y offsets are always 0.
+  double xOffset = 0;
+  double yOffset = 0;
   double r1 = (rand()/(double)RAND_MAX - 0.5)*2;
   double r2 = (rand()/(double)RAND_MAX - 0.5)*2;
   double r3 = (rand()/(double)RAND_MAX - 0.5)*2;
@@ -157,7 +174,7 @@ void MainWindow::addGraph()
   ui->customPlot->replot();
 }
 
-void MainWindow::updateGraph() {
+void MainWindow::updateGraph(int value) {
 
 }
 

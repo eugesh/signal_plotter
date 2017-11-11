@@ -43,27 +43,10 @@ link_directories (${GLIB2_LIBRARY_DIRS} ${LIBXML2_LIBRARY_DIRS})
 find_package( GDAL )
 include_directories( ${GDAL_INCLUDE_DIRS} )
 
-include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../libhyscancore/hyscancore")
-include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../libhyscantypes/hyscantypes")
-include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../libhyscandb/hyscandb")
-include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../libhyscancache/hyscancache")
-include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../libhyscanmath/hyscanmath")
-include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../pycppwrapper/pycppwrapper")
+#include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../libhyscancore/hyscancore")
 
-link_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../libhyscancore/bin")
-link_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../libhyscantypes/bin")
-link_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../libhyscandb/bin")
-link_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../libhyscancache/bin")
-link_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../libhyscanmath/bin")
-link_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../pycppwrapper/bin")
 link_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../bin")
-set (ADDON_LIBRARIES ${ADDON_LIBRARIES} hyscantypes-${HYSCAN_MAJOR_VERSION}
-                                        hyscandb-${HYSCAN_MAJOR_VERSION}
-                                        hyscancache-${HYSCAN_MAJOR_VERSION}
-                                        hyscanmath-${HYSCAN_MAJOR_VERSION}
-                                        hyscancore-${HYSCAN_MAJOR_VERSION}
-                                        cpp_acoustic_wrap
-                                        cpp_bd_wrap)
+set (ADDON_LIBRARIES ${ADDON_LIBRARIES})
 
 add_definitions (-DG_LOG_DOMAIN="ScanlineViewer")
 add_subdirectory ("source")
