@@ -67,7 +67,6 @@ MainWindow::MainWindow(QWidget *parent) :
   // connect(ui->customPlot, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextMenuRequest(QPoint)));
 
   connect(ui->action_OpenImage, SIGNAL(triggered()), this, SLOT(open_image()));
-  connect(ui->actionLoad_Project, SIGNAL(triggered()), this, SLOT(open_side_scan_proj()));
 
   connect(ui->horizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(updateGraph(int)));
 }
@@ -99,6 +98,8 @@ void MainWindow::load_image() {
   // It is loaded from open_image slot so it is always image.
   QImage img = QImage(path_to_data);
 
+  samples.clear ();
+
   // Fill out samples.
   for (int i = 0; i < img.height(); ++i ) {
     QVector<float> scan_line;
@@ -111,71 +112,63 @@ void MainWindow::load_image() {
   // ui->horizontalSlider->setMinimum(0);
   // Set maximum sliding value via the first line.
   // ui->horizontalSlider->setMaximum(samples[0].size());
-  ui->horizontalSlider->setRange(0, samples[0].size());
-}
-
-/**
- * Reaction on button click.
- */
-void MainWindow::open_side_scan_proj() {
-
-}
-
-/**
- * Physical data load.
- */
-void MainWindow::load_side_scan_project() {
-
+  ui->horizontalSlider->setRange(0, samples.size() - 1);
+  ui->horizontalSlider->setValue(0);
+  addGraph(0);
 }
 
 /**
  * Add graph.
  */
-void MainWindow::addGraph()
+void MainWindow::addGraph(int curPos)
 {
-  // Get current slider position.
-  int curPos = ui->horizontalSlider->sliderPosition();
-
-  // Determine size of current plot.
+  // Determine size of current plot. (number of points in graph).
+  int curSize;
   if (curPos < samples.size())
-    int curSize = this->samples[curPos].size();
+    curSize = this->samples[curPos].size();
   else {
     std::cout << "Error MainWindow::addGraph: invalid slide window position." << std::cout;
     return ;
   }
 
-  int n = 50; // number of points in graph
-  double xScale = (rand()/(double)RAND_MAX + 0.5)*2;
-  double yScale = (rand()/(double)RAND_MAX + 0.5)*2;
+  double xScale = 1;
+  double yScale = 1;
   // X and Y offsets are always 0.
   double xOffset = 0;
   double yOffset = 0;
-  double r1 = (rand()/(double)RAND_MAX - 0.5)*2;
-  double r2 = (rand()/(double)RAND_MAX - 0.5)*2;
-  double r3 = (rand()/(double)RAND_MAX - 0.5)*2;
-  double r4 = (rand()/(double)RAND_MAX - 0.5)*2;
-  QVector<double> x(n), y(n);
-  for (int i=0; i<n; i++)
+
+  QVector<double> x(curSize);
+  QVector<double> y(curSize);
+
+  for (int i=0; i < curSize; i++)
   {
-    x[i] = (i / (double)n - 0.5) * 10.0 * xScale + xOffset;
-    y[i] = (qSin(x[i]*r1*5)*qSin(qCos(x[i]*r2)*r4*3)+r3*qCos(qSin(x[i])*r4*2))*yScale + yOffset;
+    x[i] = i * xScale + xOffset;
+    y[i] = samples[curPos][i];
   }
 
   ui->customPlot->addGraph();
   ui->customPlot->graph()->setName(QString("New graph %1").arg(ui->customPlot->graphCount() - 1));
   ui->customPlot->graph()->setData(x, y);
-  ui->customPlot->graph()->setLineStyle((QCPGraph::LineStyle)(rand() % 5 + 1));
-  if (rand() % 100 > 50)
-    ui->customPlot->graph()->setScatterStyle(QCPScatterStyle((QCPScatterStyle::ScatterShape)(rand() % 14 + 1)));
+  ui->customPlot->graph()->setLineStyle(QCPGraph::lsImpulse);
+  // if (rand() % 100 > 50)
+    // ui->customPlot->graph()->setScatterStyle(QCPScatterStyle((QCPScatterStyle::ScatterShape)(rand() % 14 + 1)));
   QPen graphPen;
-  graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
-  graphPen.setWidthF(rand()/(double)RAND_MAX*2+1);
+  // graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
+  graphPen.setColor(QColor(250, 10, 5));
+  graphPen.setWidthF(3); //(rand() / (double)RAND_MAX * 2 + 1);
   ui->customPlot->graph()->setPen(graphPen);
   ui->customPlot->replot();
 }
 
 void MainWindow::updateGraph(int value) {
+  // Remove all graphs.
+  removeAllGraphs();
 
+  // Get current slider position.
+  int curPos = ui->horizontalSlider->sliderPosition();
+
+  // Add graph related to current position.
+  addGraph(curPos);
 }
 
 void MainWindow::titleDoubleClick(QMouseEvent* event)
@@ -229,7 +222,7 @@ void MainWindow::legendDoubleClick(QCPLegend *legend, QCPAbstractLegendItem *ite
 void MainWindow::selectionChanged()
 {
   /*
-   normally, axis base line, axis tick labels and axis labels are selectable separately, but we want
+   Normally, axis base line, axis tick labels and axis labels are selectable separately, but we want
    the user only to be able to select the axis as a whole, so we tie the selected states of the tick labels
    and the axis base line together. However, the axis label shall be selectable individually.
 
@@ -297,7 +290,7 @@ void MainWindow::mousePress()
 
 void MainWindow::graphClicked(QCPAbstractPlottable *plottable, int dataIndex)
 {
-  // since we know we only have QCPGraphs in the plot, we can immediately access interface1D()
+  // Since we know we only have QCPGraphs in the plot, we can immediately access interface1D()
   // usually it's better to first check whether interface1D() returns non-zero, and only then use it.
   double dataValue = plottable->interface1D()->dataMainValue(dataIndex);
   QString message = QString("Clicked on graph '%1' at data point #%2 with value %3.").arg(plottable->name()).arg(dataIndex).arg(dataValue);

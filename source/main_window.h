@@ -36,14 +36,12 @@ public:;
 
 private slots:;
   void open_image();
-  void open_side_scan_proj();
-
   void titleDoubleClick(QMouseEvent *event);
   void axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart part);
   void legendDoubleClick(QCPLegend* legend, QCPAbstractLegendItem* item);
   void selectionChanged();
   void graphClicked(QCPAbstractPlottable *plottable, int dataIndex);
-  void addGraph();
+  void addGraph(int pos);
   void updateGraph(int value);
   void removeSelectedGraph();
   void removeAllGraphs();
@@ -52,7 +50,6 @@ private slots:;
 
 private:;
   void load_image();
-  void load_side_scan_project();
 
 private:;
   Ui::MainWindow *ui;
