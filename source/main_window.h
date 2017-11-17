@@ -21,7 +21,10 @@
 #include <stdio.h>
 #include <iostream>
 #include <QVector>
+#include <complex>
 #include "../custom_plot/qcustomplot.h"
+
+typedef std::complex<float> Complex;
 
 namespace Ui {
 class MainWindow;
@@ -36,6 +39,8 @@ public:;
 
 private slots:;
   void open_image();
+  void open_side_scan_proj();
+
   void titleDoubleClick(QMouseEvent *event);
   void axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart part);
   void legendDoubleClick(QCPLegend* legend, QCPAbstractLegendItem* item);
@@ -50,12 +55,16 @@ private slots:;
 
 private:;
   void load_image();
+  void load_side_scan_project(QString bd_path, QString prj_name, QString track_name);
 
 private:;
   Ui::MainWindow *ui;
-  // Path to opened project or .png ot .tiff image.
+  // Path to opened project or .png or .tiff image.
   QString path_to_data;
+  // Data stored in easy to access way.
   QVector<QVector<float> > samples;
+  QVector<QVector<float> > amplitude_samples;
+  QVector<QVector<Complex> > quadrature_samples;
 };
 
 #endif

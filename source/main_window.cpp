@@ -17,6 +17,9 @@
 #include <QImage>
 #include "main_window.h"
 #include "ui_mainwindow.h"
+#include "cpp-hyscan-db-wrap.h"
+#include "cpp-hyscan-acoustic-data.h"
+#include "cpp-hyscan-raw-data.h"
 
 MainWindow::MainWindow(QWidget *parent) :
                        QMainWindow(parent),
@@ -56,7 +59,7 @@ MainWindow::MainWindow(QWidget *parent) :
   connect(ui->customPlot->xAxis, SIGNAL(rangeChanged(QCPRange)), ui->customPlot->xAxis2, SLOT(setRange(QCPRange)));
   connect(ui->customPlot->yAxis, SIGNAL(rangeChanged(QCPRange)), ui->customPlot->yAxis2, SLOT(setRange(QCPRange)));
 
-  // connect some interaction slots:
+  // Connect some interaction slots:
   connect(ui->customPlot, SIGNAL(axisDoubleClick(QCPAxis*, QCPAxis::SelectablePart, QMouseEvent*)), this, SLOT(axisLabelDoubleClick(QCPAxis*, QCPAxis::SelectablePart)));
   connect(ui->customPlot, SIGNAL(legendDoubleClick(QCPLegend*, QCPAbstractLegendItem*, QMouseEvent*)), this, SLOT(legendDoubleClick(QCPLegend*, QCPAbstractLegendItem*)));
   connect(title, SIGNAL(doubleClicked(QMouseEvent*)), this, SLOT(titleDoubleClick(QMouseEvent*)));
@@ -67,6 +70,7 @@ MainWindow::MainWindow(QWidget *parent) :
   // connect(ui->customPlot, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextMenuRequest(QPoint)));
 
   connect(ui->action_OpenImage, SIGNAL(triggered()), this, SLOT(open_image()));
+  connect(ui->actionLoad_Project, SIGNAL(triggered()), this, SLOT(open_side_scan_proj()));
 
   connect(ui->horizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(updateGraph(int)));
 }
@@ -115,6 +119,74 @@ void MainWindow::load_image() {
   ui->horizontalSlider->setRange(0, samples.size() - 1);
   ui->horizontalSlider->setValue(0);
   addGraph(0);
+}
+
+/**
+ * Reaction on button click.
+ */
+void
+MainWindow::open_side_scan_proj() {
+  /* Get track path. */
+  QString track_path = QFileDialog::getExistingDirectory (this, tr("Укажите путь к галсу. Open track."), "/home/evgeny/data/line");
+
+  if(!track_path.isEmpty()) {
+    QStringList path_words = track_path.split(QRegExp("[/\\\\]"));
+    QString track_name = path_words.last();
+    std::cout << "track_name = " << qPrintable(track_name) << std::endl;
+
+    QString project_dir_name = path_words.at(track_name.size() - 2);
+    std::cout << "project_dir_name = " << qPrintable(project_dir_name) << std::endl;
+
+    QString bd_path;
+    std::cout << "bd_path = " << qPrintable(bd_path) << std::endl;
+
+
+    for (int i = 1; i < path_words.size() - 2; ++i)
+        bd_path += QString("/%1").arg(path_words[i]);
+
+    load_side_scan_project(bd_path, project_dir_name, track_name);
+  } else {
+    QMessageBox::information(this, tr("SignalPlotter"),
+           tr("Файл не был открыт."));
+  }
+}
+
+/**
+ * Physical data load.
+ */
+void
+MainWindow::load_side_scan_project(QString bd_path, QString prj_name, QString track_name) {
+  // Connect/Reconnect to DB.
+  QString uri = QString ("file://%1").arg(bd_path);
+  int bd_check = connect_to_bd (uri.toAscii().data());
+
+  // Open project.
+  unsigned int project_id = open_project (prj_name.toAscii().data());
+
+  // Get data: acoustic, raw.
+  // Read amplitude values.
+  amplitude_samples.clear();
+  unsigned int ad_id = acoustic_data_new (prj_name.toAscii().data(), track_name.toAscii().data(), 101, 1); // Track id.
+
+  unsigned int first_index = get_last_index_in_range (ad_id);
+  unsigned int last_index = get_first_index_in_range (ad_id);
+  unsigned int range = last_index - first_index;
+
+  for (int i = first_index; i < last_index; ++i) {
+      unsigned int values_count = get_values_count(ad_id, i);
+      float *ampl_buffer = new float[range];
+      values_count = get_values(ad_id, i, ampl_buffer, values_count, NULL);
+      QVector<float> vec_ampl_scanline(values_count);
+
+     // vec_ampl_scanline.data() = ampl_buffer;
+      for (int j = 0; j < values_count; ++j) {
+          vec_ampl_scanline.append(ampl_buffer[i]);
+      }
+      amplitude_samples.append(vec_ampl_scanline);
+  }
+
+  // Read quadrature values.
+
 }
 
 /**
