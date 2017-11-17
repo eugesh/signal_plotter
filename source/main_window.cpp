@@ -185,12 +185,18 @@ MainWindow::load_side_scan_project(QString bd_path, QString prj_name, QString tr
       amplitude_samples.append(vec_ampl_scanline);
   }
 
+  activeGraphs.append("Acoustic");
   // Read quadrature values.
 
+  activeGraphs.append("RawDataIm");
+  activeGraphs.append("RawDataRe");
+  addActiveGraphs(0);
 }
 
 /**
  * Add graph.
+ *
+ * \param curPos index of current line to view.
  */
 void MainWindow::addGraph(int curPos)
 {
@@ -240,7 +246,8 @@ void MainWindow::updateGraph(int value) {
   int curPos = ui->horizontalSlider->sliderPosition();
 
   // Add graph related to current position.
-  addGraph(curPos);
+  // addGraph(curPos);
+
 }
 
 void MainWindow::titleDoubleClick(QMouseEvent* event)

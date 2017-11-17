@@ -56,11 +56,15 @@ private slots:;
 private:;
   void load_image();
   void load_side_scan_project(QString bd_path, QString prj_name, QString track_name);
+  void addActiveGraphs();
 
 private:;
   Ui::MainWindow *ui;
   // Path to opened project or .png or .tiff image.
   QString path_to_data;
+  // List of active graphs. Allowable names:
+  // "RawDataRe", "RawDataIm", "RawDataAmpl", "Acoustic", "SpectralAmpl", "SpectralPhase"
+  QStringList activeGraphs;
   // Data stored in easy to access way.
   QVector<QVector<float> > samples;
   QVector<QVector<float> > amplitude_samples;
