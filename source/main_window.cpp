@@ -1,13 +1,14 @@
 #ifndef MAIN_WINDOW_H
 #define MAIN_WINDOW_H
 
+#include <stdio.h>
+#include <iostream>
 #include <cmath>
 #include <cstdlib>
 #include <QtGui>
 #include <QObject>
 #include <QCursor>
 #include <QPointF>
-#include <QString>
 #include <QMouseEvent>
 #include <QGraphicsRectItem>
 #include <QFileDialog>
@@ -25,13 +26,14 @@ MainWindow::MainWindow(QWidget *parent) :
                        QMainWindow(parent),
                        ui(new Ui::MainWindow)
 {
+  decimation_factor = 4;
   ui->setupUi(this);
 
   ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes |
                                   QCP::iSelectLegend | QCP::iSelectPlottables);
 
-  ui->customPlot->xAxis->setRange(-8, 8);
-  ui->customPlot->yAxis->setRange(-5, 5);
+  ui->customPlot->xAxis->setRange(0, 1000);
+  ui->customPlot->yAxis->setRange(0, 255);
   ui->customPlot->axisRect()->setupFullAxesBox();
 
   ui->customPlot->plotLayout()->insertRow(0);
@@ -64,10 +66,12 @@ MainWindow::MainWindow(QWidget *parent) :
   connect(ui->customPlot, SIGNAL(legendDoubleClick(QCPLegend*, QCPAbstractLegendItem*, QMouseEvent*)), this, SLOT(legendDoubleClick(QCPLegend*, QCPAbstractLegendItem*)));
   connect(title, SIGNAL(doubleClicked(QMouseEvent*)), this, SLOT(titleDoubleClick(QMouseEvent*)));
 
+  // connect slot that shows a message in the status bar when a graph is clicked:
+  connect(ui->customPlot, SIGNAL(plottableClick(QCPAbstractPlottable*, int, QMouseEvent*)), this, SLOT(graphClicked(QCPAbstractPlottable*, int)));
 
   // setup policy and connect slot for context menu popup:
   ui->customPlot->setContextMenuPolicy(Qt::CustomContextMenu);
-  // connect(ui->customPlot, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextMenuRequest(QPoint)));
+  connect(ui->customPlot, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextMenuRequest(QPoint)));
 
   connect(ui->action_OpenImage, SIGNAL(triggered()), this, SLOT(open_image()));
   connect(ui->actionLoad_Project, SIGNAL(triggered()), this, SLOT(open_side_scan_proj()));
@@ -80,10 +84,16 @@ MainWindow::~MainWindow()
   delete ui;
 }
 
+Samples
+MainWindow::get_samples(QString name) {
+  return all_samples[name];
+}
+
 /**
  * Reaction on button click.
  */
-void MainWindow::open_image() {
+void
+MainWindow::open_image() {
   path_to_data = QFileDialog::getOpenFileName(this, tr("Укажите путь к изображению"), "/home/evgeny/data", tr("Images (*.png *.xpm *.jpg *.bmp *.jpeg)"));
 
   if(!path_to_data.isEmpty ()) {
@@ -98,7 +108,9 @@ void MainWindow::open_image() {
 /**
  * Physical data load.
  */
-void MainWindow::load_image() {
+void
+MainWindow::load_image() {
+  Samples samples;
   // It is loaded from open_image slot so it is always image.
   QImage img = QImage(path_to_data);
 
@@ -118,7 +130,9 @@ void MainWindow::load_image() {
   // ui->horizontalSlider->setMaximum(samples[0].size());
   ui->horizontalSlider->setRange(0, samples.size() - 1);
   ui->horizontalSlider->setValue(0);
-  addGraph(0);
+  all_samples.insert("PNG", samples);
+  activeGraphs.append("PNG");
+  addGraph(0, "PNG");
 }
 
 /**
@@ -134,15 +148,14 @@ MainWindow::open_side_scan_proj() {
     QString track_name = path_words.last();
     std::cout << "track_name = " << qPrintable(track_name) << std::endl;
 
-    QString project_dir_name = path_words.at(track_name.size() - 2);
+    QString project_dir_name = path_words.at(path_words.size() - 2);
     std::cout << "project_dir_name = " << qPrintable(project_dir_name) << std::endl;
 
     QString bd_path;
-    std::cout << "bd_path = " << qPrintable(bd_path) << std::endl;
-
 
     for (int i = 1; i < path_words.size() - 2; ++i)
         bd_path += QString("/%1").arg(path_words[i]);
+    std::cout << "bd_path = " << qPrintable(bd_path) << std::endl;
 
     load_side_scan_project(bd_path, project_dir_name, track_name);
   } else {
@@ -156,41 +169,67 @@ MainWindow::open_side_scan_proj() {
  */
 void
 MainWindow::load_side_scan_project(QString bd_path, QString prj_name, QString track_name) {
+  // Remove previous data
+  removeAllGraphs();
+  all_samples.clear();
+  ui->horizontalSlider->setValue(0);
   // Connect/Reconnect to DB.
   QString uri = QString ("file://%1").arg(bd_path);
   int bd_check = connect_to_bd (uri.toAscii().data());
 
   // Open project.
-  unsigned int project_id = open_project (prj_name.toAscii().data());
+  // unsigned int project_id = open_project(prj_name.toAscii().data());
 
-  // Get data: acoustic, raw.
   // Read amplitude values.
-  amplitude_samples.clear();
+  read_amplitude_values(prj_name, track_name);
+
+  activeGraphs.append("Acoustic");
+  addGraph(0, "Acoustic");
+
+  // Read quadrature values.
+
+
+  // activeGraphs.append("RawDataIm");
+  // activeGraphs.append("RawDataRe");
+  // addActiveGraphs(0);
+}
+
+void
+MainWindow::read_amplitude_values(QString prj_name, QString track_name) {
+  // all_samples["Acoustic"].clear();
+  // amplitude_samples.clear();
+  unsigned int values_count = 0;
   unsigned int ad_id = acoustic_data_new (prj_name.toAscii().data(), track_name.toAscii().data(), 101, 1); // Track id.
 
-  unsigned int first_index = get_last_index_in_range (ad_id);
-  unsigned int last_index = get_first_index_in_range (ad_id);
+  unsigned int first_index = get_first_index_in_range (ad_id);
+  unsigned int last_index = get_last_index_in_range (ad_id);
   unsigned int range = last_index - first_index;
 
+  printf("ad_id = %d, fi = %d, li = %d, r = %d\n", ad_id, first_index, last_index, range);
+
   for (int i = first_index; i < last_index; ++i) {
-      unsigned int values_count = get_values_count(ad_id, i);
-      float *ampl_buffer = new float[range];
+      values_count = get_values_count(ad_id, i);
+      // printf("values_count = %d", values_count);
+      float *ampl_buffer = new float[values_count];
       values_count = get_values(ad_id, i, ampl_buffer, values_count, NULL);
       QVector<float> vec_ampl_scanline(values_count);
 
-     // vec_ampl_scanline.data() = ampl_buffer;
+      // vec_ampl_scanline.data() = ampl_buffer;
       for (int j = 0; j < values_count; ++j) {
-          vec_ampl_scanline.append(ampl_buffer[i]);
+          vec_ampl_scanline.append(ampl_buffer[j]);
       }
-      amplitude_samples.append(vec_ampl_scanline);
+      // amplitude_samples.append(vec_ampl_scanline);
+      all_samples["Acoustic"].append(vec_ampl_scanline);
+      delete[] ampl_buffer;
   }
 
-  activeGraphs.append("Acoustic");
-  // Read quadrature values.
+  ui->customPlot->xAxis->setRange(0, 2 * values_count);
+  ui->customPlot->yAxis->setRange(-1, 1);
+}
 
-  activeGraphs.append("RawDataIm");
-  activeGraphs.append("RawDataRe");
-  addActiveGraphs(0);
+void
+MainWindow::read_quadrature_values(QString prj_name, QString track_name) {
+
 }
 
 /**
@@ -198,12 +237,14 @@ MainWindow::load_side_scan_project(QString bd_path, QString prj_name, QString tr
  *
  * \param curPos index of current line to view.
  */
-void MainWindow::addGraph(int curPos)
+void
+MainWindow::addGraph(int curPos, QString type)
 {
   // Determine size of current plot. (number of points in graph).
   int curSize;
+  Samples samples = get_samples(type);
   if (curPos < samples.size())
-    curSize = this->samples[curPos].size();
+    curSize = samples[curPos].size();
   else {
     std::cout << "Error MainWindow::addGraph: invalid slide window position." << std::cout;
     return ;
@@ -225,32 +266,36 @@ void MainWindow::addGraph(int curPos)
   }
 
   ui->customPlot->addGraph();
-  ui->customPlot->graph()->setName(QString("New graph %1").arg(ui->customPlot->graphCount() - 1));
+  ui->customPlot->graph()->setName(type); //.arg(ui->customPlot->graphCount() - 1));
   ui->customPlot->graph()->setData(x, y);
-  ui->customPlot->graph()->setLineStyle(QCPGraph::lsImpulse);
+  ui->customPlot->graph()->setLineStyle(QCPGraph::lsLine); //lsImpulse);
   // if (rand() % 100 > 50)
     // ui->customPlot->graph()->setScatterStyle(QCPScatterStyle((QCPScatterStyle::ScatterShape)(rand() % 14 + 1)));
   QPen graphPen;
-  // graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
-  graphPen.setColor(QColor(250, 10, 5));
+  graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
+  // graphPen.setColor(QColor(250, 10, 5));
   graphPen.setWidthF(3); //(rand() / (double)RAND_MAX * 2 + 1);
   ui->customPlot->graph()->setPen(graphPen);
   ui->customPlot->replot();
+  ui->horizontalSlider->setRange(0, samples.size() - 1);
 }
 
-void MainWindow::updateGraph(int value) {
+void
+MainWindow::updateGraph(int value) {
   // Remove all graphs.
   removeAllGraphs();
 
   // Get current slider position.
   int curPos = ui->horizontalSlider->sliderPosition();
 
-  // Add graph related to current position.
-  // addGraph(curPos);
-
+  // Add each active graph related to current position.
+  foreach(const QString &str, activeGraphs) {
+    addGraph(curPos, str);
+  };
 }
 
-void MainWindow::titleDoubleClick(QMouseEvent* event)
+void
+MainWindow::titleDoubleClick(QMouseEvent* event)
 {
   Q_UNUSED(event)
   if (QCPTextElement *title = qobject_cast<QCPTextElement*>(sender()))
@@ -266,7 +311,8 @@ void MainWindow::titleDoubleClick(QMouseEvent* event)
   }
 }
 
-void MainWindow::axisLabelDoubleClick(QCPAxis *axis, QCPAxis::SelectablePart part)
+void
+MainWindow::axisLabelDoubleClick(QCPAxis *axis, QCPAxis::SelectablePart part)
 {
   // Set an axis label by double clicking on it
   if (part == QCPAxis::spAxisLabel) // only react when the actual axis label is clicked, not tick label or axis backbone
@@ -281,11 +327,12 @@ void MainWindow::axisLabelDoubleClick(QCPAxis *axis, QCPAxis::SelectablePart par
   }
 }
 
-void MainWindow::legendDoubleClick(QCPLegend *legend, QCPAbstractLegendItem *item)
+void
+MainWindow::legendDoubleClick(QCPLegend *legend, QCPAbstractLegendItem *item)
 {
   // Rename a graph by double clicking on its legend item
   Q_UNUSED(legend)
-  if (item) // only react if item was clicked (user could have clicked on border padding of legend where there is no item, then item is 0)
+  if (item) // Only react if item was clicked (user could have clicked on border padding of legend where there is no item, then item is 0)
   {
     QCPPlottableLegendItem *plItem = qobject_cast<QCPPlottableLegendItem*>(item);
     bool ok;
@@ -298,7 +345,8 @@ void MainWindow::legendDoubleClick(QCPLegend *legend, QCPAbstractLegendItem *ite
   }
 }
 
-void MainWindow::selectionChanged()
+void
+MainWindow::selectionChanged()
 {
   /*
    Normally, axis base line, axis tick labels and axis labels are selectable separately, but we want
@@ -341,7 +389,8 @@ void MainWindow::selectionChanged()
   }
 }
 
-void MainWindow::mouseWheel()
+void
+MainWindow::mouseWheel()
 {
   // If an axis is selected, only allow the direction of that axis to be zoomed.
   // If no axis is selected, both directions may be zoomed.
@@ -354,7 +403,8 @@ void MainWindow::mouseWheel()
     ui->customPlot->axisRect()->setRangeZoom(Qt::Horizontal|Qt::Vertical);
 }
 
-void MainWindow::mousePress()
+void
+MainWindow::mousePress()
 {
   // If an axis is selected, only allow the direction of that axis to be dragged.
   // If no axis is selected, both directions may be dragged.
@@ -367,7 +417,24 @@ void MainWindow::mousePress()
     ui->customPlot->axisRect()->setRangeDrag(Qt::Horizontal|Qt::Vertical);
 }
 
-void MainWindow::graphClicked(QCPAbstractPlottable *plottable, int dataIndex)
+void
+MainWindow::contextMenuRequest(QPoint pos)
+{
+  QMenu *menu = new QMenu(this);
+  menu->setAttribute(Qt::WA_DeleteOnClose);
+
+  {
+    if (ui->customPlot->selectedGraphs().size() > 0)
+      menu->addAction("Remove selected graph", this, SLOT(removeSelectedGraph()));
+    if (ui->customPlot->graphCount() > 0)
+      menu->addAction("Remove all graphs", this, SLOT(removeAllGraphs()));
+  }
+
+  menu->popup(ui->customPlot->mapToGlobal(pos));
+}
+
+void
+MainWindow::graphClicked(QCPAbstractPlottable *plottable, int dataIndex)
 {
   // Since we know we only have QCPGraphs in the plot, we can immediately access interface1D()
   // usually it's better to first check whether interface1D() returns non-zero, and only then use it.
@@ -376,16 +443,19 @@ void MainWindow::graphClicked(QCPAbstractPlottable *plottable, int dataIndex)
   ui->statusBar->showMessage(message, 2500);
 }
 
-void MainWindow::removeSelectedGraph()
+void
+MainWindow::removeSelectedGraph()
 {
   if (ui->customPlot->selectedGraphs().size() > 0)
   {
+    activeGraphs.removeOne(ui->customPlot->graph()->name());
     ui->customPlot->removeGraph(ui->customPlot->selectedGraphs().first());
     ui->customPlot->replot();
   }
 }
 
-void MainWindow::removeAllGraphs()
+void
+MainWindow::removeAllGraphs()
 {
   ui->customPlot->clearGraphs();
   ui->customPlot->replot();

@@ -59,8 +59,27 @@
     <addaction name="actionHand"/>
     <addaction name="actionRubber_2"/>
    </widget>
+   <widget class="QMenu" name="menu_plots">
+    <property name="title">
+     <string>Графики</string>
+    </property>
+    <addaction name="action_Ampl"/>
+    <addaction name="action_Re"/>
+    <addaction name="action_Im"/>
+    <addaction name="separator"/>
+    <addaction name="action_AmplSpectrum"/>
+    <addaction name="action_PhaseSpectrum"/>
+   </widget>
+   <widget class="QMenu" name="menu_Settings">
+    <property name="title">
+     <string>Настройки</string>
+    </property>
+    <addaction name="action_Decimation"/>
+   </widget>
    <addaction name="menu_Open"/>
    <addaction name="menuCursor"/>
+   <addaction name="menu_plots"/>
+   <addaction name="menu_Settings"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="action_OpenImage">
@@ -264,6 +283,36 @@
   <action name="actionSet_path_to_shared_tiff">
    <property name="text">
     <string>Set path to shared.tiff</string>
+   </property>
+  </action>
+  <action name="action_Ampl">
+   <property name="text">
+    <string>Амплитуда</string>
+   </property>
+  </action>
+  <action name="action_Re">
+   <property name="text">
+    <string>Квдратура, Re</string>
+   </property>
+  </action>
+  <action name="action_Im">
+   <property name="text">
+    <string>Квдратура, Im</string>
+   </property>
+  </action>
+  <action name="action_AmplSpectrum">
+   <property name="text">
+    <string>Спектр Амплитуд</string>
+   </property>
+  </action>
+  <action name="action_PhaseSpectrum">
+   <property name="text">
+    <string>Спектр Фаз</string>
+   </property>
+  </action>
+  <action name="action_Decimation">
+   <property name="text">
+    <string>Фактор децимации</string>
    </property>
   </action>
  </widget>
