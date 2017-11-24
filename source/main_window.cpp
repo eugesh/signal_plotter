@@ -22,11 +22,12 @@
 #include "cpp-hyscan-acoustic-data.h"
 #include "cpp-hyscan-raw-data.h"
 
+
 MainWindow::MainWindow(QWidget *parent) :
                        QMainWindow(parent),
                        ui(new Ui::MainWindow)
 {
-  decimation_factor = 4;
+  decimation_factor = 16;
   ui->setupUi(this);
 
   ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes |
@@ -76,7 +77,19 @@ MainWindow::MainWindow(QWidget *parent) :
   connect(ui->action_OpenImage, SIGNAL(triggered()), this, SLOT(open_image()));
   connect(ui->actionLoad_Project, SIGNAL(triggered()), this, SLOT(open_side_scan_proj()));
 
+  createActions();
+
   connect(ui->horizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(updateGraph(int)));
+}
+
+void MainWindow::createActions() {
+  connect(ui->action_Acoustic, SIGNAL(triggered()), this, SLOT(add_acoustic_graph()));
+  connect(ui->action_Re, SIGNAL(triggered()), this, SLOT(add_raw_data_re_graph()));
+  connect(ui->action_Im, SIGNAL(triggered()), this, SLOT(add_raw_data_im_graph()));
+  connect(ui->action_Ampl, SIGNAL(triggered()), this, SLOT(add_raw_data_ampl_graph()));
+  connect(ui->action_Phase, SIGNAL(triggered()), this, SLOT(add_raw_data_phase_graph()));
+  connect(ui->action_PhaseSpectrum, SIGNAL(triggered()), this, SLOT(add_phase_spectrum_graph()));
+  connect(ui->action_AmplSpectrum, SIGNAL(triggered()), this, SLOT(add_ampl_spectrum_graph()));
 }
 
 MainWindow::~MainWindow()
@@ -118,7 +131,7 @@ MainWindow::load_image() {
 
   // Fill out samples.
   for (int i = 0; i < img.height(); ++i ) {
-    QVector<float> scan_line;
+    std::vector<Real> scan_line;
     for (int j =0 ; j < img.width(); ++j) {
         scan_line.push_back((float) qGray(img.pixel(j, i)));
     }
@@ -180,46 +193,44 @@ MainWindow::load_side_scan_project(QString bd_path, QString prj_name, QString tr
   // Open project.
   // unsigned int project_id = open_project(prj_name.toAscii().data());
 
-  // Read amplitude values.
   read_amplitude_values(prj_name, track_name);
 
   activeGraphs.append("Acoustic");
   addGraph(0, "Acoustic");
 
-  // Read quadrature values.
+  read_quadrature_values(prj_name, track_name);
 
-
-  // activeGraphs.append("RawDataIm");
-  // activeGraphs.append("RawDataRe");
-  // addActiveGraphs(0);
+  activeGraphs.append("RawDataRe");
+  activeGraphs.append("RawDataIm");
+  addGraph(0, "RawDataRe");
+  addGraph(0, "RawDataIm");
 }
 
 void
 MainWindow::read_amplitude_values(QString prj_name, QString track_name) {
-  // all_samples["Acoustic"].clear();
-  // amplitude_samples.clear();
   unsigned int values_count = 0;
-  unsigned int ad_id = acoustic_data_new (prj_name.toAscii().data(), track_name.toAscii().data(), 101, 1); // Track id.
+  // Track id.
+  unsigned int ad_id = acoustic_data_new (prj_name.toAscii().data(), track_name.toAscii().data(), 101, 1);
 
-  unsigned int first_index = get_first_index_in_range (ad_id);
-  unsigned int last_index = get_last_index_in_range (ad_id);
+  unsigned int first_index = acoustic_data_get_first_index_in_range (ad_id);
+  unsigned int last_index = acoustic_data_get_last_index_in_range (ad_id);
   unsigned int range = last_index - first_index;
 
   printf("ad_id = %d, fi = %d, li = %d, r = %d\n", ad_id, first_index, last_index, range);
 
-  for (int i = first_index; i < last_index; ++i) {
-      values_count = get_values_count(ad_id, i);
-      // printf("values_count = %d", values_count);
+  for (int i = first_index; i < last_index; i += 1) {
+      values_count = acoustic_data_get_values_count(ad_id, i);
+      printf("values_count acoustic = %d", values_count);
       float *ampl_buffer = new float[values_count];
-      values_count = get_values(ad_id, i, ampl_buffer, values_count, NULL);
-      QVector<float> vec_ampl_scanline(values_count);
+      values_count = acoustic_data_get_values(ad_id, i, ampl_buffer, values_count, NULL);
+      std::vector<Real> vec_ampl_scanline(values_count);
 
       // vec_ampl_scanline.data() = ampl_buffer;
-      for (int j = 0; j < values_count; ++j) {
-          vec_ampl_scanline.append(ampl_buffer[j]);
+      for (int j = 0; j < values_count; j += decimation_factor) {
+          vec_ampl_scanline.push_back(ampl_buffer[j]);
       }
       // amplitude_samples.append(vec_ampl_scanline);
-      all_samples["Acoustic"].append(vec_ampl_scanline);
+      all_samples["Acoustic"].push_back(vec_ampl_scanline);
       delete[] ampl_buffer;
   }
 
@@ -229,7 +240,45 @@ MainWindow::read_amplitude_values(QString prj_name, QString track_name) {
 
 void
 MainWindow::read_quadrature_values(QString prj_name, QString track_name) {
+  unsigned int values_count = 0;
+  // Track id.
+  unsigned int rd_id = raw_data_new (prj_name.toAscii().data(), track_name.toAscii().data(), 101, 1);
+  unsigned int first_index = raw_data_get_first_index_in_range (rd_id);
+  unsigned int last_index = raw_data_get_last_index_in_range (rd_id);
+  unsigned int range = last_index - first_index;
 
+  printf("rd_id = %d, fi = %d, li = %d, r = %d\n", rd_id, first_index, last_index, range);
+
+  for (int i = first_index; i < last_index; i += 1) {
+      values_count = raw_data_get_values_count(rd_id, i);
+      printf("values_count re, im = %d", values_count);
+      ComplexFloat *buffer = new ComplexFloat[values_count];
+
+      values_count = get_quadrature_values(rd_id, i, buffer, values_count, NULL);
+
+      std::vector<Real> vec_val_scanline(values_count);
+
+      // Take Re values.
+      for (int j = 0; j < values_count; j += decimation_factor) {
+          vec_val_scanline.push_back(buffer[j].re);
+      }
+
+      all_samples["RawDataRe"].push_back(vec_val_scanline);
+
+      vec_val_scanline.clear();
+
+      // Take Im values.
+      for (int j = 0; j < values_count; j += decimation_factor) {
+          vec_val_scanline.push_back(buffer[j].im);
+      }
+
+      all_samples["RawDataIm"].push_back(vec_val_scanline);
+
+      delete[] buffer;
+  }
+
+  ui->customPlot->xAxis->setRange(0, 2 * values_count);
+  ui->customPlot->yAxis->setRange(-1, 1);
 }
 
 /**
@@ -246,7 +295,7 @@ MainWindow::addGraph(int curPos, QString type)
   if (curPos < samples.size())
     curSize = samples[curPos].size();
   else {
-    std::cout << "Error MainWindow::addGraph: invalid slide window position." << std::cout;
+    std::cout << "Error MainWindow::addGraph: invalid slide window position." << std::endl;
     return ;
   }
 
@@ -261,8 +310,9 @@ MainWindow::addGraph(int curPos, QString type)
 
   for (int i=0; i < curSize; i++)
   {
-    x[i] = i * xScale + xOffset;
+    x[i] = i;
     y[i] = samples[curPos][i];
+    // memcpy(y.data(), (double*)(samples[curPos].data()), curSize * sizeof(double));
   }
 
   ui->customPlot->addGraph();
@@ -460,5 +510,67 @@ MainWindow::removeAllGraphs()
   ui->customPlot->clearGraphs();
   ui->customPlot->replot();
 }
+
+void MainWindow::add_acoustic_graph() {
+  /* Check if acoustic data is loaded. */
+  if(all_samples.contains("Acoustic")) {
+      /* Set the graph as active. */
+      activeGraphs.append("Acoustic");
+  }
+
+  /* Add graph to view area. */
+  addGraph(ui->horizontalSlider->value(), "Acoustic");
+}
+
+void MainWindow::add_raw_data_re_graph() {
+  /* Check if acoustic data is loaded. */
+  if(all_samples.contains("RawDataRe")) {
+      /* Set the graph as active. */
+      activeGraphs.append("RawDataRe");
+  }
+
+  /* Add graph to view area. */
+  addGraph(ui->horizontalSlider->value(), "RawDataRe");
+}
+
+void MainWindow::add_raw_data_im_graph() {
+  /* Check if acoustic data is loaded. */
+  if(all_samples.contains("RawDataIm")) {
+      /* Set the graph as active. */
+      activeGraphs.append("RawDataIm");
+  }
+
+  /* Add graph to view area. */
+  addGraph(ui->horizontalSlider->value(), "RawDataIm");
+}
+
+void MainWindow::add_raw_data_ampl_graph() {
+
+}
+
+void MainWindow::add_raw_data_phase_graph() {
+
+}
+
+void MainWindow::add_re_spectrum_graph() {
+
+}
+
+void MainWindow::add_im_spectrum_graph() {
+
+}
+
+void MainWindow::add_ampl_spectrum_graph() {
+
+}
+
+void MainWindow::add_phase_spectrum_graph() {
+
+}
+
+/**
+ * Private section.
+ */
+
 
 #endif

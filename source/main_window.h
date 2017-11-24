@@ -22,10 +22,12 @@
 #include <QString>
 #include <QMap>
 #include <complex>
+#include <vector>
 #include "../custom_plot/qcustomplot.h"
 
 typedef std::complex<float> Complex;
-typedef QVector<QVector<float> > Samples;
+typedef double Real;
+typedef std::vector<std::vector<Real> > Samples;
 
 namespace Ui {
 class MainWindow;
@@ -39,6 +41,16 @@ public:;
   ~MainWindow();
 
 private slots:;
+  void add_acoustic_graph();
+  void add_raw_data_re_graph();
+  void add_raw_data_im_graph();
+  void add_raw_data_ampl_graph();
+  void add_raw_data_phase_graph();
+  void add_re_spectrum_graph();
+  void add_im_spectrum_graph();
+  void add_ampl_spectrum_graph();
+  void add_phase_spectrum_graph();
+
   void open_image();
   void open_side_scan_proj();
 
@@ -56,6 +68,7 @@ private slots:;
   void mouseWheel();
 
 private:;
+  void createActions();
   /* Get samples by name:
    "RawDataRe", "RawDataIm", "RawDataAmpl", "Acoustic", "AmplSpectrum", "PhaseSpectrum", "PNG". */
   Samples get_samples(QString name);
@@ -70,20 +83,12 @@ private:;
   // Path to opened project or .png or .tiff image.
   QString path_to_data;
   // List of active graphs. Allowable names:
-  // "RawDataRe", "RawDataIm", "RawDataAmpl", "Acoustic", "AmplSpectrum", "PhaseSpectrum", "PNG"
+  // "PNG", "Acoustic", "RawDataRe", "RawDataIm", "RawDataAmpl", "RawDataPhase", "AmplSpectrum", "PhaseSpectrum"
   QStringList activeGraphs;
-  // All data.
+  // Data stored in easy to access way. Key - name from activeGraphs. Value - data.
   QMap<QString, Samples> all_samples;
   // The greater value the sparser data you see.
   float decimation_factor;
-  // Data stored in easy to access way.
-  //  QVector<QVector<float> > png_samples;
-  //  QVector<QVector<float> > amplitude_samples;
-  //  // QVector<QVector<Complex> > quadrature_samples;
-  //  QVector<QVector<float> > re_raw_samples;
-  //  QVector<QVector<float> > im_raw_samples;
-  //  QVector<QVector<float> > re_spectrum_samples;
-  //  QVector<QVector<float> > im_spectrum_samples;
 };
 
 #endif

@@ -63,9 +63,11 @@
     <property name="title">
      <string>Графики</string>
     </property>
-    <addaction name="action_Ampl"/>
+    <addaction name="action_Acoustic"/>
     <addaction name="action_Re"/>
     <addaction name="action_Im"/>
+    <addaction name="action_Ampl"/>
+    <addaction name="action_Phase"/>
     <addaction name="separator"/>
     <addaction name="action_AmplSpectrum"/>
     <addaction name="action_PhaseSpectrum"/>
@@ -313,6 +315,16 @@
   <action name="action_Decimation">
    <property name="text">
     <string>Фактор децимации</string>
+   </property>
+  </action>
+  <action name="action_Phase">
+   <property name="text">
+    <string>Фаза</string>
+   </property>
+  </action>
+  <action name="action_Acoustic">
+   <property name="text">
+    <string>Свертка</string>
    </property>
   </action>
  </widget>

@@ -62,6 +62,7 @@ set (ADDON_LIBRARIES ${ADDON_LIBRARIES} hyscantypes-${HYSCAN_MAJOR_VERSION}
                                         hyscanmath-${HYSCAN_MAJOR_VERSION}
                                         hyscancore-${HYSCAN_MAJOR_VERSION}
                                         cpp_acoustic_wrap
+                                        cpp_raw_wrap
                                         cpp_bd_wrap)
 
 add_definitions (-DG_LOG_DOMAIN="ScanlineViewer")
