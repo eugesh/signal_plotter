@@ -127,7 +127,7 @@ void MainWindow::addGraph(int curPos)
   if (curPos < samples.size())
     curSize = this->samples[curPos].size();
   else {
-    std::cout << "Error MainWindow::addGraph: invalid slide window position." << std::cout;
+    std::cout << "Error MainWindow::addGraph: invalid slide window position." << std::endl;
     return ;
   }
 

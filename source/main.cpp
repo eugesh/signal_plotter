@@ -10,8 +10,6 @@
 #include <QFile>
 #include <QTextStream>
 #include <QGraphicsView>
-#include <gdal_priv.h>
-
 #include "main_window.h"
 
 int main(int argc, char **argv)
@@ -19,8 +17,6 @@ int main(int argc, char **argv)
     QApplication app(argc, argv);
 
     QTextCodec::setCodecForTr(QTextCodec::codecForName("Windows-1251"));
-
-    GDALAllRegister();
 
     MainWindow view;
 

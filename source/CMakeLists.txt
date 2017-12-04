@@ -20,6 +20,5 @@ add_executable (scanline_viewer
 	            main.cpp
 	            ${MOCSrcs} ${UISrcs})
 
-target_link_libraries (scanline_viewer ${ADDON_LIBRARIES} ${GLIB2_LIBRARIES} ${HYSCAN_LIBRARIES} ${QTLIBS} ${QT_LIBRARIES} ${GDAL_LIBRARY} custom_plot)
+target_link_libraries (scanline_viewer ${ADDON_LIBRARIES} ${QTLIBS} ${QT_LIBRARIES} custom_plot)
 
-# set_target_properties (scanline_viewer PROPERTIES DEFINE_SYMBOL "HYSCAN_API_EXPORTS")
