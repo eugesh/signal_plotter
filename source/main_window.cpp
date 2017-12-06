@@ -23,6 +23,8 @@ MainWindow::MainWindow(QWidget *parent) :
                        ui(new Ui::MainWindow)
 {
   ui->setupUi(this);
+  Rmeas = 1; // Om
+  ResFreq = 1; // kHz
 
   ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes |
                                   QCP::iSelectLegend | QCP::iSelectPlottables);
@@ -35,8 +37,8 @@ MainWindow::MainWindow(QWidget *parent) :
   QCPTextElement *title = new QCPTextElement(ui->customPlot, "Scanline Viewer", QFont("sans", 17, QFont::Bold));
   ui->customPlot->plotLayout()->addElement(0, 0, title);
 
-  ui->customPlot->xAxis->setLabel("x Axis");
-  ui->customPlot->yAxis->setLabel("y Axis");
+  ui->customPlot->xAxis->setLabel("Timestamp.");
+  ui->customPlot->yAxis->setLabel("Signal, V.");
   ui->customPlot->legend->setVisible(true);
   QFont legendFont = font();
   legendFont.setPointSize(10);
@@ -66,9 +68,8 @@ MainWindow::MainWindow(QWidget *parent) :
   ui->customPlot->setContextMenuPolicy(Qt::CustomContextMenu);
   // connect(ui->customPlot, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextMenuRequest(QPoint)));
 
-  connect(ui->action_OpenImage, SIGNAL(triggered()), this, SLOT(open_image()));
-
-  connect(ui->horizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(updateGraph(int)));
+  connect(ui->action_OpenRadioSignal, SIGNAL(triggered()), this, SLOT(open_csv_radio()));
+  connect(ui->action_OpenAttenuationSignal, SIGNAL(triggered()), this, SLOT(open_csv_attenuation()));
 }
 
 MainWindow::~MainWindow()
@@ -77,44 +78,67 @@ MainWindow::~MainWindow()
 }
 
 /**
- * Reaction on button click.
+ * Reaction on menu button click.
  */
-void MainWindow::open_image() {
-  path_to_data = QFileDialog::getOpenFileName(this, tr("Укажите путь к изображению"), "/home/evgeny/data", tr("Images (*.png *.xpm *.jpg *.bmp *.jpeg)"));
+void MainWindow::open_csv_radio() {
+  path_to_radio_csv = QFileDialog::getOpenFileName(this, tr("Укажите путь к радиоимпульсу."), "/home/", tr("(*.csv)"));
 
-  if(!path_to_data.isEmpty ()) {
-      load_image();
+  if(!path_to_radio_csv.isEmpty ()) {
+      load_csv(1);
   } else {
     QMessageBox::information(this, tr("SignalPlotter"),
            tr("Файл не был открыт."));
-           // tr("Файл не был открыт %1.").arg(path_to_data));
+  }
+}
+
+void MainWindow::open_csv_attenuation() {
+  path_to_attenuation_csv = QFileDialog::getOpenFileName(this, tr("Укажите путь к затухающему сигналу."), "/home/", tr("(*.csv)"));
+
+  if(!path_to_attenuation_csv.isEmpty ()) {
+      load_csv(2);
+  } else {
+    QMessageBox::information(this, tr("SignalPlotter"),
+           tr("Файл не был открыт."));
+  }
+}
+
+/*
+ * Wrapper under common .csv data loader.
+ */
+void MainWindow::load_csv(unsigned int type) {
+  if (type == 1) {
+    samples_radio.clear ();
+    samples_radio = load_csv(path_to_radio_csv);
+  } else if(type == 2) {
+    samples_attenuation.clear();
+    samples_attenuation = load_csv(path_to_attenuation_csv);
+  } else {
+    printf("Wrong signal type.\n");
   }
 }
 
 /**
  * Physical data load.
+ * Format of .csv file:
+ * "X,CH2,Start,Increment,
+ * Sequence,Volt,0,num,1,num,2,num,..."
  */
-void MainWindow::load_image() {
-  // It is loaded from open_image slot so it is always image.
-  QImage img = QImage(path_to_data);
-
-  samples.clear ();
+QVector<QVector<float> > MainWindow::load_csv(QString filepath) {
+  QVector<QVector<float> > samples;
+  // Load points from .csv file.
 
   // Fill out samples.
-  for (int i = 0; i < img.height(); ++i ) {
+  /*for (int i = 0; i < img.height(); ++i ) {
     QVector<float> scan_line;
     for (int j =0 ; j < img.width(); ++j) {
         scan_line.push_back((float) qGray(img.pixel(j, i)));
     }
-    samples.push_back(scan_line);
-  }
+    samples_radio.push_back(scan_line);
+  }*/
 
-  // ui->horizontalSlider->setMinimum(0);
-  // Set maximum sliding value via the first line.
-  // ui->horizontalSlider->setMaximum(samples[0].size());
-  ui->horizontalSlider->setRange(0, samples.size() - 1);
-  ui->horizontalSlider->setValue(0);
   addGraph(0);
+
+  return samples;
 }
 
 /**
@@ -124,8 +148,8 @@ void MainWindow::addGraph(int curPos)
 {
   // Determine size of current plot. (number of points in graph).
   int curSize;
-  if (curPos < samples.size())
-    curSize = this->samples[curPos].size();
+  if (curPos < samples_radio.size())
+    curSize = this->samples_radio[curPos].size();
   else {
     std::cout << "Error MainWindow::addGraph: invalid slide window position." << std::endl;
     return ;
@@ -143,7 +167,7 @@ void MainWindow::addGraph(int curPos)
   for (int i=0; i < curSize; i++)
   {
     x[i] = i * xScale + xOffset;
-    y[i] = samples[curPos][i];
+    y[i] = samples_radio[curPos][i];
   }
 
   ui->customPlot->addGraph();
@@ -165,10 +189,10 @@ void MainWindow::updateGraph(int value) {
   removeAllGraphs();
 
   // Get current slider position.
-  int curPos = ui->horizontalSlider->sliderPosition();
+  // int curPos = ui->horizontalSlider->sliderPosition();
 
   // Add graph related to current position.
-  addGraph(curPos);
+  // addGraph(curPos);
 }
 
 void MainWindow::titleDoubleClick(QMouseEvent* event)

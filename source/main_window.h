@@ -35,7 +35,8 @@ public:;
   ~MainWindow();
 
 private slots:;
-  void open_image();
+  void open_csv_radio();
+  void open_csv_attenuation();
   void titleDoubleClick(QMouseEvent *event);
   void axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart part);
   void legendDoubleClick(QCPLegend* legend, QCPAbstractLegendItem* item);
@@ -49,13 +50,18 @@ private slots:;
   void mouseWheel();
 
 private:;
-  void load_image();
+  void load_csv(unsigned int type=1);
+  QVector<QVector<float> > load_csv(QString filepath);
 
 private:;
   Ui::MainWindow *ui;
-  // Path to opened project or .png ot .tiff image.
-  QString path_to_data;
-  QVector<QVector<float> > samples;
+  float Rmeas;
+  float ResFreq;
+  // Paths to opened .csv files.
+  QString path_to_radio_csv;
+  QString path_to_attenuation_csv;
+  QVector<QVector<float> > samples_radio;
+  QVector<QVector<float> > samples_attenuation;
 };
 
 #endif

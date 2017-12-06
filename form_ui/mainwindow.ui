@@ -24,13 +24,6 @@
     <item row="0" column="0">
      <widget class="QCustomPlot" name="customPlot" native="true"/>
     </item>
-    <item row="1" column="0">
-     <widget class="QSlider" name="horizontalSlider">
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
-      </property>
-     </widget>
-    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -39,15 +32,15 @@
      <x>0</x>
      <y>0</y>
      <width>720</width>
-     <height>18</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_Open">
     <property name="title">
      <string>Файл</string>
     </property>
-    <addaction name="action_OpenImage"/>
-    <addaction name="actionLoad_Project"/>
+    <addaction name="action_OpenRadioSignal"/>
+    <addaction name="action_OpenAttenuationSignal"/>
     <addaction name="separator"/>
     <addaction name="action_Quit"/>
    </widget>
@@ -59,13 +52,33 @@
     <addaction name="actionHand"/>
     <addaction name="actionRubber_2"/>
    </widget>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>Параметры</string>
+    </property>
+    <widget class="QMenu" name="menu_2">
+     <property name="title">
+      <string>Резонансная частота, кГц</string>
+     </property>
+     <addaction name="action_set_Resonance_Freq"/>
+    </widget>
+    <widget class="QMenu" name="menuR">
+     <property name="title">
+      <string>R измерительное, Ом</string>
+     </property>
+     <addaction name="action_set_R_meas"/>
+    </widget>
+    <addaction name="menuR"/>
+    <addaction name="menu_2"/>
+   </widget>
    <addaction name="menu_Open"/>
    <addaction name="menuCursor"/>
+   <addaction name="menu"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
-  <action name="action_OpenImage">
+  <action name="action_OpenRadioSignal">
    <property name="text">
-    <string>Загрузить изображение(Ctrl+L)</string>
+    <string>Загрузить радиоимпульс (Ctrl+L)</string>
    </property>
   </action>
   <action name="action_SavePoints">
@@ -236,9 +249,9 @@
     <string>Резиновая лента</string>
    </property>
   </action>
-  <action name="actionLoad_Project">
+  <action name="action_OpenAttenuationSignal">
    <property name="text">
-    <string>Загрузить проект HS5</string>
+    <string>Загрузить затухающий сигнал</string>
    </property>
   </action>
   <action name="action_stop_sound_gen">
@@ -264,6 +277,16 @@
   <action name="actionSet_path_to_shared_tiff">
    <property name="text">
     <string>Set path to shared.tiff</string>
+   </property>
+  </action>
+  <action name="action_set_R_meas">
+   <property name="text">
+    <string>Задать значение</string>
+   </property>
+  </action>
+  <action name="action_set_Resonance_Freq">
+   <property name="text">
+    <string>Задать значение</string>
    </property>
   </action>
  </widget>
