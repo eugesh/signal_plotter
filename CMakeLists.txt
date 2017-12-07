@@ -32,10 +32,15 @@ find_package (Qt4 REQUIRED)
 # qt4_wrap_cpp (MOC_SOURCES ${HEADERS})
 include(${QT_USE_FILE})
 
+#include (findeigen3)
+find_package (Eigen3 REQUIRED)
+include_directories (${EIGEN3_INCLUDE_DIR})
+
 link_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../bin")
 set (ADDON_LIBRARIES ${ADDON_LIBRARIES})
 
 add_definitions (-DG_LOG_DOMAIN="ScanlineViewer")
 add_subdirectory ("source")
 add_subdirectory ("custom_plot")
+add_subdirectory ("tests")
 

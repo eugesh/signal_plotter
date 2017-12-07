@@ -8,6 +8,8 @@
 #include <QCursor>
 #include <QPointF>
 #include <QString>
+#include <QFile>
+#include <QByteArray>
 #include <QMouseEvent>
 #include <QGraphicsRectItem>
 #include <QFileDialog>
@@ -95,10 +97,10 @@ void MainWindow::open_csv_attenuation() {
   path_to_attenuation_csv = QFileDialog::getOpenFileName(this, tr("Укажите путь к затухающему сигналу."), "/home/", tr("(*.csv)"));
 
   if(!path_to_attenuation_csv.isEmpty ()) {
-      load_csv(2);
+    load_csv(2);
   } else {
     QMessageBox::information(this, tr("SignalPlotter"),
-           tr("Файл не был открыт."));
+                             tr("Файл не был открыт."));
   }
 }
 
@@ -123,9 +125,28 @@ void MainWindow::load_csv(unsigned int type) {
  * "X,CH2,Start,Increment,
  * Sequence,Volt,0,num,1,num,2,num,..."
  */
-QVector<QVector<float> > MainWindow::load_csv(QString filepath) {
-  QVector<QVector<float> > samples;
+Samples MainWindow::load_csv(QString filepath) {
+  Samples samples;
+  QByteArray buf;
+
+  // Open filename
+  QFile file(filepath);
+  file.open(stderr, QIODevice::WriteOnly);
+  if(!file.open(QIODevice::ReadOnly)) {
+      printf("File %s wasn't opened\n", filepath.toAscii().data());
+      return Samples();
+  }
+
+  // Skip headline
+  buf = file.readLine();
+  // Read the second line
+  buf = file.readLine();
+  QList<QByteArray> list = buf.split(',');
+
   // Load points from .csv file.
+
+
+
 
   // Fill out samples.
   /*for (int i = 0; i < img.height(); ++i ) {
@@ -137,6 +158,8 @@ QVector<QVector<float> > MainWindow::load_csv(QString filepath) {
   }*/
 
   addGraph(0);
+
+  file.close();
 
   return samples;
 }

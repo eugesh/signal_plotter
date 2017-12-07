@@ -23,6 +23,9 @@
 #include <QVector>
 #include "../custom_plot/qcustomplot.h"
 
+typedef double Real;
+typedef std::vector<std::vector<Real> > Samples;
+
 namespace Ui {
 class MainWindow;
 }
@@ -51,7 +54,7 @@ private slots:;
 
 private:;
   void load_csv(unsigned int type=1);
-  QVector<QVector<float> > load_csv(QString filepath);
+  Samples load_csv(QString filepath);
 
 private:;
   Ui::MainWindow *ui;
@@ -60,8 +63,8 @@ private:;
   // Paths to opened .csv files.
   QString path_to_radio_csv;
   QString path_to_attenuation_csv;
-  QVector<QVector<float> > samples_radio;
-  QVector<QVector<float> > samples_attenuation;
+  Samples samples_radio;
+  Samples samples_attenuation;
 };
 
 #endif
