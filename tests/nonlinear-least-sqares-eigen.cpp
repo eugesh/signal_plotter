@@ -30,17 +30,17 @@ struct Functor
 
 struct radio_functor : Functor<double>
 {
-    my_functor(void): Functor<double>(2, N) {}
+	radio_functor(void): Functor<double>(2, N) {}
     int operator()(const Eigen::VectorXd &x, Eigen::VectorXd &fvec) const
     {
         // Implement y = y0 + A*sin(pi * (x - xc) / w)
+    	// y = y0 + A * sin(w * (x - xc));
         fvec(0) = 10.0 * pow(x(0) + 3.0, 2) + pow(x(1) - 5.0, 2);
         fvec(1) = 0;
 
         return 0;
     }
 };
-
 
 int main () {
 
