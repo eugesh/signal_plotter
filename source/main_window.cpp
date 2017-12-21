@@ -46,32 +46,37 @@ MainWindow::MainWindow(QWidget *parent) :
   legendFont.setPointSize(10);
   ui->customPlot->legend->setFont(legendFont);
   ui->customPlot->legend->setSelectedFont(legendFont);
-  ui->customPlot->legend->setSelectableParts(QCPLegend::spItems); // legend box shall not be selectable, only legend items
+
+  // Legend box shall not be selectable, only legend items.
+  ui->customPlot->legend->setSelectableParts(QCPLegend::spItems);
 
   ui->customPlot->rescaleAxes();
 
-  // connect slot that ties some axis selections together (especially opposite axes):
+  // Connect slot that ties some axis selections together (especially opposite axes):
   connect(ui->customPlot, SIGNAL(selectionChangedByUser()), this, SLOT(selectionChanged()));
-  // connect slots that takes care that when an axis is selected, only that direction can be dragged and zoomed:
+  // Connect slots that takes care that when an axis is selected, only that direction can be dragged and zoomed:
   connect(ui->customPlot, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(mousePress()));
   connect(ui->customPlot, SIGNAL(mouseWheel(QWheelEvent*)), this, SLOT(mouseWheel()));
 
-  // make bottom and left axes transfer their ranges to top and right axes:
+  // Make bottom and left axes transfer their ranges to top and right axes:
   connect(ui->customPlot->xAxis, SIGNAL(rangeChanged(QCPRange)), ui->customPlot->xAxis2, SLOT(setRange(QCPRange)));
   connect(ui->customPlot->yAxis, SIGNAL(rangeChanged(QCPRange)), ui->customPlot->yAxis2, SLOT(setRange(QCPRange)));
 
-  // connect some interaction slots:
+  // Connect some interaction slots:
   connect(ui->customPlot, SIGNAL(axisDoubleClick(QCPAxis*, QCPAxis::SelectablePart, QMouseEvent*)), this, SLOT(axisLabelDoubleClick(QCPAxis*, QCPAxis::SelectablePart)));
   connect(ui->customPlot, SIGNAL(legendDoubleClick(QCPLegend*, QCPAbstractLegendItem*, QMouseEvent*)), this, SLOT(legendDoubleClick(QCPLegend*, QCPAbstractLegendItem*)));
   connect(title, SIGNAL(doubleClicked(QMouseEvent*)), this, SLOT(titleDoubleClick(QMouseEvent*)));
 
 
-  // setup policy and connect slot for context menu popup:
+  // Setup policy and connect slot for context menu popup:
   ui->customPlot->setContextMenuPolicy(Qt::CustomContextMenu);
   // connect(ui->customPlot, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextMenuRequest(QPoint)));
 
   connect(ui->action_OpenRadioSignal, SIGNAL(triggered()), this, SLOT(open_csv_radio()));
   connect(ui->action_OpenAttenuationSignal, SIGNAL(triggered()), this, SLOT(open_csv_attenuation()));
+
+  QIDRmeas=new QInputDialog(this);
+  QIDFreqParRes=new QInputDialog(this);
 }
 
 MainWindow::~MainWindow()
@@ -83,24 +88,24 @@ MainWindow::~MainWindow()
  * Reaction on menu button click.
  */
 void MainWindow::open_csv_radio() {
-  path_to_radio_csv = QFileDialog::getOpenFileName(this, tr("Укажите путь к радиоимпульсу."), "/home/", tr("(*.csv)"));
+  path_to_radio_csv = QFileDialog::getOpenFileName(this, QObject::tr("Укажите путь к радиоимпульсу."), "/home/evgeny/workspace/hyscan5/signal-plotter/data", QObject::tr("(*.csv)"));
 
   if(!path_to_radio_csv.isEmpty ()) {
       load_csv(1);
   } else {
-    QMessageBox::information(this, tr("SignalPlotter"),
-           tr("Файл не был открыт."));
+    QMessageBox::information(this, QObject::tr("SignalPlotter"),
+                             QObject::tr("Файл не был открыт."));
   }
 }
 
 void MainWindow::open_csv_attenuation() {
-  path_to_attenuation_csv = QFileDialog::getOpenFileName(this, tr("Укажите путь к затухающему сигналу."), "/home/", tr("(*.csv)"));
+  path_to_attenuation_csv = QFileDialog::getOpenFileName(this, QObject::tr("Укажите путь к затухающему сигналу."), "/home/evgeny/workspace/hyscan5/signal-plotter/data", QObject::tr("(*.csv)"));
 
   if(!path_to_attenuation_csv.isEmpty ()) {
     load_csv(2);
   } else {
-    QMessageBox::information(this, tr("SignalPlotter"),
-                             tr("Файл не был открыт."));
+    QMessageBox::information(this, QObject::tr("SignalPlotter"),
+                             QObject::tr("Файл не был открыт."));
   }
 }
 
@@ -117,49 +122,60 @@ void MainWindow::load_csv(unsigned int type) {
   } else {
     printf("Wrong signal type.\n");
   }
+  addGraph(0);
 }
 
 /**
  * Physical data load.
  * Format of .csv file:
- * "X,CH2,Start,Increment,
- * Sequence,Volt,0,num,1,num,2,num,..."
+ * "X, CH2, Start, Increment,
+ * Sequence, Volt,
+ * 0, num,
+ * 1, num,
+ * 2, num,..."
  */
 Samples MainWindow::load_csv(QString filepath) {
   Samples samples;
   QByteArray buf;
 
-  // Open filename
+  // Open filename.
   QFile file(filepath);
-  file.open(stderr, QIODevice::WriteOnly);
   if(!file.open(QIODevice::ReadOnly)) {
-      printf("File %s wasn't opened\n", filepath.toAscii().data());
-      return Samples();
+    printf("File %s wasn't opened.\n", filepath.toAscii().data());
+    return Samples();
   }
 
-  // Skip headline
+  // for debug.
+  QFile file_d("out_debug.txt");
+  if(!file_d.open(QIODevice::WriteOnly)) {
+    printf("File %s wasn't opened.\n", QString("out_debug.txt").toAscii().data());
+    return Samples();
+  }
+
+
+  // Skip headline.
   buf = file.readLine();
   // Read the second line
   buf = file.readLine();
   QList<QByteArray> list = buf.split(',');
 
   // Load points from .csv file.
+  while (buf.size() > 2) {
+	buf = file.readLine();
+	if(buf.size() > 2) {
+	  list = buf.split(',');
+	  printf("size of list: %d, %s, %s, %s \n", list.size(), list[0].data(), list[1].data(), list[2].data());
+	  printf("%f\n", list[1].toDouble());
+	  file_d.write(list[1]);
+	  file_d.write("\n");
+	  samples.push_back(list[1].toDouble() * 10000);
+	}
+  }
 
-
-
-
-  // Fill out samples.
-  /*for (int i = 0; i < img.height(); ++i ) {
-    QVector<float> scan_line;
-    for (int j =0 ; j < img.width(); ++j) {
-        scan_line.push_back((float) qGray(img.pixel(j, i)));
-    }
-    samples_radio.push_back(scan_line);
-  }*/
-
-  addGraph(0);
+  printf("Everything was red.\n");
 
   file.close();
+  file_d.close();
 
   return samples;
 }
@@ -171,18 +187,13 @@ void MainWindow::addGraph(int curPos)
 {
   // Determine size of current plot. (number of points in graph).
   int curSize;
-  if (curPos < samples_radio.size())
-    curSize = this->samples_radio[curPos].size();
-  else {
-    std::cout << "Error MainWindow::addGraph: invalid slide window position." << std::endl;
-    return ;
-  }
+  curSize = this->samples_radio.size();
 
   double xScale = 1;
-  double yScale = 1;
+  // double yScale = 1;
   // X and Y offsets are always 0.
   double xOffset = 0;
-  double yOffset = 0;
+  // double yOffset = 0;
 
   QVector<double> x(curSize);
   QVector<double> y(curSize);
@@ -190,7 +201,7 @@ void MainWindow::addGraph(int curPos)
   for (int i=0; i < curSize; i++)
   {
     x[i] = i * xScale + xOffset;
-    y[i] = samples_radio[curPos][i];
+    y[i] = samples_radio[i];
   }
 
   ui->customPlot->addGraph();
@@ -223,7 +234,7 @@ void MainWindow::titleDoubleClick(QMouseEvent* event)
   Q_UNUSED(event)
   if (QCPTextElement *title = qobject_cast<QCPTextElement*>(sender()))
   {
-    // Set the plot title by double clicking on it
+    // Set the plot title by double clicking on it.
     bool ok;
     QString newTitle = QInputDialog::getText(this, "QCustomPlot example", "New plot title:", QLineEdit::Normal, title->text(), &ok);
     if (ok)
@@ -236,8 +247,9 @@ void MainWindow::titleDoubleClick(QMouseEvent* event)
 
 void MainWindow::axisLabelDoubleClick(QCPAxis *axis, QCPAxis::SelectablePart part)
 {
-  // Set an axis label by double clicking on it
-  if (part == QCPAxis::spAxisLabel) // only react when the actual axis label is clicked, not tick label or axis backbone
+  // Set an axis label by double clicking on it.
+  // Only react when the actual axis label is clicked, not tick label or axis backbone.
+  if (part == QCPAxis::spAxisLabel)
   {
     bool ok;
     QString newLabel = QInputDialog::getText(this, "QCustomPlot example", "New axis label:", QLineEdit::Normal, axis->label(), &ok);
@@ -251,9 +263,10 @@ void MainWindow::axisLabelDoubleClick(QCPAxis *axis, QCPAxis::SelectablePart par
 
 void MainWindow::legendDoubleClick(QCPLegend *legend, QCPAbstractLegendItem *item)
 {
-  // Rename a graph by double clicking on its legend item
+  // Rename a graph by double clicking on its legend item.
   Q_UNUSED(legend)
-  if (item) // only react if item was clicked (user could have clicked on border padding of legend where there is no item, then item is 0)
+  // Only react if item was clicked (user could have clicked on border padding of legend where there is no item, then item is 0).
+  if (item)
   {
     QCPPlottableLegendItem *plItem = qobject_cast<QCPPlottableLegendItem*>(item);
     bool ok;
@@ -281,14 +294,14 @@ void MainWindow::selectionChanged()
    or on its legend item.
   */
 
-  // make top and bottom axes be selected synchronously, and handle axis and tick labels as one selectable object:
+  // Make top and bottom axes be selected synchronously, and handle axis and tick labels as one selectable object:
   if (ui->customPlot->xAxis->selectedParts().testFlag(QCPAxis::spAxis) || ui->customPlot->xAxis->selectedParts().testFlag(QCPAxis::spTickLabels) ||
       ui->customPlot->xAxis2->selectedParts().testFlag(QCPAxis::spAxis) || ui->customPlot->xAxis2->selectedParts().testFlag(QCPAxis::spTickLabels))
   {
     ui->customPlot->xAxis2->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
     ui->customPlot->xAxis->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
   }
-  // make left and right axes be selected synchronously, and handle axis and tick labels as one selectable object:
+  // Make left and right axes be selected synchronously, and handle axis and tick labels as one selectable object:
   if (ui->customPlot->yAxis->selectedParts().testFlag(QCPAxis::spAxis) || ui->customPlot->yAxis->selectedParts().testFlag(QCPAxis::spTickLabels) ||
       ui->customPlot->yAxis2->selectedParts().testFlag(QCPAxis::spAxis) || ui->customPlot->yAxis2->selectedParts().testFlag(QCPAxis::spTickLabels))
   {
@@ -296,7 +309,7 @@ void MainWindow::selectionChanged()
     ui->customPlot->yAxis->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
   }
 
-  // synchronize selection of graphs with selection of corresponding legend items:
+  // Synchronize selection of graphs with selection of corresponding legend items:
   for (int i=0; i<ui->customPlot->graphCount(); ++i)
   {
     QCPGraph *graph = ui->customPlot->graph(i);

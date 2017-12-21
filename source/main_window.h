@@ -24,13 +24,14 @@
 #include "../custom_plot/qcustomplot.h"
 
 typedef double Real;
-typedef std::vector<std::vector<Real> > Samples;
+// typedef std::vector<std::vector<Real> > Samples;
+typedef std::vector<Real> Samples;
 
 namespace Ui {
 class MainWindow;
 }
 
-class MainWindow : public QMainWindow { //, public Ui::MainWindow {
+class MainWindow : public QMainWindow {
   Q_OBJECT
 
 public:;
@@ -58,6 +59,9 @@ private:;
 
 private:;
   Ui::MainWindow *ui;
+  // Немодальные диалоги задания величины.
+  QInputDialog *QIDRmeas; // Измерительного сопротивления.
+  QInputDialog *QIDFreqParRes; // Частоты при параллельном резонансе.
   float Rmeas;
   float ResFreq;
   // Paths to opened .csv files.
