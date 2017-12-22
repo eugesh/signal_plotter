@@ -3,6 +3,8 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <limits>
+#include <cfloat>
 #include <QtGui>
 #include <QObject>
 #include <QCursor>
@@ -20,26 +22,33 @@
 #include "main_window.h"
 #include "ui_mainwindow.h"
 
+//#include <opencv2/imgproc.hpp>
+//#include "opencv2/videoio.hpp"
+//#include <opencv2/opencv.hpp>
+
+const static double eps = 1e-10;
+
 MainWindow::MainWindow(QWidget *parent) :
                        QMainWindow(parent),
                        ui(new Ui::MainWindow)
 {
   ui->setupUi(this);
   Rmeas = 1; // Om
-  ResFreq = 1; // kHz
+  ParResFreq = 1; // kHz
 
   ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes |
                                   QCP::iSelectLegend | QCP::iSelectPlottables);
 
-  ui->customPlot->xAxis->setRange(-8, 8);
-  ui->customPlot->yAxis->setRange(-5, 5);
+  // ui->customPlot->xAxis->setRange(-10, 30000);
+  ui->customPlot->xAxis->setRange(2.7e-5, 5e-5);
+  ui->customPlot->yAxis->setRange(-2, 2);
   ui->customPlot->axisRect()->setupFullAxesBox();
 
   ui->customPlot->plotLayout()->insertRow(0);
   QCPTextElement *title = new QCPTextElement(ui->customPlot, "Scanline Viewer", QFont("sans", 17, QFont::Bold));
   ui->customPlot->plotLayout()->addElement(0, 0, title);
 
-  ui->customPlot->xAxis->setLabel("Timestamp.");
+  ui->customPlot->xAxis->setLabel("Timestamp, sec.");
   ui->customPlot->yAxis->setLabel("Signal, V.");
   ui->customPlot->legend->setVisible(true);
   QFont legendFont = font();
@@ -70,7 +79,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
   // Setup policy and connect slot for context menu popup:
   ui->customPlot->setContextMenuPolicy(Qt::CustomContextMenu);
-  // connect(ui->customPlot, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextMenuRequest(QPoint)));
+  connect(ui->customPlot, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextMenuRequest(QPoint)));
 
   connect(ui->action_OpenRadioSignal, SIGNAL(triggered()), this, SLOT(open_csv_radio()));
   connect(ui->action_OpenAttenuationSignal, SIGNAL(triggered()), this, SLOT(open_csv_attenuation()));
@@ -113,16 +122,21 @@ void MainWindow::open_csv_attenuation() {
  * Wrapper under common .csv data loader.
  */
 void MainWindow::load_csv(unsigned int type) {
+  double xOffset, yOffset, xScale, yScale;
+
   if (type == 1) {
     samples_radio.clear ();
-    samples_radio = load_csv(path_to_radio_csv);
-  } else if(type == 2) {
+    samples_radio = load_csv(path_to_radio_csv, &xOffset, &xScale, &yOffset, &yScale);
+    addGraph(samples_radio, xOffset, xScale, yOffset, yScale);
+  }
+  else if(type == 2) {
     samples_attenuation.clear();
-    samples_attenuation = load_csv(path_to_attenuation_csv);
-  } else {
+    samples_attenuation = load_csv(path_to_attenuation_csv, &xOffset, &xScale, &yOffset, &yScale);
+    addGraph(samples_attenuation, xOffset, xScale, yOffset, yScale);
+  }
+  else {
     printf("Wrong signal type.\n");
   }
-  addGraph(0);
 }
 
 /**
@@ -134,7 +148,7 @@ void MainWindow::load_csv(unsigned int type) {
  * 1, num,
  * 2, num,..."
  */
-Samples MainWindow::load_csv(QString filepath) {
+Samples MainWindow::load_csv(QString filepath, double *xOffset, double *xScale, double *yOffset, double *yScale) {
   Samples samples;
   QByteArray buf;
 
@@ -145,75 +159,73 @@ Samples MainWindow::load_csv(QString filepath) {
     return Samples();
   }
 
-  // for debug.
-  QFile file_d("out_debug.txt");
-  if(!file_d.open(QIODevice::WriteOnly)) {
-    printf("File %s wasn't opened.\n", QString("out_debug.txt").toAscii().data());
-    return Samples();
-  }
-
-
   // Skip headline.
   buf = file.readLine();
-  // Read the second line
+  // Read the second line.
   buf = file.readLine();
   QList<QByteArray> list = buf.split(',');
+
+  // Set offsets and scales for each axis.
+  *xOffset = list[2].toDouble();
+  *xScale = list[3].toDouble();
+  *yOffset = 0;
 
   // Load points from .csv file.
   while (buf.size() > 2) {
 	buf = file.readLine();
 	if(buf.size() > 2) {
 	  list = buf.split(',');
-	  printf("size of list: %d, %s, %s, %s \n", list.size(), list[0].data(), list[1].data(), list[2].data());
-	  printf("%f\n", list[1].toDouble());
-	  file_d.write(list[1]);
-	  file_d.write("\n");
-	  samples.push_back(list[1].toDouble() * 10000);
+	  samples.push_back(list[1].toDouble());
 	}
   }
 
-  printf("Everything was red.\n");
-
   file.close();
-  file_d.close();
+
+  // Find min max.
+  double min = 10000;
+  double max = -10000;
+  for (unsigned int i = 0; i < samples.size(); ++i) {
+    if(min > samples[i])
+      min = samples[i];
+    if(max < samples[i])
+      max = samples[i];
+  }
+  *yScale = (max - min) < eps ? 1 : 1 / (max - min);
 
   return samples;
 }
 
-/**
- * Add graph.
- */
-void MainWindow::addGraph(int curPos)
-{
+void MainWindow::addGraph(Samples data, double xOffset, double xScale, double yOffset, double yScale) {
   // Determine size of current plot. (number of points in graph).
   int curSize;
-  curSize = this->samples_radio.size();
+  curSize = data.size();
 
-  double xScale = 1;
   // double yScale = 1;
   // X and Y offsets are always 0.
-  double xOffset = 0;
   // double yOffset = 0;
 
   QVector<double> x(curSize);
   QVector<double> y(curSize);
 
+  printf("xScale, xOffset = %f %f\n", xScale, xOffset);
+
   for (int i=0; i < curSize; i++)
   {
-    x[i] = i * xScale + xOffset;
-    y[i] = samples_radio[i];
+	x[i] = i * xScale + xOffset;
+	y[i] = data[i] * yScale + yOffset;
   }
+  printf("xs = %.10f, xo = %.10f, ys = %.10f, yo = %.10f\n", xScale, xOffset, yScale, yOffset);
 
   ui->customPlot->addGraph();
   ui->customPlot->graph()->setName(QString("New graph %1").arg(ui->customPlot->graphCount() - 1));
   ui->customPlot->graph()->setData(x, y);
-  ui->customPlot->graph()->setLineStyle(QCPGraph::lsImpulse);
+  ui->customPlot->graph()->setLineStyle(QCPGraph::lsLine);
   // if (rand() % 100 > 50)
-    // ui->customPlot->graph()->setScatterStyle(QCPScatterStyle((QCPScatterStyle::ScatterShape)(rand() % 14 + 1)));
+	// ui->customPlot->graph()->setScatterStyle(QCPScatterStyle((QCPScatterStyle::ScatterShape)(rand() % 14 + 1)));
   QPen graphPen;
-  // graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
-  graphPen.setColor(QColor(250, 10, 5));
-  graphPen.setWidthF(3); //(rand() / (double)RAND_MAX * 2 + 1);
+  graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
+  // graphPen.setColor(QColor(250, 10, 5));
+  graphPen.setWidthF(1); //(rand() / (double)RAND_MAX * 2 + 1);
   ui->customPlot->graph()->setPen(graphPen);
   ui->customPlot->replot();
 }
@@ -357,7 +369,24 @@ void MainWindow::graphClicked(QCPAbstractPlottable *plottable, int dataIndex)
   ui->statusBar->showMessage(message, 2500);
 }
 
-void MainWindow::removeSelectedGraph()
+void
+MainWindow::contextMenuRequest(QPoint pos)
+{
+  QMenu *menu = new QMenu(this);
+  menu->setAttribute(Qt::WA_DeleteOnClose);
+
+  {
+    if (ui->customPlot->selectedGraphs().size() > 0)
+      menu->addAction("Remove selected graph", this, SLOT(removeSelectedGraph()));
+    if (ui->customPlot->graphCount() > 0)
+      menu->addAction("Remove all graphs", this, SLOT(removeAllGraphs()));
+  }
+
+  menu->popup(ui->customPlot->mapToGlobal(pos));
+}
+
+void
+MainWindow::removeSelectedGraph()
 {
   if (ui->customPlot->selectedGraphs().size() > 0)
   {
@@ -366,7 +395,8 @@ void MainWindow::removeSelectedGraph()
   }
 }
 
-void MainWindow::removeAllGraphs()
+void
+MainWindow::removeAllGraphs()
 {
   ui->customPlot->clearGraphs();
   ui->customPlot->replot();

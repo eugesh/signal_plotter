@@ -46,8 +46,9 @@ private slots:;
   void legendDoubleClick(QCPLegend* legend, QCPAbstractLegendItem* item);
   void selectionChanged();
   void graphClicked(QCPAbstractPlottable *plottable, int dataIndex);
-  void addGraph(int pos);
+  void addGraph(Samples data, double start, double step, double yOffset, double yScale);
   void updateGraph(int value);
+  void contextMenuRequest(QPoint pos);
   void removeSelectedGraph();
   void removeAllGraphs();
   void mousePress();
@@ -55,7 +56,7 @@ private slots:;
 
 private:;
   void load_csv(unsigned int type=1);
-  Samples load_csv(QString filepath);
+  Samples load_csv(QString filepath, double *xOffset, double *xScale, double *yOffset, double *yScale);
 
 private:;
   Ui::MainWindow *ui;
@@ -63,7 +64,7 @@ private:;
   QInputDialog *QIDRmeas; // Измерительного сопротивления.
   QInputDialog *QIDFreqParRes; // Частоты при параллельном резонансе.
   float Rmeas;
-  float ResFreq;
+  float ParResFreq;
   // Paths to opened .csv files.
   QString path_to_radio_csv;
   QString path_to_attenuation_csv;
