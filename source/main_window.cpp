@@ -21,10 +21,21 @@
 #include <QImage>
 #include "main_window.h"
 #include "ui_mainwindow.h"
+#include "median.h"
 
-//#include <opencv2/imgproc.hpp>
-//#include "opencv2/videoio.hpp"
-//#include <opencv2/opencv.hpp>
+#include <opencv2/imgproc.hpp>
+// #include "opencv2/videoio.hpp"
+#include <opencv2/opencv.hpp>
+#include "opencv2/core.hpp"
+#include "opencv2/face.hpp"
+#include "opencv2/highgui.hpp"
+#include "opencv2/imgproc.hpp"
+#include "opencv2/objdetect.hpp"
+#include "opencv2/videoio.hpp"
+//#include "imgproc.hpp"
+//#include "videoio.hpp"
+//#include "opencv.hpp"
+
 
 const static double eps = 1e-10;
 
@@ -40,16 +51,18 @@ MainWindow::MainWindow(QWidget *parent) :
                                   QCP::iSelectLegend | QCP::iSelectPlottables);
 
   // ui->customPlot->xAxis->setRange(-10, 30000);
-  ui->customPlot->xAxis->setRange(2.7e-5, 5e-5);
+  ui->customPlot->xAxis->setRange(2e-5, 6e-5);
   ui->customPlot->yAxis->setRange(-2, 2);
+  ui->customPlot->yAxis2->setRange(-0.025, 0.025);
   ui->customPlot->axisRect()->setupFullAxesBox();
 
   ui->customPlot->plotLayout()->insertRow(0);
   QCPTextElement *title = new QCPTextElement(ui->customPlot, "Scanline Viewer", QFont("sans", 17, QFont::Bold));
   ui->customPlot->plotLayout()->addElement(0, 0, title);
 
-  ui->customPlot->xAxis->setLabel("Timestamp, sec.");
-  ui->customPlot->yAxis->setLabel("Signal, V.");
+  ui->customPlot->xAxis->setLabel(QObject::tr("Время, сек."));
+  ui->customPlot->yAxis->setLabel(QObject::tr("Радиовоздействие, В."));
+  ui->customPlot->yAxis2->setLabel(QObject::tr("Затухание, мВ."));
   ui->customPlot->legend->setVisible(true);
   QFont legendFont = font();
   legendFont.setPointSize(10);
@@ -127,12 +140,12 @@ void MainWindow::load_csv(unsigned int type) {
   if (type == 1) {
     samples_radio.clear ();
     samples_radio = load_csv(path_to_radio_csv, &xOffset, &xScale, &yOffset, &yScale);
-    addGraph(samples_radio, xOffset, xScale, yOffset, yScale);
+    addGraph1(samples_radio, xOffset, xScale, yOffset, yScale);
   }
   else if(type == 2) {
     samples_attenuation.clear();
     samples_attenuation = load_csv(path_to_attenuation_csv, &xOffset, &xScale, &yOffset, &yScale);
-    addGraph(samples_attenuation, xOffset, xScale, yOffset, yScale);
+    addGraph2(samples_attenuation, xOffset, xScale, yOffset, yScale);
   }
   else {
     printf("Wrong signal type.\n");
@@ -195,7 +208,7 @@ Samples MainWindow::load_csv(QString filepath, double *xOffset, double *xScale, 
   return samples;
 }
 
-void MainWindow::addGraph(Samples data, double xOffset, double xScale, double yOffset, double yScale) {
+void MainWindow::addGraph1(Samples data, double xOffset, double xScale, double yOffset, double yScale) {
   // Determine size of current plot. (number of points in graph).
   int curSize;
   curSize = data.size();
@@ -216,7 +229,43 @@ void MainWindow::addGraph(Samples data, double xOffset, double xScale, double yO
   }
   printf("xs = %.10f, xo = %.10f, ys = %.10f, yo = %.10f\n", xScale, xOffset, yScale, yOffset);
 
-  ui->customPlot->addGraph();
+  // ui->customPlot->addGraph();
+  ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis);
+  ui->customPlot->graph()->setName(QString("New graph %1").arg(ui->customPlot->graphCount() - 1));
+  ui->customPlot->graph()->setData(x, y);
+  ui->customPlot->graph()->setLineStyle(QCPGraph::lsLine);
+  // if (rand() % 100 > 50)
+	// ui->customPlot->graph()->setScatterStyle(QCPScatterStyle((QCPScatterStyle::ScatterShape)(rand() % 14 + 1)));
+  QPen graphPen;
+  graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
+  // graphPen.setColor(QColor(250, 10, 5));
+  graphPen.setWidthF(1); //(rand() / (double)RAND_MAX * 2 + 1);
+  ui->customPlot->graph()->setPen(graphPen);
+  ui->customPlot->replot();
+}
+
+void MainWindow::addGraph2(Samples data, double xOffset, double xScale, double yOffset, double yScale) {
+  // Determine size of current plot. (number of points in graph).
+  int curSize;
+  curSize = data.size();
+
+  // double yScale = 1;
+  // X and Y offsets are always 0.
+  // double yOffset = 0;
+
+  QVector<double> x(curSize);
+  QVector<double> y(curSize);
+
+  printf("xScale, xOffset = %f %f\n", xScale, xOffset);
+
+  for (int i=0; i < curSize; i++)
+  {
+	x[i] = i * xScale + xOffset;
+	y[i] = data[i] * yScale + yOffset;
+  }
+  printf("xs = %.10f, xo = %.10f, ys = %.10f, yo = %.10f\n", xScale, xOffset, yScale, yOffset);
+
+  ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis2);
   ui->customPlot->graph()->setName(QString("New graph %1").arg(ui->customPlot->graphCount() - 1));
   ui->customPlot->graph()->setData(x, y);
   ui->customPlot->graph()->setLineStyle(QCPGraph::lsLine);
@@ -313,16 +362,19 @@ void MainWindow::selectionChanged()
     ui->customPlot->xAxis2->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
     ui->customPlot->xAxis->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
   }
-  // Make left and right axes be selected synchronously, and handle axis and tick labels as one selectable object:
-  if (ui->customPlot->yAxis->selectedParts().testFlag(QCPAxis::spAxis) || ui->customPlot->yAxis->selectedParts().testFlag(QCPAxis::spTickLabels) ||
-      ui->customPlot->yAxis2->selectedParts().testFlag(QCPAxis::spAxis) || ui->customPlot->yAxis2->selectedParts().testFlag(QCPAxis::spTickLabels))
+
+  if (ui->customPlot->yAxis->selectedParts().testFlag(QCPAxis::spAxis) || ui->customPlot->yAxis->selectedParts().testFlag(QCPAxis::spTickLabels))
   {
-    ui->customPlot->yAxis2->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
     ui->customPlot->yAxis->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
   }
 
+  if(ui->customPlot->yAxis2->selectedParts().testFlag(QCPAxis::spAxis) || ui->customPlot->yAxis2->selectedParts().testFlag(QCPAxis::spTickLabels))
+  {
+	ui->customPlot->yAxis2->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
+  }
+
   // Synchronize selection of graphs with selection of corresponding legend items:
-  for (int i=0; i<ui->customPlot->graphCount(); ++i)
+  for (int i=0; i < ui->customPlot->graphCount(); ++i)
   {
     QCPGraph *graph = ui->customPlot->graph(i);
     QCPPlottableLegendItem *item = ui->customPlot->legend->itemWithPlottable(graph);
@@ -343,6 +395,8 @@ void MainWindow::mouseWheel()
     ui->customPlot->axisRect()->setRangeZoom(ui->customPlot->xAxis->orientation());
   else if (ui->customPlot->yAxis->selectedParts().testFlag(QCPAxis::spAxis))
     ui->customPlot->axisRect()->setRangeZoom(ui->customPlot->yAxis->orientation());
+  else if (ui->customPlot->yAxis2->selectedParts().testFlag(QCPAxis::spAxis))
+    ui->customPlot->axisRect()->setRangeZoom(ui->customPlot->yAxis2->orientation());
   else
     ui->customPlot->axisRect()->setRangeZoom(Qt::Horizontal|Qt::Vertical);
 }
@@ -356,6 +410,8 @@ void MainWindow::mousePress()
     ui->customPlot->axisRect()->setRangeDrag(ui->customPlot->xAxis->orientation());
   else if (ui->customPlot->yAxis->selectedParts().testFlag(QCPAxis::spAxis))
     ui->customPlot->axisRect()->setRangeDrag(ui->customPlot->yAxis->orientation());
+  else if (ui->customPlot->yAxis2->selectedParts().testFlag(QCPAxis::spAxis))
+    ui->customPlot->axisRect()->setRangeDrag(ui->customPlot->yAxis2->orientation());
   else
     ui->customPlot->axisRect()->setRangeDrag(Qt::Horizontal|Qt::Vertical);
 }

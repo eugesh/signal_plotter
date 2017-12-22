@@ -46,13 +46,15 @@ private slots:;
   void legendDoubleClick(QCPLegend* legend, QCPAbstractLegendItem* item);
   void selectionChanged();
   void graphClicked(QCPAbstractPlottable *plottable, int dataIndex);
-  void addGraph(Samples data, double start, double step, double yOffset, double yScale);
+  void addGraph1(Samples data, double start, double step, double yOffset, double yScale);
+  void addGraph2(Samples data, double start, double step, double yOffset, double yScale);
   void updateGraph(int value);
   void contextMenuRequest(QPoint pos);
   void removeSelectedGraph();
   void removeAllGraphs();
   void mousePress();
   void mouseWheel();
+  // void smooth();
 
 private:;
   void load_csv(unsigned int type=1);
