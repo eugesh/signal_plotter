@@ -22,6 +22,7 @@
 #include "main_window.h"
 #include "ui_mainwindow.h"
 #include "median.h"
+#include "median_cpp.h"
 
 #include <opencv2/imgproc.hpp>
 // #include "opencv2/videoio.hpp"
@@ -97,6 +98,8 @@ MainWindow::MainWindow(QWidget *parent) :
   connect(ui->action_OpenRadioSignal, SIGNAL(triggered()), this, SLOT(open_csv_radio()));
   connect(ui->action_OpenAttenuationSignal, SIGNAL(triggered()), this, SLOT(open_csv_attenuation()));
 
+  connect(ui->action_smooth, SIGNAL(triggered()), this, SLOT(smooth()));
+
   QIDRmeas=new QInputDialog(this);
   QIDFreqParRes=new QInputDialog(this);
 }
@@ -135,17 +138,21 @@ void MainWindow::open_csv_attenuation() {
  * Wrapper under common .csv data loader.
  */
 void MainWindow::load_csv(unsigned int type) {
-  double xOffset, yOffset, xScale, yScale;
+  GraphParams g_params;
 
   if (type == 1) {
     samples_radio.clear ();
-    samples_radio = load_csv(path_to_radio_csv, &xOffset, &xScale, &yOffset, &yScale);
-    addGraph1(samples_radio, xOffset, xScale, yOffset, yScale);
+    median_mask = 99;
+    samples_radio = load_csv(path_to_radio_csv, &g_params);
+    graph_radio = g_params;
+    addGraph1(samples_radio, g_params);
   }
   else if(type == 2) {
     samples_attenuation.clear();
-    samples_attenuation = load_csv(path_to_attenuation_csv, &xOffset, &xScale, &yOffset, &yScale);
-    addGraph2(samples_attenuation, xOffset, xScale, yOffset, yScale);
+    median_mask = 199;
+    samples_attenuation = load_csv(path_to_attenuation_csv, &g_params);
+    graph_attenuation = g_params;
+    addGraph2(samples_attenuation, g_params);
   }
   else {
     printf("Wrong signal type.\n");
@@ -161,7 +168,7 @@ void MainWindow::load_csv(unsigned int type) {
  * 1, num,
  * 2, num,..."
  */
-Samples MainWindow::load_csv(QString filepath, double *xOffset, double *xScale, double *yOffset, double *yScale) {
+Samples MainWindow::load_csv(QString filepath, GraphParams *g_params) {
   Samples samples;
   QByteArray buf;
 
@@ -179,9 +186,9 @@ Samples MainWindow::load_csv(QString filepath, double *xOffset, double *xScale, 
   QList<QByteArray> list = buf.split(',');
 
   // Set offsets and scales for each axis.
-  *xOffset = list[2].toDouble();
-  *xScale = list[3].toDouble();
-  *yOffset = 0;
+  g_params->xOffset = list[2].toDouble();
+  g_params->xScale = list[3].toDouble();
+  g_params->yOffset = 0;
 
   // Load points from .csv file.
   while (buf.size() > 2) {
@@ -203,86 +210,73 @@ Samples MainWindow::load_csv(QString filepath, double *xOffset, double *xScale, 
     if(max < samples[i])
       max = samples[i];
   }
-  *yScale = (max - min) < eps ? 1 : 1 / (max - min);
+  g_params->yScale = (max - min) < eps ? 1 : 1 / (max - min);
 
   return samples;
 }
 
-void MainWindow::addGraph1(Samples data, double xOffset, double xScale, double yOffset, double yScale) {
+void MainWindow::addGraph1(Samples data, GraphParams const& g_params) {
   // Determine size of current plot. (number of points in graph).
   int curSize;
   curSize = data.size();
 
-  // double yScale = 1;
-  // X and Y offsets are always 0.
-  // double yOffset = 0;
-
   QVector<double> x(curSize);
   QVector<double> y(curSize);
 
-  printf("xScale, xOffset = %f %f\n", xScale, xOffset);
+  printf("xScale, xOffset = %f %f\n", g_params.xScale, g_params.xOffset);
 
   for (int i=0; i < curSize; i++)
   {
-	x[i] = i * xScale + xOffset;
-	y[i] = data[i] * yScale + yOffset;
+	x[i] = i * g_params.xScale + g_params.xOffset;
+	y[i] = data[i] * g_params.yScale + g_params.yOffset;
   }
-  printf("xs = %.10f, xo = %.10f, ys = %.10f, yo = %.10f\n", xScale, xOffset, yScale, yOffset);
+  printf("xs = %.10f, xo = %.10f, ys = %.10f, yo = %.10f\n", g_params.xScale, g_params.xOffset, g_params.yScale, g_params.yOffset);
 
-  // ui->customPlot->addGraph();
   ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis);
   ui->customPlot->graph()->setName(QString("New graph %1").arg(ui->customPlot->graphCount() - 1));
   ui->customPlot->graph()->setData(x, y);
   ui->customPlot->graph()->setLineStyle(QCPGraph::lsLine);
-  // if (rand() % 100 > 50)
-	// ui->customPlot->graph()->setScatterStyle(QCPScatterStyle((QCPScatterStyle::ScatterShape)(rand() % 14 + 1)));
   QPen graphPen;
   graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
-  // graphPen.setColor(QColor(250, 10, 5));
-  graphPen.setWidthF(1); //(rand() / (double)RAND_MAX * 2 + 1);
+  graphPen.setWidthF(1);
   ui->customPlot->graph()->setPen(graphPen);
   ui->customPlot->replot();
 }
 
-void MainWindow::addGraph2(Samples data, double xOffset, double xScale, double yOffset, double yScale) {
+void MainWindow::addGraph2(Samples data, GraphParams const& g_params) {
   // Determine size of current plot. (number of points in graph).
   int curSize;
   curSize = data.size();
 
-  // double yScale = 1;
-  // X and Y offsets are always 0.
-  // double yOffset = 0;
-
   QVector<double> x(curSize);
   QVector<double> y(curSize);
 
-  printf("xScale, xOffset = %f %f\n", xScale, xOffset);
+  printf("xScale, xOffset = %f %f\n", g_params.xScale, g_params.xOffset);
 
   for (int i=0; i < curSize; i++)
   {
-	x[i] = i * xScale + xOffset;
-	y[i] = data[i] * yScale + yOffset;
+	x[i] = i * g_params.xScale + g_params.xOffset;
+	y[i] = data[i] * g_params.yScale + g_params.yOffset;
   }
-  printf("xs = %.10f, xo = %.10f, ys = %.10f, yo = %.10f\n", xScale, xOffset, yScale, yOffset);
+  printf("xs = %.10f, xo = %.10f, ys = %.10f, yo = %.10f\n", g_params.xScale, g_params.xOffset, g_params.yScale, g_params.yOffset);
 
   ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis2);
   ui->customPlot->graph()->setName(QString("New graph %1").arg(ui->customPlot->graphCount() - 1));
   ui->customPlot->graph()->setData(x, y);
   ui->customPlot->graph()->setLineStyle(QCPGraph::lsLine);
-  // if (rand() % 100 > 50)
-	// ui->customPlot->graph()->setScatterStyle(QCPScatterStyle((QCPScatterStyle::ScatterShape)(rand() % 14 + 1)));
   QPen graphPen;
   graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
-  // graphPen.setColor(QColor(250, 10, 5));
-  graphPen.setWidthF(1); //(rand() / (double)RAND_MAX * 2 + 1);
+  graphPen.setWidthF(1);
   ui->customPlot->graph()->setPen(graphPen);
   ui->customPlot->replot();
 }
 
-void MainWindow::updateGraph(int value) {
+void MainWindow::updateGraph() {
   // Remove all graphs.
   removeAllGraphs();
 
+  addGraph1(samples_radio, graph_radio);
+  addGraph2(samples_attenuation, graph_attenuation);
   // Get current slider position.
   // int curPos = ui->horizontalSlider->sliderPosition();
 
@@ -456,6 +450,34 @@ MainWindow::removeAllGraphs()
 {
   ui->customPlot->clearGraphs();
   ui->customPlot->replot();
+}
+
+void
+MainWindow::smooth() {
+  // Smooth curves.
+  Samples samples_copy;
+
+  if (!samples_radio.empty()) {
+    samples_copy = Samples(samples_radio);
+    median1d(samples_radio, samples_copy, median_mask);
+    updateGraph();
+  }
+
+  if(!samples_attenuation.empty()) {
+    samples_copy = Samples(samples_attenuation);
+    median1d(samples_attenuation, samples_copy, median_mask * 3);
+    updateGraph();
+  }
+}
+
+void
+MainWindow::approximate() {
+
+}
+
+void
+MainWindow::estimate_params() {
+
 }
 
 #endif

@@ -71,9 +71,18 @@
     <addaction name="menuR"/>
     <addaction name="menu_2"/>
    </widget>
+   <widget class="QMenu" name="menu_3">
+    <property name="title">
+     <string>Инструменты</string>
+    </property>
+    <addaction name="action_smooth"/>
+    <addaction name="action_approx"/>
+    <addaction name="action_estim_param"/>
+   </widget>
    <addaction name="menu_Open"/>
    <addaction name="menuCursor"/>
    <addaction name="menu"/>
+   <addaction name="menu_3"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="action_OpenRadioSignal">
@@ -287,6 +296,21 @@
   <action name="action_set_Resonance_Freq">
    <property name="text">
     <string>Задать значение</string>
+   </property>
+  </action>
+  <action name="action_smooth">
+   <property name="text">
+    <string>Выполнить сглаживание</string>
+   </property>
+  </action>
+  <action name="action_estim_param">
+   <property name="text">
+    <string>Рассчитать параметры</string>
+   </property>
+  </action>
+  <action name="action_approx">
+   <property name="text">
+    <string>Аппроксимация</string>
    </property>
   </action>
  </widget>

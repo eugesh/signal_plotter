@@ -22,14 +22,22 @@
 #include <iostream>
 #include <QVector>
 #include "../custom_plot/qcustomplot.h"
-
-typedef double Real;
-// typedef std::vector<std::vector<Real> > Samples;
-typedef std::vector<Real> Samples;
+#include "signals_eval.h"
 
 namespace Ui {
 class MainWindow;
 }
+
+
+struct GraphParams {
+ /**
+  * Parameters of graphs in customPlot.
+  */
+  double xOffset;
+  double xScale;
+  double yOffset;
+  double yScale;
+};
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
@@ -46,19 +54,21 @@ private slots:;
   void legendDoubleClick(QCPLegend* legend, QCPAbstractLegendItem* item);
   void selectionChanged();
   void graphClicked(QCPAbstractPlottable *plottable, int dataIndex);
-  void addGraph1(Samples data, double start, double step, double yOffset, double yScale);
-  void addGraph2(Samples data, double start, double step, double yOffset, double yScale);
-  void updateGraph(int value);
+  void addGraph1(Samples data, GraphParams const& graph_params);
+  void addGraph2(Samples data, GraphParams const& graph_params);
+  void updateGraph();
   void contextMenuRequest(QPoint pos);
   void removeSelectedGraph();
   void removeAllGraphs();
   void mousePress();
   void mouseWheel();
-  // void smooth();
+  void smooth();
+  void approximate();
+  void estimate_params();
 
 private:;
   void load_csv(unsigned int type=1);
-  Samples load_csv(QString filepath, double *xOffset, double *xScale, double *yOffset, double *yScale);
+  Samples load_csv(QString filepath, GraphParams *graph_params);
 
 private:;
   Ui::MainWindow *ui;
@@ -67,11 +77,14 @@ private:;
   QInputDialog *QIDFreqParRes; // Частоты при параллельном резонансе.
   float Rmeas;
   float ParResFreq;
+  unsigned int median_mask;
   // Paths to opened .csv files.
   QString path_to_radio_csv;
   QString path_to_attenuation_csv;
   Samples samples_radio;
   Samples samples_attenuation;
+  GraphParams graph_radio;
+  GraphParams graph_attenuation;
 };
 
 #endif
