@@ -1,12 +1,16 @@
+#include <cstdlib>
+#include <cstdio>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
 #include <sstream>
+#include <string>
 
 #include <Eigen/Eigen>
-
 #include <unsupported/Eigen/NonLinearOptimization>
 
+static const unsigned int N = 1000;
+static const std::string filename("./data/test/samples_analytic_sin.txt");
 
 // Implement y = y0 + A * sin(pi * (x - xc) / w)
 struct LMFunctor
@@ -84,6 +88,17 @@ struct LMFunctor
 
 };
 
+void test_sample_creator () {
+    // y = y0 + A * sin(w * x) + B * cos(w * x);
+
+    // FILE *fp = fopen(filename.pointer, "w");
+
+    for (int i = 0; i < N; ++i) {
+
+    }
+
+    // close(fp);
+}
 
 int main(int argc, char *argv[])
 {

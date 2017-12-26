@@ -23,6 +23,7 @@
 #include "ui_mainwindow.h"
 #include "median.h"
 #include "median_cpp.h"
+#include "signals_eval.h"
 
 #include <opencv2/imgproc.hpp>
 // #include "opencv2/videoio.hpp"
@@ -141,15 +142,22 @@ void MainWindow::load_csv(unsigned int type) {
   GraphParams g_params;
 
   if (type == 1) {
-    samples_radio.clear ();
-    median_mask = 99;
+    samples_radio.clear();
+    median_mask_size = 99;
     samples_radio = load_csv(path_to_radio_csv, &g_params);
     graph_radio = g_params;
+
+    unsigned int end_index = find_radio_signal_termination(samples_radio);
+
+    printf("end_index = %d\n", end_index);
+
+    samples_radio.erase(samples_radio.begin() + end_index, samples_radio.end());
+
     addGraph1(samples_radio, g_params);
   }
   else if(type == 2) {
     samples_attenuation.clear();
-    median_mask = 199;
+    median_mask_size = 199;
     samples_attenuation = load_csv(path_to_attenuation_csv, &g_params);
     graph_attenuation = g_params;
     addGraph2(samples_attenuation, g_params);
@@ -459,13 +467,13 @@ MainWindow::smooth() {
 
   if (!samples_radio.empty()) {
     samples_copy = Samples(samples_radio);
-    median1d(samples_radio, samples_copy, median_mask);
+    median1d(samples_radio, samples_copy, median_mask_size);
     updateGraph();
   }
 
   if(!samples_attenuation.empty()) {
     samples_copy = Samples(samples_attenuation);
-    median1d(samples_attenuation, samples_copy, median_mask * 3);
+    median1d(samples_attenuation, samples_copy, median_mask_size * 3);
     updateGraph();
   }
 }

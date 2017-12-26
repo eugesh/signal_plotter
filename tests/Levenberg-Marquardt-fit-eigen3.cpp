@@ -83,7 +83,6 @@ struct LMFunctor
 
 };
 
-
 int main(int argc, char *argv[])
 {
 	//

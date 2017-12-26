@@ -77,7 +77,7 @@ private:;
   QInputDialog *QIDFreqParRes; // Частоты при параллельном резонансе.
   float Rmeas;
   float ParResFreq;
-  unsigned int median_mask;
+  unsigned int median_mask_size;
   // Paths to opened .csv files.
   QString path_to_radio_csv;
   QString path_to_attenuation_csv;

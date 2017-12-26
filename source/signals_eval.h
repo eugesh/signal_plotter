@@ -1,6 +1,15 @@
 #ifndef __SIGNALS_EVAL_H__
 #define __SIGNALS_EVAL_H__
 
+#include <iostream>
+#include <vector>
+
+struct Peak {
+    unsigned int start_index;
+    unsigned int end_index;
+    double extremum_val;
+};
+
 typedef double Real;
 // typedef std::vector<std::vector<Real> > Samples;
 typedef std::vector<Real> Samples;
@@ -12,6 +21,12 @@ typedef std::vector<Real> Samples;
 /**
  * Intersections with zero finder.
  */
+std::vector<unsigned int> find_all_zeros_indices(Samples const& data);
+
+/**
+ * Peaks counter. Returns vector of all peaks, including outliers.
+ */
+std::vector<Peak> find_all_peaks (Samples const& data, std::vector<unsigned int> const& zeros);
 
 /**
  * The first intersection with zero.
@@ -32,7 +47,7 @@ float find_last_zero (Samples const& data);
  *
  * \return time stamp of the radio signal termination.
  */
-float radio_signal_termination(Samples const& data);
+unsigned int find_radio_signal_termination(Samples const& data);
 
 /**
  * Curve fitting.
