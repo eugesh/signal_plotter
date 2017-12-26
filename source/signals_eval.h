@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <utility> // pair
 
 struct Peak {
     unsigned int start_index;
@@ -13,6 +14,8 @@ struct Peak {
 typedef double Real;
 // typedef std::vector<std::vector<Real> > Samples;
 typedef std::vector<Real> Samples;
+typedef std::vector<std::pair<unsigned int, unsigned int> > Intervals;
+typedef std::vector<Peak> Peaks;
 
 /**
  * Peaks finder.
@@ -21,12 +24,19 @@ typedef std::vector<Real> Samples;
 /**
  * Intersections with zero finder.
  */
-std::vector<unsigned int> find_all_zeros_indices(Samples const& data);
+Intervals find_all_zeros_indices(Samples const& data);
 
 /**
  * Peaks counter. Returns vector of all peaks, including outliers.
+ *
+ * \param zero_intervals - start and end point of zero interval.
  */
-std::vector<Peak> find_all_peaks (Samples const& data, std::vector<unsigned int> const& zeros);
+Peaks find_all_peaks (Samples const& data, Intervals const& zero_intervals);
+
+/*
+ * Find relevant peaks.
+ */
+Peaks find_real_peaks (Samples const& data, Peaks const& all_peaks);
 
 /**
  * The first intersection with zero.

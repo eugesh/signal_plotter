@@ -52,3 +52,37 @@ find_radio_signal_termination(Samples const& data) {
 
     return end_time_stamp;
 }
+
+/**
+ * Intersections with zero finder.
+ */
+Intervals
+find_all_zeros_indices(Samples const& data) {
+    Intervals intervals;
+
+    return intervals;
+}
+
+/**
+ * Peaks counter. Returns vector of all peaks, including outliers.
+ */
+Peaks
+find_all_peaks (Samples const& data, Intervals const& zero_intervals) {
+    Peaks all_peaks;
+
+    return all_peaks;
+}
+
+/*
+ * Find relevant peaks.
+ */
+Peaks
+find_real_peaks (Samples const& data, Peaks const& all_peaks) {
+    Peaks peaks;
+    // Find max_area among peaks. Area is approximated as rectangle for simplicity.
+
+    // Find all peaks with area larger than 0.05 * max_area.
+
+    return peaks;
+}
+
