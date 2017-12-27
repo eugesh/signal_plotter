@@ -100,6 +100,7 @@ MainWindow::MainWindow(QWidget *parent) :
   connect(ui->action_OpenAttenuationSignal, SIGNAL(triggered()), this, SLOT(open_csv_attenuation()));
 
   connect(ui->action_smooth, SIGNAL(triggered()), this, SLOT(smooth()));
+  connect(ui->action_estim_param, SIGNAL(triggered()), this, SLOT(estimate_params()));
 
   QIDRmeas=new QInputDialog(this);
   QIDFreqParRes=new QInputDialog(this);
@@ -485,7 +486,17 @@ MainWindow::approximate() {
 
 void
 MainWindow::estimate_params() {
+    double Q, f_r, f_a, Ra, La, Ca, Co;
+    // Cut noisy signal endings after median filtering.
+    Samples attenuation_signal = Samples(samples_attenuation.begin() + 3 * median_mask_size, samples_attenuation.end() - 3 * median_mask_size);
 
+    // addGraph2(attenuation_signal, graph_attenuation); // debug
+
+    signal_analyzer(attenuation_signal, &Q, &f_a, graph_attenuation.xOffset, graph_attenuation.xScale);
+
+    f_a /= graph_attenuation.xScale;
+
+    printf("f_a = %f\nQ = %f\n", f_a, Q);
 }
 
 #endif

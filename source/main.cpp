@@ -16,6 +16,8 @@ int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
 
+    printf ("3 / 2 = %d\n", 3 / 2);
+
     // QTextCodec::setCodecForTr(QTextCodec::codecForName("Windows-1251"));
     QTextCodec::setCodecForTr(QTextCodec::codecForName("UTF-8"));
 

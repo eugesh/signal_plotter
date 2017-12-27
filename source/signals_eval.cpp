@@ -1,10 +1,11 @@
+#define _USE_MATH_DEFINES // for C++
 #include <cmath>
 #include <cstdlib>
 #include <cfloat>
 #include <climits>
 #include "signals_eval.h"
 
-static const double eps = 1e-21;
+static const double eps = 1e-12;
 
 /*
  * This function should work with raw, not filtered signal.
@@ -30,7 +31,7 @@ find_radio_signal_termination(Samples const& data) {
      */
     unsigned int interm_index = 0;
     for(unsigned int i = data.size() - 1; i > 0; --i) {
-        if(fabs(data[i]) > 0.1 * max_val) {
+        if(fabs(data[i]) > 0.4 * max_val) {
             interm_index = i;
             break;
         }
@@ -58,8 +59,32 @@ find_radio_signal_termination(Samples const& data) {
  */
 Intervals
 find_all_zeros_indices(Samples const& data) {
+    printf ("find_all_zeros_indices - start\n"); // debug
     Intervals intervals;
 
+    // Find abs min element.
+    double min = DBL_MAX;
+    for (unsigned int i = 0; i < data.size(); ++i)
+        if(min > fabs(data[i]))
+            min = fabs(data[i]);
+
+    printf("min = %.21f\n", min); // debug
+
+    bool is_interval = false;
+    for (unsigned int i = 0; i < data.size() - 1; ++i) {
+        if (fabs(data[i]) < min + eps && fabs(data[i + 1]) < min + eps && !is_interval) {
+            is_interval = true;
+            intervals.push_back(std::make_pair(i, i + 1));
+            printf ("start = %d", i); // debug
+        }
+        else if (fabs(data[i]) < eps && fabs(data[i + 1]) > min + eps &&  is_interval) {
+            is_interval = false;
+            intervals.back().second = i;
+            printf (", end = %d\n", i); // debug
+        }
+    }
+
+    printf ("find_all_zeros_indices - end\n"); // debug
     return intervals;
 }
 
@@ -68,21 +93,134 @@ find_all_zeros_indices(Samples const& data) {
  */
 Peaks
 find_all_peaks (Samples const& data, Intervals const& zero_intervals) {
+    printf ("find_all_peaks - start\n"); // debug
     Peaks all_peaks;
+
+    // Iterate over intervals.
+    for (unsigned int i = 0; i < zero_intervals.size() - 1; ++i) {
+        Peak peak;
+        peak.start_index = zero_intervals[i].second;
+        peak.end_index = zero_intervals[i + 1].first;
+
+        // Iterate through interval.
+        double max_val = 0;
+        unsigned int extremum_index = 0;
+        for (unsigned int j = zero_intervals[i].second; j < zero_intervals[i + 1].first; ++j) {
+            if (max_val < fabs(data[j])) {
+                max_val = fabs(data[j]);
+                extremum_index = j;
+            }
+        }
+        peak.extremum_val = data[extremum_index];
+        printf ("peak.extremum_val = %f\n", peak.extremum_val); // debug
+        all_peaks.push_back(peak);
+    }
+
+    printf ("find_all_peaks - finish.\n"); // debug
 
     return all_peaks;
 }
 
 /*
  * Find relevant peaks.
+ * Get rid of outliers by area under curve thresholding.
+ *
+ * \param threshold_ratio (0,1) - part of an area of peak with the maximal area.
+ * \return vector of real peaks.
+ *
  */
 Peaks
-find_real_peaks (Samples const& data, Peaks const& all_peaks) {
+find_real_peaks (Samples const& data, Peaks const& all_peaks, double threshold_ratio) {
     Peaks peaks;
-    // Find max_area among peaks. Area is approximated as rectangle for simplicity.
+
+    // Calculate set of area and find max_area among peaks.
+    // Area is approximated as rectangle for simplicity.
+    std::vector<double> area_vec;
+    double max_area = 0;
+    for(unsigned int i=0; i < all_peaks.size(); ++i) {
+        // Area of rectangle.
+        double area = 0.5 * (all_peaks[i].end_index - all_peaks[i].start_index) * fabs(all_peaks[i].extremum_val);
+        area_vec.push_back(area);
+        if(max_area < area)
+            max_area = area;
+    }
 
     // Find all peaks with area larger than 0.05 * max_area.
+    for(unsigned int i=0; i < all_peaks.size(); ++i) {
+        if (area_vec[i] > threshold_ratio * max_area)
+            peaks.push_back(all_peaks[i]);
+    }
 
     return peaks;
 }
 
+/**
+ * Estimate period.
+ */
+unsigned int
+estimate_period(Peaks const& peaks) {
+    unsigned int half_period_cumsum = 0;
+
+    for (unsigned int i = 0; i < peaks.size(); ++i) {
+        unsigned int half_period = peaks[i].end_index - peaks[i].start_index;
+        if(half_period > 0)
+            half_period_cumsum += half_period;
+        else
+            printf("Error: %dth period < 0", i);
+    }
+
+    return 2 * half_period_cumsum / peaks.size();
+}
+
+/**
+ * Estimate frequency.
+ */
+double
+estimate_frequency(Peaks const& peaks, double first, double step) {
+    unsigned int first_index = peaks.front().start_index;
+    unsigned int last_index = peaks.back().end_index;
+
+    unsigned int period = estimate_period(peaks);
+
+    return (( (last_index * step + first) * step - first_index * step + first) * step) / (period * step);
+}
+
+/**
+ * Estimate quality of oscillation (Q factor = w0 / (2 * attenuation rate) ).
+ *
+ */
+double
+estimate_quality(Peaks const& peaks) {
+    double q_factor = .0;
+
+    double A0 = fabs(peaks.front().extremum_val);
+    double An = fabs(peaks.back().extremum_val);
+    // double n_of_periods = (double) (peaks.size()) / 2.0;
+    double n_of_periods = (peaks.size()) / 2;
+    q_factor = M_PI * n_of_periods / (log(A0 / An));
+
+    printf("A0 = %f\n", A0);
+    printf("An = %f\n", An);
+    printf("log(A0 / An) = %f\n", log(A0 / An));
+    printf("n_of_periods = %f\n", n_of_periods);
+    printf("q_factor = %f\n", q_factor);
+
+    return q_factor;
+}
+
+/**
+ * Interface function for all previous functions.
+ */
+void signal_analyzer(Samples const& data, double *q_factor, double *freq, double first, double step) {
+    printf ("signal_analyzer - start\n");
+
+    Intervals zero_intervals = find_all_zeros_indices(data);
+
+    Peaks all_peaks = find_all_peaks(data, zero_intervals);
+
+    Peaks real_peaks = find_real_peaks(data, all_peaks, 0.05);
+
+    *freq = estimate_frequency(real_peaks, first, step);
+
+    *q_factor = estimate_quality(real_peaks);
+}
