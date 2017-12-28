@@ -19,6 +19,7 @@ add_executable (scanline_viewer
 	            main_window.cpp
 	            main.cpp
 	            signals_eval.cpp
+	            #main_module.cpp
 	            ${MOCSrcs} ${UISrcs})
 
 target_link_libraries (scanline_viewer ${ADDON_LIBRARIES} ${QTLIBS} ${QT_LIBRARIES} ${OpenCV_LIBS} custom_plot)

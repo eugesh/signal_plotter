@@ -4,6 +4,7 @@
 #include <cfloat>
 #include <climits>
 #include "signals_eval.h"
+#include "math_module.h"
 
 static const double eps = 1e-12;
 
@@ -111,8 +112,9 @@ find_all_peaks (Samples const& data, Intervals const& zero_intervals) {
                 extremum_index = j;
             }
         }
-        peak.extremum_val = data[extremum_index];
-        printf ("peak.extremum_val = %f\n", peak.extremum_val); // debug
+        // peak.extremum_val = data[extremum_index];
+        peak.extremum_index = extremum_index;
+        printf ("peak.extremum_val = %f\n", data[extremum_index]); // debug
         all_peaks.push_back(peak);
     }
 
@@ -139,7 +141,7 @@ find_real_peaks (Samples const& data, Peaks const& all_peaks, double threshold_r
     double max_area = 0;
     for(unsigned int i=0; i < all_peaks.size(); ++i) {
         // Area of rectangle.
-        double area = 0.5 * (all_peaks[i].end_index - all_peaks[i].start_index) * fabs(all_peaks[i].extremum_val);
+        double area = 0.5 * (all_peaks[i].end_index - all_peaks[i].start_index) * fabs(data[all_peaks[i].extremum_index]);
         area_vec.push_back(area);
         if(max_area < area)
             max_area = area;
@@ -190,11 +192,11 @@ estimate_frequency(Peaks const& peaks, double first, double step) {
  *
  */
 double
-estimate_quality(Peaks const& peaks) {
+estimate_quality(Samples const& data, Peaks const& peaks) {
     double q_factor = .0;
 
-    double A0 = fabs(peaks.front().extremum_val);
-    double An = fabs(peaks.back().extremum_val);
+    double A0 = fabs(data[peaks.front().extremum_index]);
+    double An = fabs(data[peaks.back().extremum_index]);
     // double n_of_periods = (double) (peaks.size()) / 2.0;
     double n_of_periods = (peaks.size()) / 2;
     q_factor = M_PI * n_of_periods / (log(A0 / An));
@@ -209,9 +211,34 @@ estimate_quality(Peaks const& peaks) {
 }
 
 /**
+ * Estimate q-factor with least squares.
+ * model: sum(ln(yi) - a * xi + b)^2 -> min
+ */
+double
+estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peaks, double first, double step) {
+    // The problem is {[xi 1]} * [a; b] = {log(yi)}
+    double q_factor = .0;
+
+    std::vector<double> x, y;
+    // double a, b;
+
+    for (unsigned int i = 0; i < peaks.size(); ++i) {
+        y.push_back(log(fabs(data[peaks[i].extremum_index])));
+        x.push_back(peaks[i].extremum_index);// * step + first);
+    }
+
+    // linear_approximation(&a, &b, x, y);
+    linear_approximation(a, b, x, y);
+
+    printf("a = %f, b = %f\n", *a, *b);
+
+    return q_factor;
+}
+
+/**
  * Interface function for all previous functions.
  */
-void signal_analyzer(Samples const& data, double *q_factor, double *freq, double first, double step) {
+void signal_analyzer(double *a, double *b, Samples const& data, double *q_factor, double *freq, double first, double step) {
     printf ("signal_analyzer - start\n");
 
     Intervals zero_intervals = find_all_zeros_indices(data);
@@ -222,5 +249,6 @@ void signal_analyzer(Samples const& data, double *q_factor, double *freq, double
 
     *freq = estimate_frequency(real_peaks, first, step);
 
-    *q_factor = estimate_quality(real_peaks);
+    *q_factor = estimate_quality(data, real_peaks);
+    *q_factor = estimate_quality_ls(a, b, data, real_peaks, first, step);
 }

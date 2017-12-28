@@ -14,7 +14,8 @@ struct Peak {
     // Last index of peak, first index of zero interval.
     unsigned int end_index;
     // Signed value: max or min.
-    double extremum_val;
+    // double extremum_val;
+    unsigned int extremum_index;
 };
 
 typedef double Real;
@@ -57,13 +58,15 @@ double estimate_frequency(Peaks const& peaks, double first, double step);
  * Estimate quality of oscillation (Q factor = w0 / (2 * attenuation rate) ).
  *
  */
-double estimate_quality(Peaks const& peaks);
+double estimate_quality(Samples const& data, Peaks const& peaks);
+
+double estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peaks, double first, double step);
 
 
 /**
  * Interface function for all previous functions.
  */
-void signal_analyzer(Samples const& data, double *q_factor, double *freq, double first, double step);
+void signal_analyzer(double *a, double *b, Samples const& data, double *q_factor, double *freq, double first, double step);
 
 /**
  * The first intersection with zero.

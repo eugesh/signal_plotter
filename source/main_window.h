@@ -78,6 +78,8 @@ private:;
   float Rmeas;
   float ParResFreq;
   unsigned int median_mask_size;
+  // The end of radio impulse.
+  unsigned int end_index;
   // Paths to opened .csv files.
   QString path_to_radio_csv;
   QString path_to_attenuation_csv;

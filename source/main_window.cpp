@@ -48,6 +48,7 @@ MainWindow::MainWindow(QWidget *parent) :
   ui->setupUi(this);
   Rmeas = 1; // Om
   ParResFreq = 1; // kHz
+  end_index = 0;
 
   ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes |
                                   QCP::iSelectLegend | QCP::iSelectPlottables);
@@ -56,6 +57,7 @@ MainWindow::MainWindow(QWidget *parent) :
   ui->customPlot->xAxis->setRange(2e-5, 6e-5);
   ui->customPlot->yAxis->setRange(-2, 2);
   ui->customPlot->yAxis2->setRange(-0.025, 0.025);
+  // ui->customPlot->yAxis->setScaleType(QCPAxis::stLogarithmic);
   ui->customPlot->axisRect()->setupFullAxesBox();
 
   ui->customPlot->plotLayout()->insertRow(0);
@@ -90,7 +92,6 @@ MainWindow::MainWindow(QWidget *parent) :
   connect(ui->customPlot, SIGNAL(axisDoubleClick(QCPAxis*, QCPAxis::SelectablePart, QMouseEvent*)), this, SLOT(axisLabelDoubleClick(QCPAxis*, QCPAxis::SelectablePart)));
   connect(ui->customPlot, SIGNAL(legendDoubleClick(QCPLegend*, QCPAbstractLegendItem*, QMouseEvent*)), this, SLOT(legendDoubleClick(QCPLegend*, QCPAbstractLegendItem*)));
   connect(title, SIGNAL(doubleClicked(QMouseEvent*)), this, SLOT(titleDoubleClick(QMouseEvent*)));
-
 
   // Setup policy and connect slot for context menu popup:
   ui->customPlot->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -148,9 +149,7 @@ void MainWindow::load_csv(unsigned int type) {
     samples_radio = load_csv(path_to_radio_csv, &g_params);
     graph_radio = g_params;
 
-    unsigned int end_index = find_radio_signal_termination(samples_radio);
-
-    printf("end_index = %d\n", end_index);
+    end_index = find_radio_signal_termination(samples_radio);
 
     samples_radio.erase(samples_radio.begin() + end_index, samples_radio.end());
 
@@ -161,11 +160,20 @@ void MainWindow::load_csv(unsigned int type) {
     median_mask_size = 199;
     samples_attenuation = load_csv(path_to_attenuation_csv, &g_params);
     graph_attenuation = g_params;
+
     addGraph2(samples_attenuation, g_params);
   }
   else {
     printf("Wrong signal type.\n");
   }
+
+  // Cut attenuation signal.
+  if (end_index != 0 && samples_attenuation.size() != 0) {
+      graph_attenuation.xOffset += end_index * graph_attenuation.xScale;
+      samples_attenuation = Samples(samples_attenuation.begin()  + end_index, samples_attenuation.end());
+      updateGraph();
+  }
+
 }
 
 /**
@@ -266,6 +274,8 @@ void MainWindow::addGraph2(Samples data, GraphParams const& g_params) {
   {
 	x[i] = i * g_params.xScale + g_params.xOffset;
 	y[i] = data[i] * g_params.yScale + g_params.yOffset;
+	// if(y[i]>0)
+	    // y[i] = log(y[i]);
   }
   printf("xs = %.10f, xo = %.10f, ys = %.10f, yo = %.10f\n", g_params.xScale, g_params.xOffset, g_params.yScale, g_params.yOffset);
 
@@ -489,10 +499,20 @@ MainWindow::estimate_params() {
     double Q, f_r, f_a, Ra, La, Ca, Co;
     // Cut noisy signal endings after median filtering.
     Samples attenuation_signal = Samples(samples_attenuation.begin() + 3 * median_mask_size, samples_attenuation.end() - 3 * median_mask_size);
+    Samples exp_curve, exp_curve_neg;
 
     // addGraph2(attenuation_signal, graph_attenuation); // debug
 
-    signal_analyzer(attenuation_signal, &Q, &f_a, graph_attenuation.xOffset, graph_attenuation.xScale);
+    double a, b;
+    signal_analyzer(&a, &b, attenuation_signal, &Q, &f_a, graph_attenuation.xOffset, graph_attenuation.xScale);
+
+    for (unsigned int i = 0; i < samples_attenuation.size(); ++i ) {
+        exp_curve.push_back(exp(a * i + b));
+        exp_curve_neg.push_back(-exp(a * i + b));
+    }
+
+    addGraph2(exp_curve, graph_attenuation); // debug
+    addGraph2(exp_curve_neg, graph_attenuation); // debug
 
     f_a /= graph_attenuation.xScale;
 
