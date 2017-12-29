@@ -168,11 +168,11 @@ void MainWindow::load_csv(unsigned int type) {
   }
 
   // Cut attenuation signal.
-  if (end_index != 0 && samples_attenuation.size() != 0) {
+  /*if (end_index != 0 && samples_attenuation.size() != 0) {
       graph_attenuation.xOffset += end_index * graph_attenuation.xScale;
       samples_attenuation = Samples(samples_attenuation.begin()  + end_index, samples_attenuation.end());
       updateGraph();
-  }
+  }*/
 
 }
 
@@ -504,7 +504,8 @@ MainWindow::estimate_params() {
     // addGraph2(attenuation_signal, graph_attenuation); // debug
 
     double a, b;
-    signal_analyzer(&a, &b, attenuation_signal, &Q, &f_a, graph_attenuation.xOffset, graph_attenuation.xScale);
+    // signal_analyzer(&a, &b, attenuation_signal, &Q, &f_a, graph_attenuation.xOffset, graph_attenuation.xScale);
+    signal_analyzer(&a, &b, &Q, &f_a);
 
     for (unsigned int i = 0; i < samples_attenuation.size(); ++i ) {
         exp_curve.push_back(exp(a * i + b));
@@ -514,9 +515,29 @@ MainWindow::estimate_params() {
     addGraph2(exp_curve, graph_attenuation); // debug
     addGraph2(exp_curve_neg, graph_attenuation); // debug
 
-    f_a /= graph_attenuation.xScale;
+    // f_a /= graph_attenuation.xScale;
 
     printf("f_a = %f\nQ = %f\n", f_a, Q);
+}
+
+/**
+ * Interface function for signal analysis.
+ */
+void
+MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq) {
+// void signal_analyzer(double *a, double *b, Samples const& data, double *q_factor, double *freq, double first, double step, unsigned int r_end_i) {
+    printf ("signal_analyzer - start\n");
+
+    Intervals zero_intervals = find_all_zeros_indices(samples_attenuation);
+
+    Peaks all_peaks = find_all_peaks(samples_attenuation, zero_intervals);
+
+    Peaks real_peaks = find_real_peaks(samples_attenuation, all_peaks, 0.05);
+
+    *freq = estimate_frequency(real_peaks, graph_attenuation.xOffset, graph_attenuation.xScale);
+
+    *q_factor = estimate_quality(samples_attenuation, real_peaks);
+    *q_factor = estimate_quality_ls(a, b, samples_attenuation, real_peaks, graph_attenuation.xOffset, graph_attenuation.xScale, end_index);
 }
 
 #endif

@@ -159,7 +159,7 @@ find_real_peaks (Samples const& data, Peaks const& all_peaks, double threshold_r
 /**
  * Estimate period.
  */
-unsigned int
+double
 estimate_period(Peaks const& peaks) {
     unsigned int half_period_cumsum = 0;
 
@@ -171,20 +171,46 @@ estimate_period(Peaks const& peaks) {
             printf("Error: %dth period < 0", i);
     }
 
-    return 2 * half_period_cumsum / peaks.size();
+    // return 2.0 * double(half_period_cumsum) / double(peaks.size());
+    unsigned int first_index = peaks.front().start_index;
+    unsigned int last_index = peaks.back().end_index;
+    return 2.0 * double(last_index - first_index) / double(peaks.size());
 }
 
 /**
  * Estimate frequency.
  */
-double
+/*double
+estimate_frequency(Peaks const& peaks, double first, double step) {
+    unsigned int first_index = peaks.front().start_index;
+    unsigned int last_index = peaks.back().end_index;
+
+    printf("((last_index - first_index) = %d, step = %.21f\n", (last_index - first_index), step);
+
+    return double (peaks.size()) / (double(last_index - first_index) * step * 2.0);
+}*/
+/*double
 estimate_frequency(Peaks const& peaks, double first, double step) {
     unsigned int first_index = peaks.front().start_index;
     unsigned int last_index = peaks.back().end_index;
 
     unsigned int period = estimate_period(peaks);
 
-    return (( (last_index * step + first) * step - first_index * step + first) * step) / (period * step);
+    printf("last_index - first_index = %d, ", last_index - first_index);
+    printf("period = %d, ", period);
+
+    return (last_index - first_index) * step / period;
+}*/
+
+double
+estimate_frequency(Peaks const& peaks, double first, double step) {
+    // unsigned int first_index = peaks.front().start_index;
+    unsigned int first_index = peaks[2].start_index;
+    unsigned int last_index = peaks[5].end_index;
+
+    printf("last_index - first_index = %d, ", last_index - first_index);
+
+    return 2.0 / ((last_index - first_index) * step);
 }
 
 /**
@@ -213,18 +239,19 @@ estimate_quality(Samples const& data, Peaks const& peaks) {
 /**
  * Estimate q-factor with least squares.
  * model: sum(ln(yi) - a * xi + b)^2 -> min
+ * The problem is {[xi 1]} * [a; b] = {log(yi)}
  */
 double
-estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peaks, double first, double step) {
-    // The problem is {[xi 1]} * [a; b] = {log(yi)}
+estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peaks, double first, double step, unsigned int r_end_i) {
     double q_factor = .0;
 
     std::vector<double> x, y;
-    // double a, b;
 
     for (unsigned int i = 0; i < peaks.size(); ++i) {
-        y.push_back(log(fabs(data[peaks[i].extremum_index])));
-        x.push_back(peaks[i].extremum_index);// * step + first);
+        if(peaks[i].extremum_index > r_end_i) {
+            y.push_back(log(fabs(data[peaks[i].extremum_index])));
+            x.push_back(peaks[i].extremum_index);// * step + first);
+        }
     }
 
     // linear_approximation(&a, &b, x, y);
@@ -238,7 +265,7 @@ estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peak
 /**
  * Interface function for all previous functions.
  */
-void signal_analyzer(double *a, double *b, Samples const& data, double *q_factor, double *freq, double first, double step) {
+void signal_analyzer(double *a, double *b, Samples const& data, double *q_factor, double *freq, double first, double step, unsigned int r_end_i) {
     printf ("signal_analyzer - start\n");
 
     Intervals zero_intervals = find_all_zeros_indices(data);
@@ -250,5 +277,5 @@ void signal_analyzer(double *a, double *b, Samples const& data, double *q_factor
     *freq = estimate_frequency(real_peaks, first, step);
 
     *q_factor = estimate_quality(data, real_peaks);
-    *q_factor = estimate_quality_ls(a, b, data, real_peaks, first, step);
+    *q_factor = estimate_quality_ls(a, b, data, real_peaks, first, step, r_end_i);
 }

@@ -42,12 +42,12 @@ Peaks find_all_peaks(Samples const& data, Intervals const& zero_intervals);
 /*
  * Find relevant peaks.
  */
-Peaks find_real_peaks(Samples const& data, Peaks const& all_peaks);
+Peaks find_real_peaks(Samples const& data, Peaks const& all_peaks, double threshold_ratio);
 
 /**
  * Estimate period.
  */
-unsigned int estimate_period(Peaks const& peaks);
+double estimate_period(Peaks const& peaks);
 
 /**
  * Estimate frequency.
@@ -60,13 +60,13 @@ double estimate_frequency(Peaks const& peaks, double first, double step);
  */
 double estimate_quality(Samples const& data, Peaks const& peaks);
 
-double estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peaks, double first, double step);
+double estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peaks, double first, double step, unsigned int r_end_i);
 
 
 /**
  * Interface function for all previous functions.
  */
-void signal_analyzer(double *a, double *b, Samples const& data, double *q_factor, double *freq, double first, double step);
+void signal_analyzer(double *a, double *b, Samples const& data, double *q_factor, double *freq, double first, double step, unsigned int r_end_i);
 
 /**
  * The first intersection with zero.

@@ -66,9 +66,11 @@ private slots:;
   void approximate();
   void estimate_params();
 
+
 private:;
   void load_csv(unsigned int type=1);
   Samples load_csv(QString filepath, GraphParams *graph_params);
+  void signal_analyzer(double *a, double *b, double *q_factor, double *freq);
 
 private:;
   Ui::MainWindow *ui;
