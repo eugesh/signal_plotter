@@ -25,15 +25,15 @@
 #include "median_cpp.h"
 #include "signals_eval.h"
 
-#include <opencv2/imgproc.hpp>
-// #include "opencv2/videoio.hpp"
-#include <opencv2/opencv.hpp>
-#include "opencv2/core.hpp"
-#include "opencv2/face.hpp"
-#include "opencv2/highgui.hpp"
-#include "opencv2/imgproc.hpp"
-#include "opencv2/objdetect.hpp"
-#include "opencv2/videoio.hpp"
+//#include <opencv2/imgproc.hpp>
+//// #include "opencv2/videoio.hpp"
+//#include <opencv2/opencv.hpp>
+//#include "opencv2/core.hpp"
+//#include "opencv2/face.hpp"
+//#include "opencv2/highgui.hpp"
+//#include "opencv2/imgproc.hpp"
+//#include "opencv2/objdetect.hpp"
+//#include "opencv2/videoio.hpp"
 //#include "imgproc.hpp"
 //#include "videoio.hpp"
 //#include "opencv.hpp"

@@ -44,18 +44,18 @@ message("CMAKE_CURRENT_SOURCE_DIR = " ${CMAKE_CURRENT_SOURCE_DIR})
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/source")
 
-find_package( OpenCV REQUIRED )
+#find_package( OpenCV REQUIRED )
 
-IF(NOT OpenCV_FOUND)
-    MESSAGE(FATAL_ERROR "OpenCV not found")
-ENDIF()
-set(OpenCV_LIBS opencv_core opencv_highgui opencv_imgproc opencv_videoio opencv_contrib opencv_calib3d opencv_features2d opencv_gpu opencv_flann opencv_photo)
+#IF(NOT OpenCV_FOUND)
+#    MESSAGE(FATAL_ERROR "OpenCV not found")
+#ENDIF()
+#set(OpenCV_LIBS opencv_core opencv_highgui opencv_imgproc opencv_videoio opencv_contrib opencv_calib3d opencv_features2d opencv_gpu opencv_flann opencv_photo)
 
-include_directories( ${OpenCV_INCLUDE_DIRS} )
+#include_directories( ${OpenCV_INCLUDE_DIRS} )
 
-if(CMAKE_VERSION VERSION_LESS "2.8.11")
-    include_directories(${OpenCV_INCLUDE_DIRS})
-endif()
+#if(CMAKE_VERSION VERSION_LESS "2.8.11")
+#    include_directories(${OpenCV_INCLUDE_DIRS})
+#endif()
 
 set (QTLIBS QtGui QtCore QtNetwork)
 find_package (Qt4 REQUIRED)
@@ -65,6 +65,7 @@ include(${QT_USE_FILE})
 #include (findeigen3)
 find_package (Eigen3 REQUIRED)
 include_directories (${EIGEN3_INCLUDE_DIR})
+pkg_search_module(Eigen3 REQUIRED eigen3)
 
 link_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../bin")
 set (ADDON_LIBRARIES ${ADDON_LIBRARIES})
