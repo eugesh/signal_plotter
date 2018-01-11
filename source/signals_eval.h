@@ -55,6 +55,11 @@ double estimate_period(Peaks const& peaks);
 double estimate_frequency(Peaks const& peaks, double first, double step);
 
 /**
+ * Estimate frequency by Fourier spectrum analysis.
+ */
+double estimate_frequency_fft(Samples const& data, double first, double step);
+
+/**
  * Estimate quality of oscillation (Q factor = w0 / (2 * attenuation rate) ).
  *
  */

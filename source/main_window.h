@@ -49,6 +49,7 @@ public:;
 private slots:;
   void open_csv_radio();
   void open_csv_attenuation();
+  void save_report_dialog();
   void titleDoubleClick(QMouseEvent *event);
   void axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart part);
   void legendDoubleClick(QCPLegend* legend, QCPAbstractLegendItem* item);
@@ -64,13 +65,14 @@ private slots:;
   void mouseWheel();
   void smooth();
   void approximate();
-  void estimate_params();
+  void estimate_contour_params();
 
 
 private:;
   void load_csv(unsigned int type=1);
   Samples load_csv(QString filepath, GraphParams *graph_params);
   void signal_analyzer(double *a, double *b, double *q_factor, double *freq);
+  void save_report(QString filepath);
 
 private:;
   Ui::MainWindow *ui;
@@ -89,7 +91,9 @@ private:;
   QString path_to_attenuation_csv;
   QString path_to_report;
   Samples samples_radio;
+  Samples samples_radio_smoothed;
   Samples samples_attenuation;
+  Samples samples_attenuation_smoothed;
   GraphParams graph_radio;
   GraphParams graph_attenuation;
 };
