@@ -74,17 +74,20 @@ private:;
 
 private:;
   Ui::MainWindow *ui;
-  // Немодальные диалоги задания величины.
-  QInputDialog *QIDRmeas; // Измерительного сопротивления.
-  QInputDialog *QIDFreqParRes; // Частоты при параллельном резонансе.
+  // Немодальные диалоги задания величин:
+  QInputDialog *QIDRmeas; // Измерительное сопротивление.
+  QInputDialog *QIDFreqParRes; // Частота при параллельном резонансе.
+  QInputDialog *QIDNPeaks; // Число анализируемых пиков.
   float Rmeas;
   float ParResFreq;
+  int NumOfAnalysedPeaks;
   unsigned int median_mask_size;
   // The end of radio impulse.
   unsigned int end_index;
   // Paths to opened .csv files.
   QString path_to_radio_csv;
   QString path_to_attenuation_csv;
+  QString path_to_report;
   Samples samples_radio;
   Samples samples_attenuation;
   GraphParams graph_radio;

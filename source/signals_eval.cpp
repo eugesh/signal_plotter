@@ -243,8 +243,6 @@ estimate_quality(Samples const& data, Peaks const& peaks) {
  */
 double
 estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peaks, double first, double step, unsigned int r_end_i) {
-    double q_factor = .0;
-
     std::vector<double> x, y;
 
     for (unsigned int i = 0; i < peaks.size(); ++i) {
@@ -259,7 +257,7 @@ estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peak
 
     printf("a = %f, b = %f\n", *a, *b);
 
-    return q_factor;
+    return *a;
 }
 
 /**
@@ -277,5 +275,5 @@ void signal_analyzer(double *a, double *b, Samples const& data, double *q_factor
     *freq = estimate_frequency(real_peaks, first, step);
 
     *q_factor = estimate_quality(data, real_peaks);
-    *q_factor = estimate_quality_ls(a, b, data, real_peaks, first, step, r_end_i);
+    estimate_quality_ls(a, b, data, real_peaks, first, step, r_end_i);
 }

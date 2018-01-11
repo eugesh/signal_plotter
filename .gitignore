@@ -3,4 +3,5 @@ build
 doc/documentation
 form_h
 *docx
-
+.project
+.cproject

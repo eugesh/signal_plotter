@@ -537,7 +537,13 @@ MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq
     *freq = estimate_frequency(real_peaks, graph_attenuation.xOffset, graph_attenuation.xScale);
 
     *q_factor = estimate_quality(samples_attenuation, real_peaks);
-    *q_factor = estimate_quality_ls(a, b, samples_attenuation, real_peaks, graph_attenuation.xOffset, graph_attenuation.xScale, end_index);
+    estimate_quality_ls(a, b, samples_attenuation, real_peaks, graph_attenuation.xOffset, graph_attenuation.xScale, end_index);
+
+    double d = - *a / *freq;
+
+    *q_factor = M_PI / d;
+
+    printf("a = %f, f = %f, d = %.12f, Q = %f\n", *a, *freq, d, *q_factor);
 }
 
 #endif

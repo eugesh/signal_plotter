@@ -32,7 +32,7 @@
      <x>0</x>
      <y>0</y>
      <width>720</width>
-     <height>26</height>
+     <height>18</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_Open">
@@ -42,23 +42,24 @@
     <addaction name="action_OpenRadioSignal"/>
     <addaction name="action_OpenAttenuationSignal"/>
     <addaction name="separator"/>
+    <addaction name="action"/>
+    <addaction name="separator"/>
     <addaction name="action_Quit"/>
    </widget>
    <widget class="QMenu" name="menuCursor">
     <property name="title">
      <string>Курсор</string>
     </property>
-    <addaction name="actionCross"/>
-    <addaction name="actionHand"/>
+    <addaction name="actionArrow"/>
     <addaction name="actionRubber_2"/>
    </widget>
    <widget class="QMenu" name="menu">
     <property name="title">
      <string>Параметры</string>
     </property>
-    <widget class="QMenu" name="menu_2">
+    <widget class="QMenu" name="menu_f_par_res">
      <property name="title">
-      <string>Резонансная частота, кГц</string>
+      <string>Частота параллельного резонанса, кГц</string>
      </property>
      <addaction name="action_set_Resonance_Freq"/>
     </widget>
@@ -68,8 +69,16 @@
      </property>
      <addaction name="action_set_R_meas"/>
     </widget>
+    <widget class="QMenu" name="menu_n">
+     <property name="title">
+      <string>Число анализируемых пиков, n</string>
+     </property>
+     <addaction name="action_set_n"/>
+     <addaction name="action_set_n_auto"/>
+    </widget>
     <addaction name="menuR"/>
-    <addaction name="menu_2"/>
+    <addaction name="menu_f_par_res"/>
+    <addaction name="menu_n"/>
    </widget>
    <widget class="QMenu" name="menu_3">
     <property name="title">
@@ -153,9 +162,9 @@
     <string>-X</string>
    </property>
   </action>
-  <action name="actionCross">
+  <action name="actionArrow">
    <property name="text">
-    <string>Крест</string>
+    <string>Указатель</string>
    </property>
   </action>
   <action name="actionHand">
@@ -311,6 +320,27 @@
   <action name="action_approx">
    <property name="text">
     <string>Аппроксимация</string>
+   </property>
+  </action>
+  <action name="action_set_n">
+   <property name="text">
+    <string>Задать число</string>
+   </property>
+  </action>
+  <action name="action_set_n_auto">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Автоматически</string>
+   </property>
+  </action>
+  <action name="action">
+   <property name="text">
+    <string>Сохранить отчет</string>
    </property>
   </action>
  </widget>
