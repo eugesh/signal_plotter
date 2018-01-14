@@ -47,8 +47,8 @@ public:;
   ~MainWindow();
 
 private slots:;
-  void open_csv_radio();
-  void open_csv_attenuation();
+  void open_csv_radio_dialog();
+  void open_csv_attenuation_dialog();
   void save_report_dialog();
   void titleDoubleClick(QMouseEvent *event);
   void axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart part);
@@ -69,7 +69,8 @@ private slots:;
 
 
 private:;
-  void load_csv(unsigned int type=1);
+  void load_csv_radio();
+  void load_csv_attenuation();
   Samples load_csv(QString filepath, GraphParams *graph_params);
   void signal_analyzer(double *a, double *b, double *q_factor, double *freq);
   void save_report(QString filepath);
