@@ -10,14 +10,14 @@ add_executable (test_Gauss test_Gauss.cpp)
 add_executable (test_fft_eigen fft_eigen_test.cpp)
 
 
-target_link_libraries (Levenberg-Marquardt Eigen3::Eigen)
-target_link_libraries (Levenberg-Marquardt-fit Eigen3::Eigen)
-target_link_libraries (nonlinear-least-sqares Eigen3::Eigen)
-target_link_libraries (Levenberg-Marquardt-fit-sin-eigen3 Eigen3::Eigen)
+target_link_libraries (Levenberg-Marquardt)# Eigen3::Eigen)
+target_link_libraries (Levenberg-Marquardt-fit)# Eigen3::Eigen)
+target_link_libraries (nonlinear-least-sqares)# Eigen3::Eigen)
+target_link_libraries (Levenberg-Marquardt-fit-sin-eigen3)# Eigen3::Eigen)
 target_link_libraries (test_median1d)
 target_link_libraries (lsm_test)
 target_link_libraries (test_Gauss)
-target_link_libraries (test_fft_eigen Eigen3::Eigen -lfftw3f)
+target_link_libraries (test_fft_eigen -lfftw3f)# Eigen3::Eigen)
 
 
 configure_file(measured_data.txt ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COPYONLY)

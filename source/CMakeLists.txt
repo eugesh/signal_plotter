@@ -22,5 +22,5 @@ add_executable (scanline_viewer
 	            #main_module.cpp
 	            ${MOCSrcs} ${UISrcs})
 
-target_link_libraries (scanline_viewer ${ADDON_LIBRARIES} ${QTLIBS} ${QT_LIBRARIES} custom_plot Eigen3::Eigen -lfftw3f) #${OpenCV_LIBS} 
+target_link_libraries (scanline_viewer ${ADDON_LIBRARIES} ${QTLIBS} ${QT_LIBRARIES} custom_plot -lfftw3f) # Eigen3::Eigen ${OpenCV_LIBS} 
 
