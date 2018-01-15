@@ -293,13 +293,9 @@ void MainWindow::updateGraph() {
     // Remove all graphs.
     removeAllGraphs();
 
+    // Add graphs.
     addGraph1(samples_radio, graph_radio);
     addGraph2(samples_attenuation, graph_attenuation);
-    // Get current slider position.
-    // int curPos = ui->horizontalSlider->sliderPosition();
-
-    // Add graph related to current position.
-    // addGraph(curPos);
 }
 
 void MainWindow::titleDoubleClick(QMouseEvent* event)
@@ -473,6 +469,23 @@ MainWindow::removeAllGraphs()
 void
 MainWindow::smooth() {
     // Smooth curves.
+
+    if (samples_radio_smoothed.empty()) {
+        samples_radio_smoothed = samples_radio;
+        median1d(samples_radio_smoothed, samples_radio, median_mask_size);
+        updateGraph();
+    }
+
+    if(samples_attenuation_smoothed.empty()) {
+        samples_attenuation_smoothed = samples_attenuation;
+        median1d(samples_attenuation_smoothed, samples_attenuation, median_mask_size * 3);
+        updateGraph();
+    }
+}
+
+/*void
+MainWindow::smooth() {
+    // Smooth curves.
     Samples samples_copy;
 
     if (!samples_radio.empty()) {
@@ -486,7 +499,7 @@ MainWindow::smooth() {
         median1d(samples_attenuation, samples_copy, median_mask_size * 3);
         updateGraph();
     }
-}
+}*/
 
 void
 MainWindow::approximate() {

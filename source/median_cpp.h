@@ -32,12 +32,11 @@ compare (const void * a, const void * b) {
 
 /**
  *  Standard median 1d filter.
- *  Doesn't perform inplace filtering, so
+ *  Doesn't perform in-place filtering, so
  *  arrays should be pointers to physically different memory places.
  *
- * \param[out] - output filtered array(time series);
- * \param[in] - input  filtered array(time series);
- * \param[in] - length of the array;
+ * \param[out] - output filtered array(time series), memory must be preallocated, length must match with length of 'in';
+ * \param[in] - input array(time series);
  * \param[in] - size of sliding mask, odd number = {3, 5, 7, ..., l / 2 - 1 }.
  *
  */
@@ -53,7 +52,7 @@ void median1d(std::vector<T> & out, std::vector<T> const& in, int msize) {
         mask[shift + j] = in[i + j];
     }
 
-    // Sort mask.
+    // Sort mask in descending or ascending order.
     std::sort(mask.begin(), mask.end());
 
     // Get pivoting element.
