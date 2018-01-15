@@ -74,4 +74,3 @@ add_definitions (-DG_LOG_DOMAIN="ScanlineViewer")
 add_subdirectory ("source")
 add_subdirectory ("custom_plot")
 add_subdirectory ("tests")
-

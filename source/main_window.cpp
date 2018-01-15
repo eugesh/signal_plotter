@@ -92,6 +92,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QIDRmeas = new QInputDialog(this);
     QIDFreqParRes = new QInputDialog(this);
+    QIDNPeaks = new QInputDialog(this); // Число анализируемых пиков.
 }
 
 MainWindow::~MainWindow()

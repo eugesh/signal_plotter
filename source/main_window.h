@@ -67,7 +67,6 @@ private slots:;
   void approximate();
   void estimate_contour_params();
 
-
 private:;
   void load_csv_radio();
   void load_csv_attenuation();
