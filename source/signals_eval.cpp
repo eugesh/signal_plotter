@@ -79,7 +79,7 @@ find_radio_signal_termination(Samples const& data) {
  * Intersections with zero finder.
  */
 Intervals
-find_all_zeros_indices(Samples const& data) {
+find_all_zeros_indices(Samples const& data, unsigned int start, unsigned int end) {
     printf ("find_all_zeros_indices - start\n"); // debug
     Intervals intervals;
 
@@ -92,7 +92,7 @@ find_all_zeros_indices(Samples const& data) {
     printf("min = %.21f\n", min); // debug
 
     bool is_interval = false;
-    for (unsigned int i = 0; i < data.size() - 1; ++i) {
+    for (unsigned int i = start; i < end - 1; ++i) {
         if (fabs(data[i]) < min + eps && fabs(data[i + 1]) < min + eps && !is_interval) {
             is_interval = true;
             intervals.push_back(std::make_pair(i, i + 1));
@@ -113,7 +113,7 @@ find_all_zeros_indices(Samples const& data) {
  * Peaks counter. Returns vector of all peaks, including outliers.
  */
 Peaks
-find_all_peaks (Samples const& data, Intervals const& zero_intervals) {
+find_all_peaks (Samples const& data, Intervals const& zero_intervals, unsigned int start, unsigned int end) {
     printf("find_all_peaks - start\n"); // debug
     Peaks all_peaks;
 
@@ -153,7 +153,7 @@ find_all_peaks (Samples const& data, Intervals const& zero_intervals) {
  * \return vector of real peaks.
  */
 Peaks
-find_real_peaks (Samples const& data, Peaks const& all_peaks, double threshold_ratio) {
+find_real_peaks (Samples const& data, Peaks const& all_peaks, double threshold_ratio, unsigned int start, unsigned int end) {
     Peaks peaks;
 
     // Calculate set of area and find max_area among peaks.

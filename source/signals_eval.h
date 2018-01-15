@@ -30,19 +30,19 @@ typedef std::vector<Peak> Peaks;
 /**
  * Intersections with zero finder.
  */
-Intervals find_all_zeros_indices(Samples const& data);
+Intervals find_all_zeros_indices(Samples const& data, unsigned int start, unsigned int end);
 
 /**
  * Peaks counter. Returns vector of all peaks, including outliers.
  *
  * \param zero_intervals - start and end point of zero interval.
  */
-Peaks find_all_peaks(Samples const& data, Intervals const& zero_intervals);
+Peaks find_all_peaks(Samples const& data, Intervals const& zero_intervals, unsigned int start, unsigned int end);
 
 /*
  * Find relevant peaks.
  */
-Peaks find_real_peaks(Samples const& data, Peaks const& all_peaks, double threshold_ratio);
+Peaks find_real_peaks(Samples const& data, Peaks const& all_peaks, double threshold_ratio, unsigned int start, unsigned int end);
 
 /**
  * Estimate period.

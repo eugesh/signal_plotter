@@ -88,7 +88,7 @@ private:;
   float decimation_factor;
   unsigned int median_mask_size;
   // The end of radio impulse.
-  unsigned int end_index;
+  unsigned int radio_end_index;
   // Paths to opened .csv files.
   QString path_to_radio_csv;
   QString path_to_attenuation_csv;

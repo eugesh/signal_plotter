@@ -34,7 +34,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->setupUi(this);
 	Rmeas = 1; // Om
 	ParResFreq = 1; // kHz
-	end_index = 0;
+	radio_end_index = 0;
 	median_mask_size = 199;
 	samples_radio_show = false;
 	samples_radio_smoothed_show = false;
@@ -160,9 +160,9 @@ void MainWindow::load_csv_radio() {
 	samples_radio = load_csv(path_to_radio_csv, &g_params);
 	graph_radio = g_params;
 
-	end_index = find_radio_signal_termination(samples_radio);
+	radio_end_index = find_radio_signal_termination(samples_radio);
 
-	samples_radio.erase(samples_radio.begin() + end_index, samples_radio.end());
+	samples_radio.erase(samples_radio.begin() + radio_end_index, samples_radio.end());
 
 	addGraph1(samples_radio, g_params);
 }
@@ -526,7 +526,7 @@ void
 MainWindow::estimate_contour_params() {
 	double Q, f_r, f_a, Ra, La, Ca, Co;
 	// Cut noisy signal endings after median filtering.
-	Samples attenuation_signal = Samples(samples_attenuation_smoothed.begin() + 3 * median_mask_size, samples_attenuation_smoothed.end() - 3 * median_mask_size);
+	// Samples attenuation_signal = Samples(samples_attenuation_smoothed.begin() + 3 * median_mask_size, samples_attenuation_smoothed.end() - 3 * median_mask_size);
 	Samples exp_curve, exp_curve_neg;
 
 	// addGraph2(attenuation_signal, graph_attenuation); // debug
@@ -535,13 +535,13 @@ MainWindow::estimate_contour_params() {
 	// signal_analyzer(&a, &b, attenuation_signal, &Q, &f_a, graph_attenuation.xOffset, graph_attenuation.xScale);
 	signal_analyzer(&a, &b, &Q, &f_a);
 
-	for(unsigned int i = end_index; i < samples_attenuation_smoothed.size(); ++i) {
+	for(unsigned int i = radio_end_index; i < samples_attenuation_smoothed.size(); ++i) {
 		exp_curve.push_back(exp(a * i + b));
 		exp_curve_neg.push_back(-exp(a * i + b));
 	}
 
 	GraphParams graph_exp = graph_attenuation;
-	graph_exp.xOffset = graph_attenuation.xOffset + end_index * graph_attenuation.xScale;
+	graph_exp.xOffset = graph_attenuation.xOffset + radio_end_index * graph_attenuation.xScale;
 
 	addGraph2(exp_curve, graph_exp); // debug
 	addGraph2(exp_curve_neg, graph_exp); // debug
@@ -556,16 +556,21 @@ MainWindow::estimate_contour_params() {
  */
 void
 MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq) {
-	Intervals zero_intervals = find_all_zeros_indices(samples_attenuation_smoothed);
+	unsigned int start = radio_end_index;
+	unsigned int finish = samples_attenuation_smoothed.size() - median_mask_size;
 
-	Peaks all_peaks = find_all_peaks(samples_attenuation_smoothed, zero_intervals);
+	Intervals zero_intervals = find_all_zeros_indices(samples_attenuation_smoothed, start, finish);
 
-	Peaks real_peaks = find_real_peaks(samples_attenuation_smoothed, all_peaks, 0.05);
+	Peaks all_peaks = find_all_peaks(samples_attenuation_smoothed, zero_intervals, start, finish);
+
+	Peaks real_peaks = find_real_peaks(samples_attenuation_smoothed, all_peaks, 0.05, start, finish);
+
+	printf("graph_attenuation.xOffset = %f", graph_attenuation.xOffset);
 
 	*freq = estimate_frequency(real_peaks, graph_attenuation.xOffset, graph_attenuation.xScale);
 
 	*q_factor = estimate_quality(samples_attenuation_smoothed, real_peaks);
-	estimate_quality_ls(a, b, samples_attenuation_smoothed, real_peaks, graph_attenuation.xOffset, graph_attenuation.xScale, end_index);
+	estimate_quality_ls(a, b, samples_attenuation_smoothed, real_peaks, graph_attenuation.xOffset, graph_attenuation.xScale, radio_end_index);
 
 	double d = - *a / *freq;
 
