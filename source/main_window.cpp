@@ -36,6 +36,11 @@ MainWindow::MainWindow(QWidget *parent) :
     ParResFreq = 1; // kHz
     end_index = 0;
     median_mask_size = 99;
+    samples_radio_show = false;
+    samples_radio_smoothed_show = false;
+    samples_attenuation_show = false;
+    samples_attenuation_smoothed_show = false;
+
 
     ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes |
                                   QCP::iSelectLegend | QCP::iSelectPlottables);
@@ -441,12 +446,37 @@ MainWindow::contextMenuRequest(QPoint pos)
 
   {
     if (ui->customPlot->selectedGraphs().size() > 0)
+      menu->addAction("Show selected graph", this, SLOT(showSelectedGraph()));
+    if (ui->customPlot->selectedGraphs().size() > 0)
+      menu->addAction("Hide selected graph", this, SLOT(hideSelectedGraph()));
+    if (ui->customPlot->selectedGraphs().size() > 0)
       menu->addAction("Remove selected graph", this, SLOT(removeSelectedGraph()));
     if (ui->customPlot->graphCount() > 0)
       menu->addAction("Remove all graphs", this, SLOT(removeAllGraphs()));
+
   }
 
   menu->popup(ui->customPlot->mapToGlobal(pos));
+}
+
+void
+MainWindow::showSelectedGraph()
+{
+  if (ui->customPlot->selectedGraphs().size() > 0)
+  {
+    ui->customPlot->selectedGraphs().first()->setVisible(true);
+    ui->customPlot->replot();
+  }
+}
+
+void
+MainWindow::hideSelectedGraph()
+{
+  if (ui->customPlot->selectedGraphs().size() > 0)
+  {
+    ui->customPlot->selectedGraphs().first()->setVisible(false);;
+    ui->customPlot->replot();
+  }
 }
 
 void
