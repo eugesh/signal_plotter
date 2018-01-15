@@ -113,7 +113,7 @@ find_all_zeros_indices(Samples const& data, unsigned int start, unsigned int end
  * Peaks counter. Returns vector of all peaks, including outliers.
  */
 Peaks
-find_all_peaks (Samples const& data, Intervals const& zero_intervals, unsigned int start, unsigned int end) {
+find_all_peaks (Samples const& data, Intervals const& zero_intervals) {
     printf("find_all_peaks - start\n"); // debug
     Peaks all_peaks;
 
@@ -153,7 +153,7 @@ find_all_peaks (Samples const& data, Intervals const& zero_intervals, unsigned i
  * \return vector of real peaks.
  */
 Peaks
-find_real_peaks (Samples const& data, Peaks const& all_peaks, double threshold_ratio, unsigned int start, unsigned int end) {
+find_real_peaks (Samples const& data, Peaks const& all_peaks, double threshold_ratio) {
     Peaks peaks;
 
     // Calculate set of area and find max_area among peaks.
@@ -223,30 +223,62 @@ estimate_frequency(Peaks const& peaks, double first, double step) {
     return (last_index - first_index) * step / period;
 }*/
 
-double
+/*double
 estimate_frequency(Peaks const& peaks, double first, double step) {
-    // unsigned int first_index = peaks.front().start_index;
-    // Indices of the first and the last peaks.
-    unsigned int first_index = peaks.front().start_index;
-    // unsigned int first_index = peaks[2].start_index;
-    unsigned int last_index = peaks.back().end_index;
+	// Indices of the first and the last peaks.
+	unsigned int first_index = peaks.front().start_index;
+	unsigned int last_index = peaks.back().end_index;
 
-    printf("last_index - first_index = %d, ", last_index - first_index);
+	printf("last_index - first_index = %d, ", last_index - first_index);
 
-    unsigned int even_peaks_num = peaks.size() - peaks.size() % 2;
+	unsigned int even_peaks_num = peaks.size() - peaks.size() % 2;
 
-    double even_peaks_range = floor(double(last_index - first_index));
+	double even_peaks_range = floor(double(last_index - first_index));
 
-    printf("even_peaks_num = %d\n", even_peaks_num);
+	printf("even_peaks_num = %d\n", even_peaks_num);
 
-    return even_peaks_num / (2.0 * even_peaks_range * step);
+	return even_peaks_num / (2.0 * even_peaks_range * step);
+}*/
+
+double
+estimate_frequency(Samples const& data, Peaks const& peaks, double first, double step, unsigned int start, unsigned int end) {
+  // Indices of the first and the last analysing peaks.
+	unsigned int first_peak_num = 0;
+	unsigned int last_peak_num = peaks.size() - 1;
+	unsigned int first_index = 0;
+	unsigned int last_index = data.size();
+
+	for(unsigned int i = 0; i < peaks.size() && peaks[i].start_index <= start; ++i) {
+		first_index = peaks[i + 1].start_index;
+		first_peak_num = i + 1;
+	}
+
+	for(unsigned int i = peaks.size() - 1; i > 0 && peaks[i].end_index >= end; i--) {
+		last_index = peaks[i].end_index;
+		last_peak_num = i;
+	}
+
+	/*first_index = peaks.front().start_index;
+	last_index = peaks.back().end_index;*/
+
+	printf("\nstart = %d, end = %d, peaks.size() = %d, peaks.back().end_index = %d\n", start, end, peaks.size(), peaks.back().end_index);
+	printf("last_index = %d, first_index = %d\n", last_index, first_index);
+	printf("last_peak_num = %d, first_peak_num = %d\n", last_peak_num, first_peak_num);
+
+	// unsigned int even_peaks_num = peaks.size() - peaks.size() % 2;
+
+	double even_peaks_range = floor(double(last_index - first_index));
+
+	// printf("even_peaks_num = %d\n", even_peaks_num);
+
+	return double(last_peak_num - first_peak_num + 1) / (2.0 * even_peaks_range * step);
 }
 
 /**
  * Realization with Eigen3's fft.
  */
 double
-estimate_frequency_fft(Samples const& data, double first, double step) {
+estimate_frequency_fft(Samples const& data, double first, double step, unsigned int start, unsigned int end) {
   double Fs = 1.0 / step;
   printf("Fs = %f\n", Fs);
   Eigen::FFT<Real> fft;
@@ -283,7 +315,7 @@ fft.inv(timevec, freqvec);
  *
  */
 double
-estimate_quality(Samples const& data, Peaks const& peaks) {
+estimate_quality(Samples const& data, Peaks const& peaks, unsigned int start, unsigned int end) {
     double q_factor = .0;
 
     double A0 = fabs(data[peaks.front().extremum_index]);
@@ -307,7 +339,7 @@ estimate_quality(Samples const& data, Peaks const& peaks) {
  * The problem is {[xi 1]} * [a; b] = {log(yi)}
  */
 double
-estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peaks, double first, double step, unsigned int r_end_i) {
+estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peaks, double first, double step, unsigned int r_end_i, unsigned int start, unsigned int end) {
     std::vector<double> x, y;
 
     for (unsigned int i = 0; i < peaks.size(); ++i) {

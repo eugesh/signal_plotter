@@ -37,12 +37,12 @@ Intervals find_all_zeros_indices(Samples const& data, unsigned int start, unsign
  *
  * \param zero_intervals - start and end point of zero interval.
  */
-Peaks find_all_peaks(Samples const& data, Intervals const& zero_intervals, unsigned int start, unsigned int end);
+Peaks find_all_peaks(Samples const& data, Intervals const& zero_intervals);
 
 /*
  * Find relevant peaks.
  */
-Peaks find_real_peaks(Samples const& data, Peaks const& all_peaks, double threshold_ratio, unsigned int start, unsigned int end);
+Peaks find_real_peaks(Samples const& data, Peaks const& all_peaks, double threshold_ratio);
 
 /**
  * Estimate period.
@@ -52,20 +52,20 @@ double estimate_period(Peaks const& peaks);
 /**
  * Estimate frequency.
  */
-double estimate_frequency(Peaks const& peaks, double first, double step);
+double estimate_frequency(Samples const& data, Peaks const& peaks, double first, double step, unsigned int start, unsigned int end);
 
 /**
  * Estimate frequency by Fourier spectrum analysis.
  */
-double estimate_frequency_fft(Samples const& data, double first, double step);
+double estimate_frequency_fft(Samples const& data, double first, double step, unsigned int start, unsigned int end);
 
 /**
  * Estimate quality of oscillation (Q factor = w0 / (2 * attenuation rate) ).
  *
  */
-double estimate_quality(Samples const& data, Peaks const& peaks);
+double estimate_quality(Samples const& data, Peaks const& peaks, unsigned int start, unsigned int end);
 
-double estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peaks, double first, double step, unsigned int r_end_i);
+double estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peaks, double first, double step, unsigned int r_end_i, unsigned int start, unsigned int end);
 
 
 /**

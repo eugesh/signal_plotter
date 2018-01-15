@@ -557,13 +557,39 @@ MainWindow::estimate_contour_params() {
 void
 MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq) {
 	unsigned int start = radio_end_index;
+	unsigned int finish = samples_attenuation_smoothed.size() - 3 * median_mask_size;
+
+	Intervals zero_intervals = find_all_zeros_indices(samples_attenuation_smoothed, 0, samples_attenuation_smoothed.size());
+
+	Peaks all_peaks = find_all_peaks(samples_attenuation_smoothed, zero_intervals);
+
+	Peaks real_peaks = find_real_peaks(samples_attenuation_smoothed, all_peaks, 0.05);
+
+	printf("graph_attenuation.xOffset = %f", graph_attenuation.xOffset);
+
+	*freq = estimate_frequency(samples_attenuation_smoothed, real_peaks, graph_attenuation.xOffset, graph_attenuation.xScale, start, finish);
+
+	*q_factor = estimate_quality(samples_attenuation_smoothed, real_peaks, start, finish);
+	estimate_quality_ls(a, b, samples_attenuation_smoothed, real_peaks, graph_attenuation.xOffset, graph_attenuation.xScale, radio_end_index, start, finish);
+
+	double d = - *a / *freq;
+
+	*q_factor = M_PI / d;
+
+	printf("a = %f, f = %f, d = %.12f, Q = %f\n", *a, *freq, d, *q_factor);
+}
+
+/*
+void
+MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq) {
+	unsigned int start = radio_end_index;
 	unsigned int finish = samples_attenuation_smoothed.size() - median_mask_size;
 
 	Intervals zero_intervals = find_all_zeros_indices(samples_attenuation_smoothed, start, finish);
 
-	Peaks all_peaks = find_all_peaks(samples_attenuation_smoothed, zero_intervals, start, finish);
+	Peaks all_peaks = find_all_peaks(samples_attenuation_smoothed, zero_intervals);
 
-	Peaks real_peaks = find_real_peaks(samples_attenuation_smoothed, all_peaks, 0.05, start, finish);
+	Peaks real_peaks = find_real_peaks(samples_attenuation_smoothed, all_peaks, 0.05);
 
 	printf("graph_attenuation.xOffset = %f", graph_attenuation.xOffset);
 
@@ -578,6 +604,7 @@ MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq
 
 	printf("a = %f, f = %f, d = %.12f, Q = %f\n", *a, *freq, d, *q_factor);
 }
+*/
 
 #endif
 
