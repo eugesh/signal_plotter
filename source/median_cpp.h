@@ -49,7 +49,7 @@ void median1d(std::vector<T> & out, std::vector<T> const& in, int msize) {
     // Get current mask.
     std::vector<T> mask(msize);
     for(int j = -shift; j < shift; ++j) {
-        mask[shift + j] = in[i + j];
+      mask[shift + j] = in[i + j];
     }
 
     // Sort mask in descending or ascending order.

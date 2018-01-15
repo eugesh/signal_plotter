@@ -71,7 +71,7 @@ double estimate_quality_ls(double *a, double *b, Samples const& data, Peaks cons
 /**
  * Interface function for all previous functions.
  */
-void signal_analyzer(double *a, double *b, Samples const& data, double *q_factor, double *freq, double first, double step, unsigned int r_end_i);
+// void signal_analyzer(double *a, double *b, Samples const& data, double *q_factor, double *freq, double first, double step, unsigned int r_end_i);
 
 /**
  * The first intersection with zero.

@@ -85,6 +85,7 @@ private:;
   float Rmeas;
   float ParResFreq;
   int NumOfAnalysedPeaks;
+  float decimation_factor;
   unsigned int median_mask_size;
   // The end of radio impulse.
   unsigned int end_index;

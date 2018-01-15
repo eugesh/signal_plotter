@@ -328,7 +328,7 @@ estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peak
 /**
  * Interface function for all previous functions.
  */
-void signal_analyzer(double *a, double *b, Samples const& data, double *q_factor, double *freq, double first, double step, unsigned int r_end_i) {
+/*void signal_analyzer(double *a, double *b, Samples const& data, double *q_factor, double *freq, double first, double step, unsigned int r_end_i) {
     printf ("signal_analyzer - start\n");
 
     Intervals zero_intervals = find_all_zeros_indices(data);
@@ -341,4 +341,4 @@ void signal_analyzer(double *a, double *b, Samples const& data, double *q_factor
 
     *q_factor = estimate_quality(data, real_peaks);
     estimate_quality_ls(a, b, data, real_peaks, first, step, r_end_i);
-}
+}*/
