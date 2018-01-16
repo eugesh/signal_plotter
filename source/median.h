@@ -1,5 +1,5 @@
-#ifndef __CV_FILTER_MEDIAN_H__
-#define __CV_FILTER_MEDIAN_H__
+#ifndef ___MEDIAN_H__
+#define ___MEDIAN_H__
 
 #include <stdio.h>
 #include <stdlib.h>

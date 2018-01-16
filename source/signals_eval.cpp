@@ -10,6 +10,28 @@
 
 static const double eps = 1e-12;
 
+/*Intervals
+peaks2intervals(Peaks const& peaks) {
+	Intervals intervals;
+	for (int i = 0; i < peaks.size() - 1; ++i) {
+		intervals.push_back(std::make_pair());
+	}
+
+	return intervals;
+}*/
+
+/**
+ * The simplest way: center.
+ */
+std::vector<unsigned int> intervals2points(Intervals const& intervals) {
+	std::vector<unsigned int>points;
+	for(unsigned int i = 0; i < intervals.size(); ++i) {
+		points.push_back(intervals[i].first + (intervals[i].second - intervals[i].first) / 2);
+	}
+
+	return points;
+}
+
 template <typename T>
 T
 spectrum_analysis(std::vector<std::complex<T> > freqvec, T Fs) {
@@ -153,13 +175,13 @@ find_all_peaks (Samples const& data, Intervals const& zero_intervals, unsigned i
  * \return vector of real peaks.
  */
 Peaks
-find_real_peaks (Samples const& data, Peaks const& all_peaks, double threshold_ratio, unsigned int start, unsigned int end) {
+find_real_peaks(std::vector<unsigned int> &zero_points, Samples const& data, Peaks const& all_peaks, double threshold_ratio, unsigned int start, unsigned int end) {
     Peaks peaks;
 
     // Calculate set of area and find max_area among peaks.
     // Area is approximated as rectangle for simplicity.
     std::vector<double> area_vec;
-    double max_area = 0;
+    double max_area = 0.0;
     for(unsigned int i = 0; i < all_peaks.size(); ++i) {
         // Area of rectangle.
         double area = 0.5 * (all_peaks[i].end_index - all_peaks[i].start_index) * fabs(data[all_peaks[i].extremum_index]);
@@ -168,11 +190,16 @@ find_real_peaks (Samples const& data, Peaks const& all_peaks, double threshold_r
             max_area = area;
     }
 
+    int last_index = 0;
     // Find all peaks with area larger than 0.05 * max_area.
     for(unsigned int i = 0; i < all_peaks.size(); ++i) {
-        if (area_vec[i] > threshold_ratio * max_area)
+        if (area_vec[i] > threshold_ratio * max_area) {
             peaks.push_back(all_peaks[i]);
+        		zero_points.push_back(all_peaks[i].start_index);
+        		last_index = i;
+        }
     }
+    zero_points.push_back(all_peaks[last_index].end_index);
 
     return peaks;
 }
@@ -189,7 +216,7 @@ estimate_period(Peaks const& peaks) {
         if(half_period > 0)
             half_period_cumsum += half_period;
         else
-            printf("Error: %dth period < 0", i);
+            printf("Error: %dth period < 0\n", i);
     }
 
     // return 2.0 * double(half_period_cumsum) / double(peaks.size());
@@ -257,27 +284,6 @@ estimate_frequency_fft(Samples const& data, double first, double step) {
   return spectrum_analysis(freqvec, Fs);
 }
 
-/*
-Eigen::FFT<real> fft;
-
-double Fs = 10000;
-double omega = 1000;
-
-std::vector<real> timevec = GenSinus(1e5, Fs, 0, 10, omega, 0.5);
-std::vector<std::complex<real> > freqvec;
-
-fft.fwd(freqvec, timevec);
-// Manipulate freqvec
-real freq = spectrum_analysis(freqvec, Fs);
-
-printf("freq = %f\n", freq);
-printf("omega - omega_res = %f\n", omega - freq * 2 * M_PI);
-printf("error, % = %f\n", (omega - freq * 2 * M_PI) * 100 / omega);
-
-fft.inv(timevec, freqvec);
-*/
-
-
 /**
  * Estimate quality of oscillation (Q factor = w0 / (2 * attenuation rate) ).
  *
@@ -323,6 +329,62 @@ estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peak
     printf("a = %f, b = %f\n", *a, *b);
 
     return *a;
+}
+
+void
+half_periods_verificator(Intervals const& zero_intervals, float *max_dev, float *mean_dev) {
+	float sum = 0.0;
+	*mean_dev = 0, *max_dev = 0;
+	// Find half period mean.
+	for(unsigned int i = 0; i < zero_intervals.size() - 1; ++i) {
+		unsigned int zero_interval_left = zero_intervals[i].second - zero_intervals[i].first;
+		unsigned int zero_interval_right = zero_intervals[i + 1].second - zero_intervals[i + 1].first;
+		unsigned int half_period = zero_intervals[i + 1].first - zero_intervals[i].second;
+		unsigned int full_half_period = half_period + (zero_interval_left + zero_interval_right) / 2;
+		printf("zero_interval_left = %d, zero_interval_right = %d, full_half_period = %d\n", zero_interval_left, zero_interval_right, full_half_period);
+		sum += full_half_period;
+	}
+	float mean_full_half_period = sum / (zero_intervals.size() - 1);
+
+	// Find max and mean deviation.
+	sum = 0.0;
+	for(unsigned int i = 0; i < zero_intervals.size() - 1; ++i) {
+		unsigned int zero_interval_left = zero_intervals[i].second - zero_intervals[i].first;
+		unsigned int zero_interval_right = zero_intervals[i + 1].second - zero_intervals[i + 1].first;
+		unsigned int half_period = zero_intervals[i + 1].first - zero_intervals[i].second;
+		float full_half_period = half_period + (zero_interval_left + zero_interval_right) / 2;
+		float cur_dev = full_half_period / mean_full_half_period;
+		sum += cur_dev;
+		if(*max_dev < cur_dev)
+			*max_dev = cur_dev;
+	}
+
+	*mean_dev = sum / (zero_intervals.size() - 1);
+}
+
+void
+half_periods_verificator(std::vector<unsigned int> const& zero_points, float *max_dev, float *mean_dev) {
+	float sum = 0.0;
+	*mean_dev = 0, *max_dev = 0;
+	// Find half period mean.
+	for(unsigned int i = 0; i < zero_points.size() - 1; ++i) {
+		unsigned int half_period = zero_points[i + 1] - zero_points[i];
+		printf("half_period = %d\n", half_period);
+		sum += half_period;
+	}
+	float mean_half_period = sum / (zero_points.size() - 1);
+
+	// Find max and mean deviation.
+	sum = 0.0;
+	for(unsigned int i = 0; i < zero_points.size() - 1; ++i) {
+		unsigned int half_period = zero_points[i + 1] - zero_points[i];
+		float cur_dev = fabs(mean_half_period - float(half_period)) / mean_half_period;
+		sum += cur_dev;
+		if(*max_dev < cur_dev)
+			*max_dev = cur_dev;
+	}
+
+	*mean_dev = sum / (zero_points.size() - 1);
 }
 
 /**

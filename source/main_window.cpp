@@ -35,7 +35,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	Rmeas = 1; // Om
 	ParResFreq = 1; // kHz
 	radio_end_index = 0;
-	median_mask_size = 199;
+	median_mask_size = 99;
 	samples_radio_show = false;
 	samples_radio_smoothed_show = false;
 	samples_attenuation_show = false;
@@ -157,6 +157,7 @@ void MainWindow::load_csv_radio() {
 	GraphParams g_params;
 
 	samples_radio.clear();
+	samples_radio_smoothed.clear();
 	samples_radio = load_csv(path_to_radio_csv, &g_params);
 	graph_radio = g_params;
 
@@ -170,6 +171,7 @@ void MainWindow::load_csv_radio() {
 void MainWindow::load_csv_attenuation() {
 	GraphParams g_params;
 	samples_attenuation.clear();
+	samples_attenuation_smoothed.clear();
 	samples_attenuation = load_csv(path_to_attenuation_csv, &g_params);
 	graph_attenuation = g_params;
 
@@ -556,14 +558,19 @@ MainWindow::estimate_contour_params() {
  */
 void
 MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq) {
+	std::vector<unsigned int> zero_points_to_analyze;
 	unsigned int start = radio_end_index;
 	unsigned int finish = samples_attenuation_smoothed.size() - median_mask_size;
 
 	Intervals zero_intervals = find_all_zeros_indices(samples_attenuation_smoothed, start, finish);
 
+	std::vector<unsigned int> zero_points = intervals2points(zero_intervals);
+
 	Peaks all_peaks = find_all_peaks(samples_attenuation_smoothed, zero_intervals, start, finish);
 
-	Peaks real_peaks = find_real_peaks(samples_attenuation_smoothed, all_peaks, 0.05, start, finish);
+	Peaks real_peaks = find_real_peaks(zero_points_to_analyze, samples_attenuation_smoothed, all_peaks, 0.3, start, finish);
+
+	verify_half_periods(zero_points_to_analyze);
 
 	printf("graph_attenuation.xOffset = %f", graph_attenuation.xOffset);
 
@@ -578,6 +585,119 @@ MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq
 
 	printf("a = %f, f = %f, d = %.12f, Q = %f\n", *a, *freq, d, *q_factor);
 }
+
+
+/*
+void
+MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq) {
+	unsigned int start = radio_end_index;
+	unsigned int finish = samples_attenuation_smoothed.size() - median_mask_size;
+
+	Intervals zero_intervals = find_all_zeros_indices(samples_attenuation_smoothed, start, finish);
+
+	verify_half_periods(zero_intervals);
+
+	Peaks all_peaks = find_all_peaks(samples_attenuation_smoothed, zero_intervals, start, finish);
+
+	Peaks real_peaks = find_real_peaks(samples_attenuation_smoothed, all_peaks, 0.25, start, finish);
+
+	printf("graph_attenuation.xOffset = %f", graph_attenuation.xOffset);
+
+	*freq = estimate_frequency(real_peaks, graph_attenuation.xOffset, graph_attenuation.xScale);
+
+	*q_factor = estimate_quality(samples_attenuation_smoothed, real_peaks);
+	estimate_quality_ls(a, b, samples_attenuation_smoothed, real_peaks, graph_attenuation.xOffset, graph_attenuation.xScale, radio_end_index);
+
+	double d = - *a / *freq;
+
+	*q_factor = M_PI / d;
+
+	printf("a = %f, f = %f, d = %.12f, Q = %f\n", *a, *freq, d, *q_factor);
+}
+
+ */
+
+void
+MainWindow::verify_half_periods(std::vector<unsigned int> const& zero_points) {
+	float max_dev;
+	float mean_dev;
+
+	half_periods_verificator(zero_points, &max_dev, &mean_dev);
+
+	std::vector<QPoint> xy_points;
+
+	for(unsigned int i = 0; i < zero_points.size(); ++i) {
+		xy_points.push_back(QPoint(zero_points[i], 0));
+	}
+	plot_points(xy_points, graph_attenuation);
+
+	printf("max_dev = %f, mean_dev = %f\n", max_dev, mean_dev);
+
+	if(max_dev > 0.03) {
+		QMessageBox::information(this, QObject::tr("SignalPlotter"),
+														 QObject::tr("Предупреждение: отклонение в измерении полупериодов превысило 3%!"));
+	}
+}
+
+void
+MainWindow::verify_half_periods(Intervals const& zero_intervals) {
+	float max_dev;
+	float mean_dev;
+
+	half_periods_verificator(zero_intervals, &max_dev, &mean_dev);
+
+	std::vector<QPoint> xy_points;
+
+	for(unsigned int i = 0; i < zero_intervals.size(); ++i) {
+		xy_points.push_back(QPoint(zero_intervals[i].first, 0));
+		xy_points.push_back(QPoint(zero_intervals[i].second, 0));
+	}
+	plot_points(xy_points, graph_attenuation);
+
+	printf("max_dev = %f, mean_dev = %f\n", max_dev, mean_dev);
+
+	if(max_dev > 0.03) {
+		QMessageBox::information(this, QObject::tr("SignalPlotter"),
+														 QObject::tr("Предупреждение: отклонение в измерении полупериодов превысило 3%!"));
+	}
+}
+
+void
+MainWindow::plot_points(std::vector<QPoint> const& xy_points, GraphParams const& g_params) {
+	QVector<double> x, y;
+	for(unsigned int i = 0; i < xy_points.size(); ++i){
+		x.push_back(xy_points[i].x() * g_params.xScale + g_params.xOffset);
+		y.push_back(xy_points[i].y() * g_params.yScale + g_params.yOffset);
+	}
+
+	ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis);
+	ui->customPlot->graph()->setName(QString("Points"));
+	ui->customPlot->graph()->setData(x, y);
+	ui->customPlot->graph()->setLineStyle(QCPGraph::lsNone);
+	ui->customPlot->graph()->setScatterStyle(QCPScatterStyle::ssCircle);
+	ui->customPlot->graph()->setPen(QPen(QBrush(Qt::red), 2));
+	ui->customPlot->replot();
+}
+
+/*void
+MainWindow::plot_points(std::vector<QPoint> const& xy_points) {
+	QVector<double> x, y;
+	for(int i = 0; i < xy_points.size(); ++i){
+		x.push_back(xy_points[i].x());
+		y.push_back(xy_points[i].y());
+	}
+	QCPGraph *points = new QCPGraph(ui->customPlot->xAxis, ui->customPlot->yAxis);
+	// ui->customPlot->addGraph(points);
+	ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis);
+	points->setAdaptiveSampling(false);
+	points->removeFromLegend();
+	points->setLineStyle(QCPGraph::lsNone);
+	points->setScatterStyle(QCPScatterStyle::ssCircle);
+	points->setPen(QPen(QBrush(Qt::red), 200));
+	points->addData(x, y);
+  //	ui->customPlot->graph()->setData(x, y);
+	ui->customPlot->replot();
+}*/
 
 #endif
 

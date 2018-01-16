@@ -32,17 +32,24 @@ typedef std::vector<Peak> Peaks;
  */
 Intervals find_all_zeros_indices(Samples const& data, unsigned int start, unsigned int end);
 
+std::vector<unsigned int> intervals2points(Intervals const& intervals);
+
 /**
  * Peaks counter. Returns vector of all peaks, including outliers.
  *
- * \param zero_intervals - start and end point of zero interval.
+ * \param data - time series to analyze;
+ * \param zero_intervals - start and end point of zero interval;
+ * \param start - start index in data to analyze;
+ * \param end - finish index in data to analyze
+ * \return
+ *
  */
 Peaks find_all_peaks(Samples const& data, Intervals const& zero_intervals, unsigned int start, unsigned int end);
 
 /*
  * Find relevant peaks.
  */
-Peaks find_real_peaks(Samples const& data, Peaks const& all_peaks, double threshold_ratio, unsigned int start, unsigned int end);
+Peaks find_real_peaks(std::vector<unsigned int> &zero_points, Samples const& data, Peaks const& all_peaks, double threshold_ratio, unsigned int start, unsigned int end);
 
 /**
  * Estimate period.
@@ -94,6 +101,12 @@ float find_last_zero(Samples const& data);
  */
 unsigned int find_radio_signal_termination(Samples const& data);
 
+/**
+ *
+ */
+void half_periods_verificator(Intervals const& half_periods, float *max_dev, float *mean_dev);
+
+void half_periods_verificator(std::vector<unsigned int> const& zero_points, float *max_dev, float *mean_dev);
 /**
  * Curve fitting.
  *
