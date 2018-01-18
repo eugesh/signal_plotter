@@ -31,11 +31,24 @@ typedef std::vector<Peak> Peaks;
  * Intersections with zero finder.
  */
 Intervals find_all_zeros_indices(Samples const& data, unsigned int start, unsigned int end);
-
+/*
+ * Centers of intervals.
+ */
 std::vector<unsigned int> intervals2points(Intervals const& intervals);
 
 /**
- * Peaks counter. Returns vector of all peaks, including outliers.
+ * Sign changes searching.
+ *
+ * \param data input signal;
+ * \param start the first index of analysing interval;
+ * \param end the last index of analysing interval;
+ *
+ * \return vector of indices of sign changes.
+ */
+std::vector<unsigned int> sign_changes(Samples const& data, unsigned int start, unsigned int end);
+
+/**
+ * Peaks extractor. Returns vector of all peaks, including outliers.
  *
  * \param data - time series to analyze;
  * \param zero_intervals - start and end point of zero interval;
@@ -45,6 +58,18 @@ std::vector<unsigned int> intervals2points(Intervals const& intervals);
  *
  */
 Peaks find_all_peaks(Samples const& data, Intervals const& zero_intervals);
+
+/**
+ * Peaks extractor. Returns vector of all peaks, including outliers.
+ *
+ * \param data - time series to analyze;
+ * \param zero_points - sign change points;
+ * \param start - start index in data to analyze;
+ * \param end - finish index in data to analyze
+ * \return
+ *
+ */
+Peaks find_all_peaks(Samples const& data, std::vector<unsigned int> const& zero_points);
 
 /*
  * Find relevant peaks.

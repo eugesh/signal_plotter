@@ -82,8 +82,6 @@ private:;
   void save_report(QString filepath);
   void verify_half_periods(Intervals const& zero_intervals);
   void verify_half_periods(std::vector<unsigned int> const& zero_points);
-
-  // Debug function
   void plot_points(std::vector<QPoint> const& xy_points, GraphParams const& g_params);
 
 private:;
@@ -94,7 +92,7 @@ private:;
   QInputDialog *QIDFreqParRes; // Частота при параллельном резонансе.
   QInputDialog *QIDNPeaks; // Число анализируемых пиков.
   double Rmeas;
-  double ParResFreq;
+  double FreqParRes;
   double FreqNominalAntenna;
   unsigned int NumOfAnalysedPeaks;
   float decimation_factor;
@@ -115,6 +113,8 @@ private:;
   bool samples_attenuation_smoothed_show;
   GraphParams graph_radio;
   GraphParams graph_attenuation;
+  // Calculated parameters.
+  double Q, f_a, Ra, La, Ca, C0, U_max, I_max, F0;
 };
 
 #endif

@@ -55,7 +55,7 @@ vec_cf lp_freq(vec_cf const& vfreq, real Fs, real cut_f) {
 	if(cut_index > vfreq.size())
 		cut_index = vfreq.size() - 1;
 
-	printf("vfreq.size() = %d, cut_index = %d\n", vfreq.size(), cut_index);
+	// printf("vfreq.size() = %d, cut_index = %d\n", vfreq.size(), cut_index);
 
 	for(unsigned int i = 0; i < vfreq.size(); ++i) {
 		if(i < cut_index) {
@@ -98,39 +98,25 @@ amplitude_rescale(T &in_out_vec, T const& vec) {
 	}
 }
 
-/*template<typename T> // T - vector
-void
-amplitude_rescale(T &in_out_vec, T const& vec) {
-	// Find max ampl.
-	double max_ampl_out = 0;
-	double max_ampl_in = 0;
-	for(unsigned int i = 0; i < vec.size(); ++i) {
-		if(max_ampl_in < fabs(vec[i])) {
-			max_ampl_in = fabs(vec[i]);
-		}
-		if(max_ampl_out < fabs(in_out_vec[i])) {
-			max_ampl_out = fabs(in_out_vec[i]);
-		}
-	}
-
-	double scale = max_ampl_in / max_ampl_out;
-
-	// Rescale to original ampl.
-	for(unsigned int i = 0; i < vec.size(); ++i) {
-		in_out_vec[i] = in_out_vec[i] * scale;
-	}
-}*/
-
+/*
+ * Central function of the file.
+ */
 /**
  * Low Pass in frequency domain. Works with amplitude.
+ *
+ * \param v_ampl input signal;
+ * \param step discretization interval size, Fs = 1 / step;
+ * \param cut_f threshold frequency, higher which ones are suppressed;
+ *
+ * \return filtered vector.
  */
 vec_f lp_ampl(vec_f v_ampl, real step, real cut_f) {
 	vec_f filtered;
 
 	// Sampling frequency.
   double Fs = 1.0 / step;
-  printf("Fs = %f\n", Fs);
-  printf("v_ampl.size() = %u\n", v_ampl.size());
+  // printf("Fs = %f\n", Fs);
+  // printf("v_ampl.size() = %u\n", v_ampl.size());
 
   Eigen::FFT<Real> fft;
   std::vector<std::complex<real> > freqvec;
@@ -143,14 +129,6 @@ vec_f lp_ampl(vec_f v_ampl, real step, real cut_f) {
 
   // Backward Fourier transform.
   fft.inv(filtered, freqvec);
-
-  // printf("filtered.size() = %u\n", filtered.size());
-
-  // Retrieve discretization.
-  // vec_f filtered_out = rediscretization(filtered, v_ampl.size());
-
-  // Rescale amplitude.
-  // amplitude_rescale(filtered_out, v_ampl);
 
 	return filtered;
 	// Stored "plans" get destroyed with fft's destructor.

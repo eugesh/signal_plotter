@@ -131,6 +131,18 @@ find_all_zeros_indices(Samples const& data, unsigned int start, unsigned int end
     return intervals;
 }
 
+std::vector<unsigned int>
+sign_changes(Samples const& data, unsigned int start, unsigned int end) {
+	std::vector<unsigned int> zero_indices;
+
+	for(unsigned int i = start; i < end-1; ++i) {
+		if(copysign(1.0, (double)data[i]) != copysign(1.0, (double)data[i+1]))
+			zero_indices.push_back(i);
+	}
+
+	return zero_indices;
+}
+
 /**
  * Peaks counter. Returns vector of all peaks, including outliers.
  */
@@ -162,6 +174,33 @@ find_all_peaks (Samples const& data, Intervals const& zero_intervals) {
     }
 
     printf("find_all_peaks - finish.\n"); // debug
+
+    return all_peaks;
+}
+
+Peaks
+find_all_peaks (Samples const& data, std::vector<unsigned int> const& zero_points) {
+    Peaks all_peaks;
+
+    // Iterate over zero intervals.
+    for(unsigned int i = 0; i < zero_points.size() - 1; ++i) {
+        Peak peak;
+        peak.start_index = zero_points[i];
+        peak.end_index = zero_points[i + 1];
+
+        // Iterate through non-zero interval.
+        double max_val = 0;
+        unsigned int extremum_index = 0;
+        for (unsigned int j = zero_points[i]; j < zero_points[i + 1]; ++j) {
+            if (max_val < fabs(data[j])) {
+                max_val = fabs(data[j]);
+                extremum_index = j;
+            }
+        }
+        // peak.extremum_val = data[extremum_index];
+        peak.extremum_index = extremum_index;
+        all_peaks.push_back(peak);
+    }
 
     return all_peaks;
 }
@@ -299,8 +338,8 @@ estimate_quality(Samples const& data, Peaks const& peaks) {
 
     double A0 = fabs(data[peaks.front().extremum_index]);
     double An = fabs(data[peaks.back().extremum_index]);
-    // double n_of_periods = (double) (peaks.size()) / 2.0;
-    double n_of_periods = double(peaks.size()) / 2;
+
+    double n_of_periods = double(peaks.size() - 1) / 2.0;
     q_factor = M_PI * n_of_periods / (log(A0 / An));
 
     printf("A0 = %f\n", A0);
