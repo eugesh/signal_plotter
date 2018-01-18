@@ -44,12 +44,12 @@ std::vector<unsigned int> intervals2points(Intervals const& intervals);
  * \return
  *
  */
-Peaks find_all_peaks(Samples const& data, Intervals const& zero_intervals, unsigned int start, unsigned int end);
+Peaks find_all_peaks(Samples const& data, Intervals const& zero_intervals);
 
 /*
  * Find relevant peaks.
  */
-Peaks find_real_peaks(std::vector<unsigned int> &zero_points, Samples const& data, Peaks const& all_peaks, double threshold_ratio, unsigned int start, unsigned int end);
+Peaks find_real_peaks(std::vector<unsigned int> &zero_points, Samples const& data, Peaks const& all_peaks, double threshold_ratio);
 
 /**
  * Estimate period.

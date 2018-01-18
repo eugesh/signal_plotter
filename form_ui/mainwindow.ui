@@ -22,7 +22,133 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0">
-     <widget class="QCustomPlot" name="customPlot" native="true"/>
+     <widget class="QCustomPlot" name="customPlot" native="true">
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="0" column="0">
+        <layout class="QVBoxLayout" name="verticalLayout">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <item>
+            <spacer name="horizontalSpacer_4">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_5">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_6">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>Сгенерировать очет</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <spacer name="verticalSpacer_4">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <spacer name="verticalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <spacer name="verticalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+      </layout>
+      <zorder>pushButton_all</zorder>
+      <zorder>horizontalSpacer</zorder>
+      <zorder>horizontalSpacer_2</zorder>
+      <zorder>horizontalSpacer_3</zorder>
+      <zorder>pushButton_all</zorder>
+      <zorder>layoutWidget</zorder>
+      <zorder>verticalSpacer</zorder>
+      <zorder>verticalSpacer_2</zorder>
+      <zorder>verticalSpacer_3</zorder>
+      <zorder>verticalSpacer_4</zorder>
+      <zorder>pushButton</zorder>
+      <zorder>horizontalSpacer_4</zorder>
+      <zorder>horizontalSpacer_6</zorder>
+      <zorder>horizontalSpacer_5</zorder>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -75,7 +201,15 @@
      </property>
      <addaction name="action_set_n"/>
      <addaction name="action_set_n_auto"/>
+     <addaction name="action_set_n_hand"/>
     </widget>
+    <widget class="QMenu" name="menu_F_nominal">
+     <property name="title">
+      <string>Частота резонанса антенны номинальная, кГц</string>
+     </property>
+     <addaction name="action_set_f_nom"/>
+    </widget>
+    <addaction name="menu_F_nominal"/>
     <addaction name="menuR"/>
     <addaction name="menu_f_par_res"/>
     <addaction name="menu_n"/>
@@ -87,6 +221,7 @@
     <addaction name="action_smooth"/>
     <addaction name="action_approx"/>
     <addaction name="action_estim_param"/>
+    <addaction name="action_radio_end_hand"/>
    </widget>
    <addaction name="menu_Open"/>
    <addaction name="menuCursor"/>
@@ -341,6 +476,21 @@
   <action name="action_save_report">
    <property name="text">
     <string>Сохранить отчет</string>
+   </property>
+  </action>
+  <action name="action_set_n_hand">
+   <property name="text">
+    <string>Указать вручную</string>
+   </property>
+  </action>
+  <action name="action_set_f_nom">
+   <property name="text">
+    <string>Задать значение</string>
+   </property>
+  </action>
+  <action name="action_radio_end_hand">
+   <property name="text">
+    <string>Указать момент оканчания радиовоздействия</string>
    </property>
   </action>
  </widget>

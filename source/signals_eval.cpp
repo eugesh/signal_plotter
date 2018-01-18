@@ -135,7 +135,7 @@ find_all_zeros_indices(Samples const& data, unsigned int start, unsigned int end
  * Peaks counter. Returns vector of all peaks, including outliers.
  */
 Peaks
-find_all_peaks (Samples const& data, Intervals const& zero_intervals, unsigned int start, unsigned int end) {
+find_all_peaks (Samples const& data, Intervals const& zero_intervals) {
     printf("find_all_peaks - start\n"); // debug
     Peaks all_peaks;
 
@@ -170,12 +170,14 @@ find_all_peaks (Samples const& data, Intervals const& zero_intervals, unsigned i
  * Find relevant peaks.
  * Get rid of outliers by area under curve thresholding.
  *
- * \param threshold_ratio (0,1) - minimal area as part of an area of peak with the maximal area.
+ * \param zero_points[inout] - input vector of zero points, output cut vector;
+ * \param threshold_ratio[in] = (0, 1) - minimal area as part of an area of peak with the maximal area;
+ * \param
  *
  * \return vector of real peaks.
  */
 Peaks
-find_real_peaks(std::vector<unsigned int> &zero_points, Samples const& data, Peaks const& all_peaks, double threshold_ratio, unsigned int start, unsigned int end) {
+find_real_peaks(std::vector<unsigned int> &zero_points, Samples const& data, Peaks const& all_peaks, double threshold_ratio) {
     Peaks peaks;
 
     // Calculate set of area and find max_area among peaks.
@@ -190,16 +192,19 @@ find_real_peaks(std::vector<unsigned int> &zero_points, Samples const& data, Pea
             max_area = area;
     }
 
-    int last_index = 0;
     // Find all peaks with area larger than 0.05 * max_area.
     for(unsigned int i = 0; i < all_peaks.size(); ++i) {
         if (area_vec[i] > threshold_ratio * max_area) {
             peaks.push_back(all_peaks[i]);
-        		zero_points.push_back(all_peaks[i].start_index);
-        		last_index = i;
         }
     }
-    zero_points.push_back(all_peaks[last_index].end_index);
+
+    // Eliminate vector of zero pints. Remove all points to the right side of the last peak.
+    printf("peaks.back().end_index = %d\n", peaks.back().end_index);
+    for (int i = all_peaks.size(); i > 0 && peaks.back().end_index < zero_points.back(); i--) {
+    	zero_points.pop_back();
+    	printf("zero_points.back() = %d\n", zero_points.back());
+    }
 
     return peaks;
 }
@@ -295,7 +300,7 @@ estimate_quality(Samples const& data, Peaks const& peaks) {
     double A0 = fabs(data[peaks.front().extremum_index]);
     double An = fabs(data[peaks.back().extremum_index]);
     // double n_of_periods = (double) (peaks.size()) / 2.0;
-    double n_of_periods = (peaks.size()) / 2;
+    double n_of_periods = double(peaks.size()) / 2;
     q_factor = M_PI * n_of_periods / (log(A0 / An));
 
     printf("A0 = %f\n", A0);

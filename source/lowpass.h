@@ -17,8 +17,9 @@ typedef std::vector<int> vec_i;
 
 /**
  * Low Pass in frequency domain. Works with frequency vector.
+ * Cuts off high frequencies.
  */
-vec_cf lp_freq(vec_cf const& vfreq, real Fs, real cut_f) {
+vec_cf lp_freq_cutoff(vec_cf const& vfreq, real Fs, real cut_f) {
 	unsigned int L = vfreq.size();
 
 	// The first and the last frequencies.
@@ -32,6 +33,40 @@ vec_cf lp_freq(vec_cf const& vfreq, real Fs, real cut_f) {
 		cut_index = vfreq.size() - 1;
 
 	return vec_cf(vfreq.begin(), vfreq.begin() + cut_index);
+}
+
+/**
+ * Low Pass in frequency domain. Works with frequency vector.
+ * Applies the simplest transfer function.
+ */
+vec_cf lp_freq(vec_cf const& vfreq, real Fs, real cut_f) {
+	unsigned int L = vfreq.size();
+	vec_cf out_vec(vfreq.size());
+
+	// The first and the last frequencies.
+	real first_freq = 0 * Fs / L;
+	real last_freq = (L - 1) * Fs / L;
+
+	// Index to cut frequency vector.
+	unsigned int cut_index = vfreq.size() - 1;
+	if ((last_freq - first_freq) > 0)
+		cut_index = floor(vfreq.size() * cut_f / (last_freq - first_freq));
+
+	if(cut_index > vfreq.size())
+		cut_index = vfreq.size() - 1;
+
+	printf("vfreq.size() = %d, cut_index = %d\n", vfreq.size(), cut_index);
+
+	for(unsigned int i = 0; i < vfreq.size(); ++i) {
+		if(i < cut_index) {
+			out_vec[i] = vfreq[i];
+		}
+		else {
+			out_vec[i] = 0.000001 * vfreq[i];
+		}
+	}
+
+	return out_vec;
 }
 
 template<typename T> // T - vector
@@ -109,15 +144,15 @@ vec_f lp_ampl(vec_f v_ampl, real step, real cut_f) {
   // Backward Fourier transform.
   fft.inv(filtered, freqvec);
 
-  printf("filtered.size() = %u\n", filtered.size());
+  // printf("filtered.size() = %u\n", filtered.size());
 
   // Retrieve discretization.
-  vec_f filtered_out = rediscretization(filtered, v_ampl.size());
+  // vec_f filtered_out = rediscretization(filtered, v_ampl.size());
 
   // Rescale amplitude.
-  amplitude_rescale(filtered_out, v_ampl);
+  // amplitude_rescale(filtered_out, v_ampl);
 
-	return filtered_out;
+	return filtered;
 	// Stored "plans" get destroyed with fft's destructor.
 }
 

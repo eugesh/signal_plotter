@@ -24,6 +24,11 @@
 #include "../custom_plot/qcustomplot.h"
 #include "signals_eval.h"
 
+// Constants
+static const double freq_warn_prec = 0.03;
+static const double freq_error_prec = 0.05;
+static const unsigned int freq_factor_to_pass = 2;
+
 namespace Ui {
 class MainWindow;
 }
@@ -84,12 +89,14 @@ private:;
 private:;
   Ui::MainWindow *ui;
   // Немодальные диалоги задания величин:
+  QInputDialog *QIDFreqNominal; // Номинальная частота резонанса антенны.
   QInputDialog *QIDRmeas; // Измерительное сопротивление.
   QInputDialog *QIDFreqParRes; // Частота при параллельном резонансе.
   QInputDialog *QIDNPeaks; // Число анализируемых пиков.
-  float Rmeas;
-  float ParResFreq;
-  int NumOfAnalysedPeaks;
+  double Rmeas;
+  double ParResFreq;
+  double FreqNominalAntenna;
+  unsigned int NumOfAnalysedPeaks;
   float decimation_factor;
   unsigned int median_mask_size;
   // The end of radio impulse.

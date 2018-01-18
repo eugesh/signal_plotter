@@ -23,6 +23,7 @@
 #include "ui_mainwindow.h"
 #include "median.h"
 #include "median_cpp.h"
+#include "lowpass.h"
 #include "signals_eval.h"
 
 const static double eps = 1e-10;
@@ -34,6 +35,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->setupUi(this);
 	Rmeas = 1; // Om
 	ParResFreq = 1; // kHz
+	FreqNominalAntenna = 600; // kHz
 	radio_end_index = 0;
 	median_mask_size = 99;
 	samples_radio_show = false;
@@ -52,7 +54,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->customPlot->axisRect()->setupFullAxesBox();
 
 	ui->customPlot->plotLayout()->insertRow(0);
-	QCPTextElement *title = new QCPTextElement(ui->customPlot, "Scanline Viewer", QFont("sans", 17, QFont::Bold));
+	QCPTextElement *title = new QCPTextElement(ui->customPlot, QObject::tr("Расчет параметров антенны"), QFont("sans", 17, QFont::Bold));
 	ui->customPlot->plotLayout()->addElement(0, 0, title);
 
 	ui->customPlot->xAxis->setLabel(QObject::tr("Время, сек."));
@@ -95,9 +97,34 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(ui->action_smooth, SIGNAL(triggered()), this, SLOT(smooth()));
 	connect(ui->action_estim_param, SIGNAL(triggered()), this, SLOT(estimate_contour_params()));
 
+	QIDFreqNominal = new QInputDialog(this);
 	QIDRmeas = new QInputDialog(this);
 	QIDFreqParRes = new QInputDialog(this);
 	QIDNPeaks = new QInputDialog(this); // Число анализируемых пиков.
+	QIDFreqNominal->setComboBoxEditable(true);
+	QIDRmeas->setComboBoxEditable(true);
+	QIDFreqParRes->setComboBoxEditable(true);
+	QIDNPeaks->setComboBoxEditable(true);
+	QIDFreqNominal->setDoubleMaximum(10000.0);
+	QIDRmeas->setDoubleMaximum(1000.0);
+	QIDFreqParRes->setDoubleMaximum(10000.0);
+  QIDNPeaks->setIntMaximum(100);
+  QIDFreqNominal->setDoubleMinimum(.001);
+	QIDRmeas->setDoubleMinimum(0.001);
+  QIDFreqParRes->setDoubleMinimum(.001);
+  QIDNPeaks->setIntMinimum(1);
+  QIDFreqNominal->setCancelButtonText(QObject::tr("Отмена"));
+	QIDRmeas->setCancelButtonText(QObject::tr("Отмена"));
+  QIDFreqParRes->setCancelButtonText(QObject::tr("Отмена"));
+  QIDNPeaks->setCancelButtonText(QObject::tr("Отмена"));
+  QIDFreqNominal->setOkButtonText(QObject::tr("Ввод"));
+  QIDRmeas->setOkButtonText(QObject::tr("Ввод"));
+  QIDFreqParRes->setOkButtonText(QObject::tr("Ввод"));
+  QIDNPeaks->setOkButtonText(QObject::tr("Ввод"));
+  QIDFreqNominal->setLabelText(QObject::tr("Введите величину номинальной частоты резонанса антенны"));
+  QIDRmeas->setLabelText(QObject::tr("Укажите величину измерительного сопротивления"));
+  QIDFreqParRes->setLabelText(QObject::tr("Введите величину частоты параллельного резонанса антенны"));
+  QIDNPeaks->setLabelText(QObject::tr("Укажите число анализируемых полупериодов"));
 }
 
 MainWindow::~MainWindow()
@@ -508,13 +535,19 @@ MainWindow::smooth() {
 
 	if (samples_radio_smoothed.empty()) {
 		samples_radio_smoothed = samples_radio;
-		median1d(samples_radio_smoothed, samples_radio, median_mask_size);
+		// median1d(samples_radio_smoothed, samples_radio, median_mask_size);
+
+		samples_radio_smoothed = lp_ampl(samples_radio, graph_radio.xScale, freq_factor_to_pass * FreqNominalAntenna * 1000);
+
 		updateGraph();
 	}
 
 	if(samples_attenuation_smoothed.empty()) {
 		samples_attenuation_smoothed = samples_attenuation;
-		median1d(samples_attenuation_smoothed, samples_attenuation, median_mask_size * 3);
+		// median1d(samples_attenuation_smoothed, samples_attenuation, median_mask_size * 3);
+
+		samples_attenuation_smoothed = lp_ampl(samples_attenuation, graph_attenuation.xScale, freq_factor_to_pass * FreqNominalAntenna * 1000);
+
 		updateGraph();
 	}
 }
@@ -558,7 +591,7 @@ MainWindow::estimate_contour_params() {
  */
 void
 MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq) {
-	std::vector<unsigned int> zero_points_to_analyze;
+	// std::vector<unsigned int> zero_points_to_analyze;
 	unsigned int start = radio_end_index;
 	unsigned int finish = samples_attenuation_smoothed.size() - median_mask_size;
 
@@ -566,11 +599,11 @@ MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq
 
 	std::vector<unsigned int> zero_points = intervals2points(zero_intervals);
 
-	Peaks all_peaks = find_all_peaks(samples_attenuation_smoothed, zero_intervals, start, finish);
+	Peaks all_peaks = find_all_peaks(samples_attenuation_smoothed, zero_intervals);
 
-	Peaks real_peaks = find_real_peaks(zero_points_to_analyze, samples_attenuation_smoothed, all_peaks, 0.3, start, finish);
+	Peaks real_peaks = find_real_peaks(zero_points, samples_attenuation_smoothed, all_peaks, 0.3);
 
-	verify_half_periods(zero_points_to_analyze);
+	verify_half_periods(zero_points);
 
 	printf("graph_attenuation.xOffset = %f", graph_attenuation.xOffset);
 

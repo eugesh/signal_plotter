@@ -22,8 +22,8 @@ compare (const void * elem1, const void * elem2)
 }*/
 
 int
-compare (const void * a, const void * b) {
-   return ( *(int*)a - *(int*)b );
+compare(const void * a, const void * b) {
+   return (*(int*)a - *(int*)b);
 }
 
 /**
