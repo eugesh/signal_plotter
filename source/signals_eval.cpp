@@ -8,6 +8,10 @@
 #include "math_module.h"
 #include <unsupported/Eigen/FFT>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 static const double eps = 1e-12;
 
 /*Intervals

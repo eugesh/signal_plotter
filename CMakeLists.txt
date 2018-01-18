@@ -57,7 +57,13 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/source")
 #    include_directories(${OpenCV_INCLUDE_DIRS})
 #endif()
 
-set (QTLIBS QtGui QtCore QtNetwork)
+
+if( WIN32 )
+	set (QTLIBS QtGui4 QtCore4 QtNetwork4)
+else()
+	set (QTLIBS QtGui QtCore QtNetwork)
+endif()
+
 find_package (Qt4 REQUIRED)
 # qt4_wrap_cpp (MOC_SOURCES ${HEADERS})
 include(${QT_USE_FILE})

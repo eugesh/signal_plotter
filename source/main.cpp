@@ -14,7 +14,6 @@
 
 int main(int argc, char **argv)
 {
-	// printf("log(M_E) = %f, M_E = %f\n", double(log(M_E)), M_E);
 	QApplication app(argc, argv);
 
 	// QTextCodec::setCodecForTr(QTextCodec::codecForName("Windows-1251"));
