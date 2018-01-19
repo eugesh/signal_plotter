@@ -1,15 +1,6 @@
-#include <stdio.h>
-#include <math.h>
 #include <QApplication>
 #include <QTextCodec>
 #include <QTime>
-// #include <QUdpSocket>
-// #include <QHostAddress>
-#include <QProcess>
-#include <QImage>
-#include <QFile>
-#include <QTextStream>
-#include <QGraphicsView>
 #include "main_window.h"
 
 int main(int argc, char **argv)

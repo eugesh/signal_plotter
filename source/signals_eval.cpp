@@ -24,7 +24,8 @@ peaks2intervals(Peaks const& peaks) {
 	return intervals;
 }*/
 
-/**
+/*
+ * Finds central points of intervals.
  * The simplest way: center.
  */
 std::vector<unsigned int> intervals2points(Intervals const& intervals) {
@@ -36,9 +37,17 @@ std::vector<unsigned int> intervals2points(Intervals const& intervals) {
 	return points;
 }
 
+/**
+ * Finds frequency with max rate. Frequency of oscillating signal.
+ *
+ * \param freqvec input vector of frequencies, taken after fft;
+ * \param Fs sampling frequency;
+ *
+ * \returns frequency with max rate.
+ */
 template <typename T>
 T
-spectrum_analysis(std::vector<std::complex<T> > freqvec, T Fs) {
+spectrum_analysis(std::vector<std::complex<T> > const& freqvec, T Fs) {
   unsigned int i_max = 0;
 
   // Find index of frequency with max rate.
@@ -52,6 +61,36 @@ spectrum_analysis(std::vector<std::complex<T> > freqvec, T Fs) {
   }
 
   return T(i_max - 1) * Fs / (freqvec.size());
+}
+
+/**
+ * Finds median value of half-periods.
+ */
+double half_period_median(std::vector<unsigned int> const&zero_points) {
+  std::vector<unsigned int> half_periods;
+
+  for(unsigned int i = 0; i < zero_points.size() - 1; ++i) {
+    half_periods.push_back(zero_points[i + 1] - zero_points[i]);
+  }
+
+  // Sort half_periods in descending or ascending order.
+  std::sort(half_periods.begin(), half_periods.end());
+
+  // Get pivoting element.
+  return half_periods[zero_points.size() / 2];
+}
+
+/**
+ * Finds mean value of half-periods.
+ */
+double half_period_mean(std::vector<unsigned int> const&zero_points) {
+  double mean = 0;
+
+  for(unsigned int i = 0; i < zero_points.size() - 1; ++i) {
+    mean += zero_points[i + 1] - zero_points[i];
+  }
+
+  return mean / zero_points.size();
 }
 
 /*
@@ -250,6 +289,64 @@ find_real_peaks(std::vector<unsigned int> &zero_points, Samples const& data, Pea
     }
 
     return peaks;
+}
+
+/*
+ * Find relevant peaks.
+ * Get rid of outliers by area under curve thresholding.
+ *
+ * \param zero_points[inout] - input vector of zero points, output cut vector;
+ * \param threshold_ratio[in] = (0, 1) - minimal area as part of an area of peak with the maximal area (first peak);
+ * \param thresh_period_ratio[in] = (0, 1) - threshold value for relative error of period
+ *
+ * \return vector of real peaks.
+ */
+Peaks
+find_real_peaks_double_check(std::vector<unsigned int> &zero_points, Samples const& data, Peaks const& all_peaks, double thresh_area_ratio, double thresh_period_ratio) {
+  Peaks peaks;
+  bool stop_flag = false;
+
+  // Find median and calc mean half-period.
+  double half_period_med = half_period_median(zero_points);
+  double mean_half_period = half_period_mean(zero_points);
+
+  if(fabs(half_period_med - mean_half_period) / mean_half_period > thresh_period_ratio)
+    mean_half_period = half_period_med;
+
+  printf("mean half period = %f\n", mean_half_period);
+
+  // Calculate set of area and find max_area among peaks.
+  // Area is approximated as rectangle for simplicity.
+  std::vector<double> area_vec;
+  double max_area = 0.0;
+  for(unsigned int i = 0; i < all_peaks.size(); ++i) {
+    // Area of rectangle.
+    double area = 0.5 * (all_peaks[i].end_index - all_peaks[i].start_index) * fabs(data[all_peaks[i].extremum_index]);
+    area_vec.push_back(area);
+    if(max_area < area)
+      max_area = area;
+  }
+
+  // Find all peaks with area larger than 0.05 * max_area.
+  for(unsigned int i = 0; i < all_peaks.size() &&
+                          !stop_flag; ++i) {
+    // Eliminate by area and half-period difference.
+    if (area_vec[i] > thresh_area_ratio * max_area &&
+        ((all_peaks[i].end_index - all_peaks[i].start_index) - mean_half_period) > thresh_period_ratio * mean_half_period)
+    {
+      peaks.push_back(all_peaks[i]);
+      stop_flag = true;
+    }
+  }
+
+  // Eliminate vector of zero pints. Remove all points to the right side of the last peak.
+  printf("peaks.back().end_index = %d\n", peaks.back().end_index);
+  for (int i = all_peaks.size(); i > 0 && peaks.back().end_index < zero_points.back(); i--) {
+    zero_points.pop_back();
+    printf("zero_points.back() = %d\n", zero_points.back());
+  }
+
+  return peaks;
 }
 
 /**

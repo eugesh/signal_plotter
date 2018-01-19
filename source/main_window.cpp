@@ -56,95 +56,95 @@ MainWindow::MainWindow(QWidget *parent) :
                        QMainWindow(parent),
                        ui(new Ui::MainWindow)
 {
-	ui->setupUi(this);
-	Rmeas = 2.55; // Om
-	FreqParRes = 600; // kHz
-	FreqNominalAntenna = 600; // kHz
-	radio_end_index = 0;
-	median_mask_size = 99;
-	NumOfAnalysedPeaks = 4;
-	samples_radio_show = false;
-	samples_radio_smoothed_show = false;
-	samples_attenuation_show = false;
-	samples_attenuation_smoothed_show = false;
+  ui->setupUi(this);
+  Rmeas = 2.55; // Om
+  FreqParRes = 600; // kHz
+  FreqNominalAntenna = 600; // kHz
+  radio_end_index = 0;
+  median_mask_size = 99;
+  NumOfAnalysedPeaks = 4;
+  samples_radio_show = false;
+  samples_radio_smoothed_show = false;
+  samples_attenuation_show = false;
+  samples_attenuation_smoothed_show = false;
 
 
-	ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes |
-																QCP::iSelectLegend | QCP::iSelectPlottables);
+  ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes |
+                                QCP::iSelectLegend | QCP::iSelectPlottables);
 
-	ui->customPlot->xAxis->setRange(2e-5, 6e-5);
-	ui->customPlot->yAxis->setRange(-2, 2);
-	ui->customPlot->yAxis2->setRange(-0.025, 0.025);
-	// ui->customPlot->yAxis->setScaleType(QCPAxis::stLogarithmic);
-	ui->customPlot->axisRect()->setupFullAxesBox();
+  ui->customPlot->xAxis->setRange(2e-5, 6e-5);
+  ui->customPlot->yAxis->setRange(-2, 2);
+  ui->customPlot->yAxis2->setRange(-0.025, 0.025);
+  // ui->customPlot->yAxis->setScaleType(QCPAxis::stLogarithmic);
+  ui->customPlot->axisRect()->setupFullAxesBox();
 
-	ui->customPlot->plotLayout()->insertRow(0);
-	QCPTextElement *title = new QCPTextElement(ui->customPlot, QObject::tr("Расчет параметров антенны"), QFont("sans", 17, QFont::Bold));
-	ui->customPlot->plotLayout()->addElement(0, 0, title);
+  ui->customPlot->plotLayout()->insertRow(0);
+  QCPTextElement *title = new QCPTextElement(ui->customPlot, QObject::tr("Расчет параметров антенны"), QFont("sans", 17, QFont::Bold));
+  ui->customPlot->plotLayout()->addElement(0, 0, title);
 
-	ui->customPlot->xAxis->setLabel(QObject::tr("Время, сек."));
-	ui->customPlot->yAxis->setLabel(QObject::tr("Радиовоздействие, В."));
-	ui->customPlot->yAxis2->setLabel(QObject::tr("Затухание, мВ."));
-	ui->customPlot->legend->setVisible(true);
-	QFont legendFont = font();
-	legendFont.setPointSize(10);
-	ui->customPlot->legend->setFont(legendFont);
-	ui->customPlot->legend->setSelectedFont(legendFont);
+  ui->customPlot->xAxis->setLabel(QObject::tr("Время, сек."));
+  ui->customPlot->yAxis->setLabel(QObject::tr("Радиовоздействие, В."));
+  ui->customPlot->yAxis2->setLabel(QObject::tr("Затухание, мВ."));
+  ui->customPlot->legend->setVisible(true);
+  QFont legendFont = font();
+  legendFont.setPointSize(10);
+  ui->customPlot->legend->setFont(legendFont);
+  ui->customPlot->legend->setSelectedFont(legendFont);
 
-	// Legend box shall not be selectable, only legend items.
-	ui->customPlot->legend->setSelectableParts(QCPLegend::spItems);
+  // Legend box shall not be selectable, only legend items.
+  ui->customPlot->legend->setSelectableParts(QCPLegend::spItems);
 
-	ui->customPlot->rescaleAxes();
+  ui->customPlot->rescaleAxes();
 
-	// Connect slot that ties some axis selections together (especially opposite axes):
-	connect(ui->customPlot, SIGNAL(selectionChangedByUser()), this, SLOT(selectionChanged()));
-	// Connect slots that takes care that when an axis is selected, only that direction can be dragged and zoomed:
-	connect(ui->customPlot, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(mousePress()));
-	connect(ui->customPlot, SIGNAL(mouseWheel(QWheelEvent*)), this, SLOT(mouseWheel()));
+  // Connect slot that ties some axis selections together (especially opposite axes):
+  connect(ui->customPlot, SIGNAL(selectionChangedByUser()), this, SLOT(selectionChanged()));
+  // Connect slots that takes care that when an axis is selected, only that direction can be dragged and zoomed:
+  connect(ui->customPlot, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(mousePress()));
+  connect(ui->customPlot, SIGNAL(mouseWheel(QWheelEvent*)), this, SLOT(mouseWheel()));
 
-	// Make bottom and left axes transfer their ranges to top and right axes:
-	connect(ui->customPlot->xAxis, SIGNAL(rangeChanged(QCPRange)), ui->customPlot->xAxis2, SLOT(setRange(QCPRange)));
-	connect(ui->customPlot->yAxis, SIGNAL(rangeChanged(QCPRange)), ui->customPlot->yAxis2, SLOT(setRange(QCPRange)));
+  // Make bottom and left axes transfer their ranges to top and right axes:
+  connect(ui->customPlot->xAxis, SIGNAL(rangeChanged(QCPRange)), ui->customPlot->xAxis2, SLOT(setRange(QCPRange)));
+  connect(ui->customPlot->yAxis, SIGNAL(rangeChanged(QCPRange)), ui->customPlot->yAxis2, SLOT(setRange(QCPRange)));
 
-	// Connect some interaction slots:
-	connect(ui->customPlot, SIGNAL(axisDoubleClick(QCPAxis*, QCPAxis::SelectablePart, QMouseEvent*)), this, SLOT(axisLabelDoubleClick(QCPAxis*, QCPAxis::SelectablePart)));
-	connect(ui->customPlot, SIGNAL(legendDoubleClick(QCPLegend*, QCPAbstractLegendItem*, QMouseEvent*)), this, SLOT(legendDoubleClick(QCPLegend*, QCPAbstractLegendItem*)));
-	connect(title, SIGNAL(doubleClicked(QMouseEvent*)), this, SLOT(titleDoubleClick(QMouseEvent*)));
+  // Connect some interaction slots:
+  connect(ui->customPlot, SIGNAL(axisDoubleClick(QCPAxis*, QCPAxis::SelectablePart, QMouseEvent*)), this, SLOT(axisLabelDoubleClick(QCPAxis*, QCPAxis::SelectablePart)));
+  connect(ui->customPlot, SIGNAL(legendDoubleClick(QCPLegend*, QCPAbstractLegendItem*, QMouseEvent*)), this, SLOT(legendDoubleClick(QCPLegend*, QCPAbstractLegendItem*)));
+  connect(title, SIGNAL(doubleClicked(QMouseEvent*)), this, SLOT(titleDoubleClick(QMouseEvent*)));
 
-	// Setup policy and connect slot for context menu popup:
-	ui->customPlot->setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(ui->customPlot, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextMenuRequest(QPoint)));
+  // Setup policy and connect slot for context menu popup:
+  ui->customPlot->setContextMenuPolicy(Qt::CustomContextMenu);
+  connect(ui->customPlot, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextMenuRequest(QPoint)));
 
-	connect(ui->action_OpenRadioSignal, SIGNAL(triggered()), this, SLOT(open_csv_radio_dialog()));
-	connect(ui->action_OpenAttenuationSignal, SIGNAL(triggered()), this, SLOT(open_csv_attenuation_dialog()));
-	connect(ui->action_save_report, SIGNAL(triggered()), this, SLOT(save_report_dialog()));
+  connect(ui->action_OpenRadioSignal, SIGNAL(triggered()), this, SLOT(open_csv_radio_dialog()));
+  connect(ui->action_OpenAttenuationSignal, SIGNAL(triggered()), this, SLOT(open_csv_attenuation_dialog()));
+  connect(ui->action_save_report, SIGNAL(triggered()), this, SLOT(save_report_dialog()));
 
-	connect(ui->action_smooth, SIGNAL(triggered()), this, SLOT(smooth()));
-	connect(ui->action_estim_param, SIGNAL(triggered()), this, SLOT(estimate_contour_params()));
+  connect(ui->action_smooth, SIGNAL(triggered()), this, SLOT(smooth()));
+  connect(ui->action_estim_param, SIGNAL(triggered()), this, SLOT(estimate_contour_params()));
 
-	// Parameters setting munues.
+  // Parameters setting menus.
   connect(ui->action_set_f_nom, SIGNAL(triggered()), this, SLOT(SetFreqNominal()));
   connect(ui->action_set_Resonance_Freq, SIGNAL(triggered()), this, SLOT(SetFreqParRes()));
   connect(ui->action_set_R_meas, SIGNAL(triggered()), this, SLOT(SetRmeas()));
   connect(ui->action_set_n, SIGNAL(triggered()), this, SLOT(SetNPeaks()));
-	QIDFreqNominal = new QInputDialog(this);
-	QIDRmeas = new QInputDialog(this);
-	QIDFreqParRes = new QInputDialog(this);
-	QIDNPeaks = new QInputDialog(this); // Число анализируемых пиков.
-	QIDFreqNominal->setComboBoxEditable(true);
-	QIDRmeas->setComboBoxEditable(true);
-	QIDFreqParRes->setComboBoxEditable(true);
-	QIDNPeaks->setComboBoxEditable(true);
-	QIDFreqNominal->setDoubleMaximum(10000.0);
-	QIDRmeas->setDoubleMaximum(1000.0);
-	QIDFreqParRes->setDoubleMaximum(10000.0);
+  QIDFreqNominal = new QInputDialog(this);
+  QIDRmeas = new QInputDialog(this);
+  QIDFreqParRes = new QInputDialog(this);
+  QIDNPeaks = new QInputDialog(this); // Число анализируемых пиков.
+  QIDFreqNominal->setComboBoxEditable(true);
+  QIDRmeas->setComboBoxEditable(true);
+  QIDFreqParRes->setComboBoxEditable(true);
+  QIDNPeaks->setComboBoxEditable(true);
+  QIDFreqNominal->setDoubleMaximum(10000.0);
+  QIDRmeas->setDoubleMaximum(1000.0);
+  QIDFreqParRes->setDoubleMaximum(10000.0);
   QIDNPeaks->setIntMaximum(100);
   QIDFreqNominal->setDoubleMinimum(.001);
-	QIDRmeas->setDoubleMinimum(0.001);
+  QIDRmeas->setDoubleMinimum(0.001);
   QIDFreqParRes->setDoubleMinimum(.001);
   QIDNPeaks->setIntMinimum(1);
   QIDFreqNominal->setCancelButtonText(QObject::tr("Отмена"));
-	QIDRmeas->setCancelButtonText(QObject::tr("Отмена"));
+  QIDRmeas->setCancelButtonText(QObject::tr("Отмена"));
   QIDFreqParRes->setCancelButtonText(QObject::tr("Отмена"));
   QIDNPeaks->setCancelButtonText(QObject::tr("Отмена"));
   QIDFreqNominal->setOkButtonText(QObject::tr("Ввод"));
@@ -204,11 +204,6 @@ void MainWindow::save_report_dialog() {
     QMessageBox::information(this, QObject::tr("SignalPlotter"),
                              QObject::tr("Путь не был указан корректно."));
   }
-}
-
-void
-MainWindow::save_report(QString filepath) {
-
 }
 
 /*
@@ -291,6 +286,7 @@ Samples MainWindow::load_csv(QString filepath, GraphParams *g_params) {
 			max = samples[i];
 	}
 	g_params->yScale = (max - min) < eps ? 1 : 1 / (max - min);
+	// g_params->yScale = (max - min) / (2 * samples.size() * 1.5);
 
 	return samples;
 }
@@ -350,14 +346,15 @@ void MainWindow::addGraph1(Samples data, GraphParams const& g_params) {
 	QVector<double> x(curSize);
 	QVector<double> y(curSize);
 
-	printf("xScale, xOffset = %.12f %f.12\n", g_params.xScale, g_params.xOffset);
-
 	for (int i=0; i < curSize; i++)
 	{
 		x[i] = i * g_params.xScale + g_params.xOffset;
 		y[i] = data[i] * g_params.yScale + g_params.yOffset;
 	}
-	printf("xs = %.12f, xo = %.12f, ys = %.12f, yo = %.12f\n", g_params.xScale, g_params.xOffset, g_params.yScale, g_params.yOffset);
+
+  // ui->customPlot->xAxis->setRange(g_params.xOffset - 10 * g_params.xScale, (x.size() + 10) * g_params.xScale + g_params.xOffset);
+  // ui->customPlot->yAxis->setRange(g_params.yOffset - 10 * g_params.yScale, (y.size() + 10) * g_params.yScale + g_params.yOffset);
+  // ui->customPlot->yAxis2->setRange(-0.025, 0.025);
 
 	ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis);
 	ui->customPlot->graph()->setName(QString("New graph %1").arg(ui->customPlot->graphCount() - 1));
@@ -381,14 +378,14 @@ void MainWindow::addGraph2(Samples data, GraphParams const& g_params) {
 	QVector<double> x(curSize);
 	QVector<double> y(curSize);
 
-	printf("xScale, xOffset = %f %f\n", g_params.xScale, g_params.xOffset);
-
 	for (int i=0; i < curSize; i++)
 	{
 		x[i] = i * g_params.xScale + g_params.xOffset;
 		y[i] = data[i] * g_params.yScale + g_params.yOffset;
 	}
-	printf("xs = %.10f, xo = %.10f, ys = %.10f, yo = %.10f\n", g_params.xScale, g_params.xOffset, g_params.yScale, g_params.yOffset);
+
+  ui->customPlot->xAxis->setRange(g_params.xOffset - 10 * g_params.xScale, (x.size() + 10) * g_params.xScale + g_params.xOffset);
+  // ui->customPlot->yAxis2->setRange(g_params.yOffset - 10 * g_params.yScale, (y.size() + 10) * g_params.yScale + g_params.yOffset);
 
 	// Attenuation graph has different y scale.
 	ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis2);
@@ -718,6 +715,7 @@ MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq
 	Peaks all_peaks = find_all_peaks(samples_attenuation_smoothed, zero_points);
 
 	Peaks real_peaks = find_real_peaks(zero_points, samples_attenuation_smoothed, all_peaks, 0.3);
+	// Peaks real_peaks = find_real_peaks_double_check(zero_points, samples_attenuation_smoothed, all_peaks, 0.3, 0.1);
 
 	verify_half_periods(zero_points);
 
@@ -735,35 +733,10 @@ MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq
 	printf("a = %f, f = %f, d = %.12f, Q = %f\n", *a, *freq, d, *q_factor);
 }
 
-/*void
-MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq) {
-	// std::vector<unsigned int> zero_points_to_analyze;
-	unsigned int start = radio_end_index;
-	unsigned int finish = samples_attenuation_smoothed.size() - median_mask_size;
+void
+MainWindow::save_report(QString filepath) {
 
-	Intervals zero_intervals = find_all_zeros_indices(samples_attenuation_smoothed, start, finish);
-
-	std::vector<unsigned int> zero_points = intervals2points(zero_intervals);
-
-	Peaks all_peaks = find_all_peaks(samples_attenuation_smoothed, zero_intervals);
-
-	Peaks real_peaks = find_real_peaks(zero_points, samples_attenuation_smoothed, all_peaks, 0.3);
-
-	verify_half_periods(zero_points);
-
-	printf("graph_attenuation.xOffset = %f", graph_attenuation.xOffset);
-
-	*freq = estimate_frequency(real_peaks, graph_attenuation.xOffset, graph_attenuation.xScale);
-
-	*q_factor = estimate_quality(samples_attenuation_smoothed, real_peaks);
-	estimate_quality_ls(a, b, samples_attenuation_smoothed, real_peaks, graph_attenuation.xOffset, graph_attenuation.xScale, radio_end_index);
-
-	double d = - *a / *freq;
-
-	*q_factor = M_PI / d;
-
-	printf("a = %f, f = %f, d = %.12f, Q = %f\n", *a, *freq, d, *q_factor);
-}*/
+}
 
 void
 MainWindow::verify_half_periods(std::vector<unsigned int> const& zero_points) {

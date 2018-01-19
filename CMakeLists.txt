@@ -40,6 +40,9 @@ if (NOT CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
   set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 endif ()
 
+# Build without console application.
+# set(CMAKE_CXX_FLAGS "-mwindows")
+
 message("CMAKE_CURRENT_SOURCE_DIR = " ${CMAKE_CURRENT_SOURCE_DIR})
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/source")
