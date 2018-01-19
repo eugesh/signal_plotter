@@ -62,6 +62,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	FreqNominalAntenna = 600; // kHz
 	radio_end_index = 0;
 	median_mask_size = 99;
+	NumOfAnalysedPeaks = 4;
 	samples_radio_show = false;
 	samples_radio_smoothed_show = false;
 	samples_attenuation_show = false;
@@ -121,6 +122,11 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(ui->action_smooth, SIGNAL(triggered()), this, SLOT(smooth()));
 	connect(ui->action_estim_param, SIGNAL(triggered()), this, SLOT(estimate_contour_params()));
 
+	// Parameters setting munues.
+  connect(ui->action_set_f_nom, SIGNAL(triggered()), this, SLOT(SetFreqNominal()));
+  connect(ui->action_set_Resonance_Freq, SIGNAL(triggered()), this, SLOT(SetFreqParRes()));
+  connect(ui->action_set_R_meas, SIGNAL(triggered()), this, SLOT(SetRmeas()));
+  connect(ui->action_set_n, SIGNAL(triggered()), this, SLOT(SetNPeaks()));
 	QIDFreqNominal = new QInputDialog(this);
 	QIDRmeas = new QInputDialog(this);
 	QIDFreqParRes = new QInputDialog(this);
@@ -145,10 +151,14 @@ MainWindow::MainWindow(QWidget *parent) :
   QIDRmeas->setOkButtonText(QObject::tr("Ввод"));
   QIDFreqParRes->setOkButtonText(QObject::tr("Ввод"));
   QIDNPeaks->setOkButtonText(QObject::tr("Ввод"));
-  QIDFreqNominal->setLabelText(QObject::tr("Введите величину номинальной частоты резонанса антенны"));
-  QIDRmeas->setLabelText(QObject::tr("Укажите величину измерительного сопротивления"));
-  QIDFreqParRes->setLabelText(QObject::tr("Введите величину частоты параллельного резонанса антенны"));
-  QIDNPeaks->setLabelText(QObject::tr("Укажите число анализируемых полупериодов"));
+  QIDFreqNominal->setLabelText(QObject::tr("Введите величину номинальной частоты резонанса антенны: "));
+  QIDRmeas->setLabelText(QObject::tr("Укажите величину измерительного сопротивления: "));
+  QIDFreqParRes->setLabelText(QObject::tr("Введите величину частоты параллельного резонанса антенны: "));
+  QIDNPeaks->setLabelText(QObject::tr("Укажите число анализируемых полупериодов: "));
+  connect(QIDFreqNominal, SIGNAL(doubleValueChanged(double)), this, SLOT(changeFreqNominal(double)));
+  connect(QIDFreqParRes, SIGNAL(doubleValueChanged(double)), this, SLOT(changeFreqParRes(double)));
+  connect(QIDRmeas, SIGNAL(doubleValueChanged(double)), this, SLOT(changeRmeas(double)));
+  connect(QIDNPeaks, SIGNAL(intValueChanged(int)), this, SLOT(changeNPeaks(int)));
 }
 
 MainWindow::~MainWindow()
@@ -283,6 +293,50 @@ Samples MainWindow::load_csv(QString filepath, GraphParams *g_params) {
 	g_params->yScale = (max - min) < eps ? 1 : 1 / (max - min);
 
 	return samples;
+}
+
+void
+MainWindow::changeFreqNominal(double val) {
+  FreqNominalAntenna = val;
+}
+
+void
+MainWindow::changeFreqParRes(double val) {
+  FreqParRes = val;
+}
+
+void
+MainWindow::changeRmeas(double val) {
+  Rmeas = val;
+}
+
+void
+MainWindow::changeNPeaks(unsigned int val) {
+  NumOfAnalysedPeaks = val;
+}
+
+void
+MainWindow::SetFreqNominal() {
+  QIDFreqNominal->setDoubleValue(FreqNominalAntenna);
+  QIDFreqNominal->show();
+}
+
+void
+MainWindow::SetFreqParRes() {
+  QIDFreqParRes->setDoubleValue(FreqParRes);
+  QIDFreqParRes->show();
+}
+
+void
+MainWindow::SetRmeas() {
+  QIDRmeas->setDoubleValue(Rmeas);
+  QIDRmeas->show();
+}
+
+void
+MainWindow::SetNPeaks() {
+  QIDNPeaks->setDoubleValue(NumOfAnalysedPeaks);
+  QIDNPeaks->show();
 }
 
 /**
@@ -621,7 +675,35 @@ MainWindow::estimate_contour_params() {
   F0 = w0 / (2 * M_PI);
   C0 = Ca / ((FreqParRes * 1000 / F0) * (FreqParRes * 1000 / F0) - 1);
   printf("C0 = %.21f\n", C0 * 1e12);
+
+  QString scout;
+  scout = QObject::tr("Заданные параметры\n");
+  scout += (QObject::tr("Rmeas:             ") + QString::number(Rmeas) + QObject::tr(", Ом;") + "\n");
+  scout += (QObject::tr("Fnom:              ") + QString::number(FreqNominalAntenna) + QObject::tr(", кГц;") + "\n");
+  scout += (QObject::tr("F, пар. рез.:     ") + QString::number(FreqParRes) + QObject::tr(", кГц;") + "\n\n");
+  scout += QObject::tr("Измеренные вспомогательные параметры(по экспоненте)\n");
+  scout += (QObject::tr("Umax, размах:     ") + QString::number(U_max * 1000) + QObject::tr(", мВ;") + "\n");
+  scout += (QObject::tr("Imax, размах:       ") + QString::number(I_max * 1000) + QObject::tr(", мA;") + "\n");
+  scout += (QObject::tr("Добротность:       ") + QString::number(Q) + ";\n\n");
+  scout += QObject::tr("Параметры контура\n");
+  scout += ("Ra:     " + QString::number(Ra) + QObject::tr(", Oм;") + "\n");
+  scout += ("Ca:     " + QString::number(Ca * 1e12) + QObject::tr(", пФ;") + "\n");
+  scout += ("La:     " + QString::number(La * 1e6) + QObject::tr(", мкГн;") + "\n");
+  scout += ("C0:     " + QString::number(C0 * 1e12) + QObject::tr(", пФ;") + "\n");
+  scout += (QObject::tr("F0, частота колебательного контура:     ") + QString::number(F0 / 1000) + QObject::tr(", кГц;") + "\n");
+  scout += (QObject::tr("F, частота свободных колебаний:           ") + QString::number(w / (2000 * M_PI)) + QObject::tr(", кГц") + "\n");
+
+  QMessageBox::information(this, QObject::tr("Протокол измерения параметров антенны"), scout);
 }
+
+/*scout="Current videocard param:\n";
+scout+=("Videocard name: "+QString(cp.name));
+scout+="Compute capability: "+QString::number(cp.major)+".";
+scout+=QString::number(cp.minor)+"\n";
+scout+="MaxThreadsPerMultiProcessor: "+QString::number(cp.maxThreadsPerMultiProcessor)+"\n";
+scout+="MultiProcessorCount: "+QString::number(cp.multiProcessorCount)+"\n";
+scout+="TotalGlobalMem: "+QString::number(cp.totalGlobalMem)+"\n";
+scout+="TotalConstantMem: "+QString::number(cp.constantMemPerDevice)+"\n\n";*/
 
 /**
  * Interface function for signal analysis.

@@ -52,6 +52,15 @@ public:;
   ~MainWindow();
 
 private slots:;
+  void changeFreqNominal(double);
+  void changeFreqParRes(double);
+  void changeRmeas(double);
+  void changeNPeaks(unsigned int);
+  void SetFreqNominal();
+  void SetFreqParRes();
+  void SetRmeas();
+  void SetNPeaks();
+
   void open_csv_radio_dialog();
   void open_csv_attenuation_dialog();
   void save_report_dialog();

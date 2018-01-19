@@ -59,9 +59,9 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/source")
 
 
 if( WIN32 )
-	set (QTLIBS QtGui4 QtCore4 QtNetwork4)
+	set (QTLIBS QtGui4 QtCore4)
 else()
-	set (QTLIBS QtGui QtCore QtNetwork)
+	set (QTLIBS QtGui QtCore)
 endif()
 
 find_package (Qt4 REQUIRED)
