@@ -311,7 +311,7 @@ MainWindow::changeRmeas(double val) {
 }
 
 void
-MainWindow::changeNPeaks(unsigned int val) {
+MainWindow::changeNPeaks(int val) {
   NumOfAnalysedPeaks = val;
 }
 

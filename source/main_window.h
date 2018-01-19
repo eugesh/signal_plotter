@@ -55,7 +55,7 @@ private slots:;
   void changeFreqNominal(double);
   void changeFreqParRes(double);
   void changeRmeas(double);
-  void changeNPeaks(unsigned int);
+  void changeNPeaks(int);
   void SetFreqNominal();
   void SetFreqParRes();
   void SetRmeas();
