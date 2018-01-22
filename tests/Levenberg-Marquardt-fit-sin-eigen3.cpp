@@ -93,7 +93,7 @@ void test_sample_creator () {
 
     // FILE *fp = fopen(filename.pointer, "w");
 
-    for (int i = 0; i < N; ++i) {
+    for (unsigned int i = 0; i < N; ++i) {
 
     }
 

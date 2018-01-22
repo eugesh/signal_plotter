@@ -693,15 +693,6 @@ MainWindow::estimate_contour_params() {
   QMessageBox::information(this, QObject::tr("Протокол измерения параметров антенны"), scout);
 }
 
-/*scout="Current videocard param:\n";
-scout+=("Videocard name: "+QString(cp.name));
-scout+="Compute capability: "+QString::number(cp.major)+".";
-scout+=QString::number(cp.minor)+"\n";
-scout+="MaxThreadsPerMultiProcessor: "+QString::number(cp.maxThreadsPerMultiProcessor)+"\n";
-scout+="MultiProcessorCount: "+QString::number(cp.multiProcessorCount)+"\n";
-scout+="TotalGlobalMem: "+QString::number(cp.totalGlobalMem)+"\n";
-scout+="TotalConstantMem: "+QString::number(cp.constantMemPerDevice)+"\n\n";*/
-
 /**
  * Interface function for signal analysis.
  */
@@ -716,15 +707,26 @@ MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq
 
 	Peaks real_peaks = find_real_peaks(zero_points, samples_attenuation_smoothed, all_peaks, 0.3);
 	// Peaks real_peaks = find_real_peaks_double_check(zero_points, samples_attenuation_smoothed, all_peaks, 0.3, 0.1);
+	if(real_peaks.size() < 2)
+	  printf("Error: MainWindow::signal_analyzer: real_peaks.size() < 2");
 
-	verify_half_periods(zero_points);
+	estimate_quality_ls(a, b, samples_attenuation_smoothed, real_peaks, radio_end_index);
+
+	if(!verify_half_periods(zero_points)) {
+	  Samples fitted_data(samples_attenuation_smoothed.size());
+	  fit_in_exp_bound(fitted_data, samples_attenuation_smoothed, real_peaks, *a, *b, radio_end_index);
+	  updateGraph();
+	  GraphParams graph_exp = graph_attenuation;
+	  graph_exp.xOffset = graph_attenuation.xOffset + radio_end_index * graph_attenuation.xScale;
+	  addGraph2(fitted_data, graph_attenuation);
+	}
 
 	printf("graph_attenuation.xOffset = %f", graph_attenuation.xOffset);
 
 	*freq = estimate_frequency(real_peaks, graph_attenuation.xOffset, graph_attenuation.xScale);
 
 	*q_factor = estimate_quality(samples_attenuation_smoothed, real_peaks);
-	estimate_quality_ls(a, b, samples_attenuation_smoothed, real_peaks, graph_attenuation.xOffset, graph_attenuation.xScale, radio_end_index);
+	// estimate_quality_ls(a, b, samples_attenuation_smoothed, real_peaks, radio_end_index);
 
 	double d = - *a / (*freq * graph_attenuation.xScale);
 
@@ -738,10 +740,10 @@ MainWindow::save_report(QString filepath) {
 
 }
 
-void
+bool
 MainWindow::verify_half_periods(std::vector<unsigned int> const& zero_points) {
-	float max_dev;
-	float mean_dev;
+  bool ret = true;
+	float max_dev, mean_dev;
 
 	half_periods_verificator(zero_points, &max_dev, &mean_dev);
 
@@ -757,7 +759,10 @@ MainWindow::verify_half_periods(std::vector<unsigned int> const& zero_points) {
 	if(max_dev > 0.03) {
 		QMessageBox::information(this, QObject::tr("SignalPlotter"),
 														 QObject::tr("Предупреждение: отклонение в измерении полупериодов превысило 3%!"));
+		ret = false;
 	}
+
+	return ret;
 }
 
 void
@@ -780,10 +785,10 @@ MainWindow::plot_points(std::vector<QPoint> const& xy_points, GraphParams const&
 /*
  * Deprecated.
  */
-void
+bool
 MainWindow::verify_half_periods(Intervals const& zero_intervals) {
-	float max_dev;
-	float mean_dev;
+  bool ret = true;
+	float max_dev, mean_dev;
 
 	half_periods_verificator(zero_intervals, &max_dev, &mean_dev);
 
@@ -800,7 +805,10 @@ MainWindow::verify_half_periods(Intervals const& zero_intervals) {
 	if(max_dev > 0.03) {
 		QMessageBox::information(this, QObject::tr("SignalPlotter"),
 														 QObject::tr("Предупреждение: отклонение в измерении полупериодов превысило 3%!"));
+		ret = false;
 	}
+
+  return ret;
 }
 
 #endif

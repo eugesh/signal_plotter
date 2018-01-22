@@ -60,7 +60,7 @@ int main() {
 
   printf("freq = %f\n", freq);
   printf("omega - omega_res = %f\n", omega - freq * 2 * M_PI);
-  printf("error, % = %f\n", (omega - freq * 2 * M_PI) * 100 / omega);
+  printf("error, [%] = %f\n", double((omega - freq * 2 * M_PI) * 100.0 / omega));
 
   fft.inv(timevec, freqvec);
 

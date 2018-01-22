@@ -24,6 +24,28 @@ peaks2intervals(Peaks const& peaks) {
 	return intervals;
 }*/
 
+template<typename T>
+T
+find_max(std::vector<T> data) {
+  double max = data[0];
+  for(unsigned int i = 0; i < data.size(); ++i) {
+    if(max < data[i])
+      max = data[i];
+  }
+  return max;
+}
+
+template<typename T>
+T
+find_min(std::vector<T> data) {
+  double min = data[0];
+  for(unsigned int i = 0; i < data.size(); ++i) {
+    if(min > data[i])
+      min = data[i];
+  }
+  return min;
+}
+
 /*
  * Finds central points of intervals.
  * The simplest way: center.
@@ -302,7 +324,10 @@ find_real_peaks(std::vector<unsigned int> &zero_points, Samples const& data, Pea
  * \return vector of real peaks.
  */
 Peaks
-find_real_peaks_double_check(std::vector<unsigned int> &zero_points, Samples const& data, Peaks const& all_peaks, double thresh_area_ratio, double thresh_period_ratio) {
+find_real_peaks_double_check(std::vector<unsigned int> &zero_points, Samples const& data,
+                             Peaks const& all_peaks, double thresh_area_ratio,
+                             double thresh_period_ratio)
+{
   Peaks peaks;
   bool stop_flag = false;
 
@@ -313,7 +338,7 @@ find_real_peaks_double_check(std::vector<unsigned int> &zero_points, Samples con
   if(fabs(half_period_med - mean_half_period) / mean_half_period > thresh_period_ratio)
     mean_half_period = half_period_med;
 
-  printf("mean half period = %f\n", mean_half_period);
+  printf("mean half period = %f, half_period_med = %f\n", mean_half_period, half_period_med);
 
   // Calculate set of area and find max_area among peaks.
   // Area is approximated as rectangle for simplicity.
@@ -327,19 +352,29 @@ find_real_peaks_double_check(std::vector<unsigned int> &zero_points, Samples con
       max_area = area;
   }
 
+  printf("max_area = %f\n", max_area);
+
   // Find all peaks with area larger than 0.05 * max_area.
   for(unsigned int i = 0; i < all_peaks.size() &&
                           !stop_flag; ++i) {
+    printf("fabs((all_peaks[i].end_index - all_peaks[i].start_index) - mean_half_period) = %f", fabs((all_peaks[i].end_index - all_peaks[i].start_index) - mean_half_period));
+    printf("thresh_period_ratio * mean_half_period = %f", thresh_period_ratio * mean_half_period);
     // Eliminate by area and half-period difference.
     if (area_vec[i] > thresh_area_ratio * max_area &&
-        ((all_peaks[i].end_index - all_peaks[i].start_index) - mean_half_period) > thresh_period_ratio * mean_half_period)
+      fabs((all_peaks[i].end_index - all_peaks[i].start_index) - mean_half_period) < thresh_period_ratio * mean_half_period)
     {
       peaks.push_back(all_peaks[i]);
+    } else {
       stop_flag = true;
     }
   }
 
-  // Eliminate vector of zero pints. Remove all points to the right side of the last peak.
+  if(peaks.empty()) {
+    printf("peaks is empty\n");
+    return Peaks();
+  }
+
+  // Eliminate vector of zero points. Remove all points to the right side of the last peak.
   printf("peaks.back().end_index = %d\n", peaks.back().end_index);
   for (int i = all_peaks.size(); i > 0 && peaks.back().end_index < zero_points.back(); i--) {
     zero_points.pop_back();
@@ -454,11 +489,21 @@ estimate_quality(Samples const& data, Peaks const& peaks) {
 
 /**
  * Estimate q-factor with least squares.
- * model: sum(ln(yi) - a * xi + b)^2 -> min
- * The problem is {[xi 1]} * [a; b] = {log(yi)}
+ * model: sum((ln(y_i) - a * x_i + b)^2) -> min;
+ * The problem is {[xi 1]} * [a; b] = {log(yi)}.
+ *
+ * \param a
+ * \param b
+ * \param data
+ * \param peaks
+ * \param first
+ * \param step
+ * \param r_end_i end of radio signal;
+ *
+ * \returns *a
  */
 double
-estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peaks, double first, double step, unsigned int r_end_i) {
+estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peaks, unsigned int r_end_i) {
     std::vector<double> x, y;
 
     for (unsigned int i = 0; i < peaks.size(); ++i) {
@@ -468,7 +513,6 @@ estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peak
         }
     }
 
-    // linear_approximation(&a, &b, x, y);
     linear_approximation(a, b, x, y);
 
     printf("a = %f, b = %f\n", *a, *b);
@@ -531,6 +575,80 @@ half_periods_verificator(std::vector<unsigned int> const& zero_points, float *ma
 
 	*mean_dev = sum / (zero_points.size() - 1);
 }
+
+/**
+ * Curve fitting in exponential boundaries.
+ * model: sum((ln(y_i) - a * x_i + b)^2) -> min;
+ * The problem is {[xi 1]} * [a; b] = {log(yi)}.
+ * Safe for data input/output.
+ *
+ * \param[out] fitted_data output vector of fitted values,
+ *             must be preallocated in advance. Can be input vector(in-place transformation).
+ * \param data[in]
+ * \param peaks[in] peaks of sine like curve;
+ * \param a
+ * \param b
+ * \param r_end_i end of radio signal;
+ *
+ * \returns *a
+ */
+void
+fit_in_exp_bound(Samples & fitted_data, Samples const& data, Peaks const& peaks, double a, double b, unsigned int r_end_i) {
+  Samples data_copy = data;
+  std::vector<double> x, log_dy;
+  double delta, a_t, b_t, shift, min, max;
+
+  // Find shift  as min abs value of data.
+  max = find_max(data);
+  min = find_min(data);
+  shift = abs(max - min);
+
+  // Calculate differences.
+  for (unsigned int i = 0; i < peaks.size(); ++i) {
+    if(peaks[i].extremum_index > r_end_i) {
+      x.push_back(peaks[i].extremum_index);
+      if(data[peaks[i].extremum_index] > 0) {
+        delta = -exp(peaks[i].extremum_index * a + b) + data[peaks[i].extremum_index];
+        log_dy.push_back(log(delta + shift));
+      }
+      else {
+        delta = exp(peaks[i].extremum_index * a + b) + data[peaks[i].extremum_index];
+        log_dy.push_back(log(delta + shift));
+      }
+    }
+  }
+  // Solve least squares problem: fit in exponential trend.
+  linear_approximation(&a_t, &b_t, x, log_dy);
+  printf("a_t = %21f, b_t = %21f\n", a_t, b_t);
+
+  // Fit data.
+  for(int i = 0; i < data.size(); ++i) {
+    fitted_data[i] = data_copy[i] - exp(a_t * i + b_t) + shift;
+  }
+}
+
+/*
+    std::vector<double> x, y;
+
+  // Plot exponential asymptotes.
+  for(unsigned int i = radio_end_index; i < samples_attenuation_smoothed.size(); ++i) {
+    exp_curve.push_back(exp(a * i + b));
+    exp_curve_neg.push_back(-exp(a * i + b));
+  }
+
+    for (unsigned int i = 0; i < peaks.size(); ++i) {
+        if(peaks[i].extremum_index > r_end_i) {
+            y.push_back(log(fabs(data[peaks[i].extremum_index])));
+            x.push_back(peaks[i].extremum_index);
+        }
+    }
+
+    linear_approximation(a, b, x, y);
+
+    printf("a = %f, b = %f\n", *a, *b);
+
+    return *a;
+ */
 
 /**
  * Interface function for all previous functions.

@@ -98,8 +98,7 @@ double estimate_frequency_fft(Samples const& data, double first, double step);
  */
 double estimate_quality(Samples const& data, Peaks const& peaks);
 
-double estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peaks, double first, double step, unsigned int r_end_i);
-
+double estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peaks, unsigned int r_end_i);
 
 /**
  * Interface function for all previous functions.
@@ -128,15 +127,16 @@ float find_last_zero(Samples const& data);
 unsigned int find_radio_signal_termination(Samples const& data);
 
 /**
- *
+ * Estimation of intervals inequality.
  */
 void half_periods_verificator(Intervals const& half_periods, float *max_dev, float *mean_dev);
 
 void half_periods_verificator(std::vector<unsigned int> const& zero_points, float *max_dev, float *mean_dev);
+
 /**
- * Curve fitting.
- *
+ * Curve fitting in exponential boundaries.
  */
+void fit_in_exp_bound(Samples & fitted, Samples const& data, Peaks const& peaks, double a, double b, unsigned int r_end_i);
 
 /**
  * Antenna parameters estimator.

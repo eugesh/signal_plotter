@@ -89,8 +89,8 @@ private:;
   Samples load_csv(QString filepath, GraphParams *graph_params);
   void signal_analyzer(double *a, double *b, double *q_factor, double *freq);
   void save_report(QString filepath);
-  void verify_half_periods(Intervals const& zero_intervals);
-  void verify_half_periods(std::vector<unsigned int> const& zero_points);
+  bool verify_half_periods(Intervals const& zero_intervals);
+  bool verify_half_periods(std::vector<unsigned int> const& zero_points);
   void plot_points(std::vector<QPoint> const& xy_points, GraphParams const& g_params);
 
 private:;
