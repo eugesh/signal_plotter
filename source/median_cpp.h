@@ -6,8 +6,6 @@
 #include <algorithm>
 #include <stdlib.h>
 
-// int compare(const void * elem1, const void * elem2);
-
 template <typename T>
 void median1d(std::vector<T> & out, std::vector<T> const& in, int msize);
 

@@ -19,7 +19,6 @@ add_executable (scanline_viewer
 	            main_window.cpp
 	            main.cpp
 	            signals_eval.cpp
-	            #main_module.cpp
 	            ${MOCSrcs} ${UISrcs})
 
 if(CMAKE_VERSION VERSION_LESS "3.0")

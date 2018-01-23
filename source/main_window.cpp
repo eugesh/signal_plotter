@@ -68,7 +68,6 @@ MainWindow::MainWindow(QWidget *parent) :
   samples_attenuation_show = false;
   samples_attenuation_smoothed_show = false;
 
-
   ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes |
                                 QCP::iSelectLegend | QCP::iSelectPlottables);
 
@@ -556,13 +555,17 @@ MainWindow::contextMenuRequest(QPoint pos)
   menu->setAttribute(Qt::WA_DeleteOnClose);
 
   if (ui->customPlot->selectedGraphs().size() > 0)
-    menu->addAction("Show selected graph", this, SLOT(showSelectedGraph()));
+    menu->addAction(QObject::tr("Показать выбранные кривые"), this, SLOT(showSelectedGraph()));
+    // menu->addAction("Show selected graph", this, SLOT(showSelectedGraph()));
   if (ui->customPlot->selectedGraphs().size() > 0)
-    menu->addAction("Hide selected graph", this, SLOT(hideSelectedGraph()));
+    menu->addAction(QObject::tr("Скрыть выбранные кривые"), this, SLOT(hideSelectedGraph()));
+    // menu->addAction("Hide selected graph", this, SLOT(hideSelectedGraph()));
   if (ui->customPlot->selectedGraphs().size() > 0)
-    menu->addAction("Remove selected graph", this, SLOT(removeSelectedGraph()));
+    menu->addAction(QObject::tr("Удалить выбранные кривые"), this, SLOT(removeSelectedGraph()));
+    // menu->addAction("Remove selected graph", this, SLOT(removeSelectedGraph()));
   if (ui->customPlot->graphCount() > 0)
-    menu->addAction("Remove all graphs", this, SLOT(removeAllGraphs()));
+    menu->addAction(QObject::tr("Удалить все кривые"), this, SLOT(removeAllGraphs()));
+    // menu->addAction("Remove all graphs", this, SLOT(removeAllGraphs()));
 
   menu->popup(ui->customPlot->mapToGlobal(pos));
 }
@@ -608,29 +611,24 @@ void
 MainWindow::smooth() {
 	// Smooth curves.
 
-	if (samples_radio_smoothed.empty()) {
-		// samples_radio_smoothed = samples_radio;
-		// median1d(samples_radio_smoothed, samples_radio, median_mask_size);
+	if (!samples_radio.empty()) {
+	  // Smooth radio signal with low-pass filter.
 		samples_radio_smoothed = lp_ampl(samples_radio, graph_radio.xScale, freq_factor_to_pass * 5 * FreqNominalAntenna * 1000);
-
 		updateGraph();
 	}
 
-	if(samples_attenuation_smoothed.empty()) {
-		// samples_attenuation_smoothed = samples_attenuation;
-		// median1d(samples_attenuation_smoothed, samples_attenuation, median_mask_size * 3);
+	if(!samples_attenuation.empty()) {
+	  // Smooth oscillation signal with low-pass filter.
 		samples_attenuation_smoothed = lp_ampl(samples_attenuation, graph_attenuation.xScale, freq_factor_to_pass * FreqNominalAntenna * 1000);
 
+		// Find symmetry of signal relative to Ox and move. It's not precise but mostly it helps.
+		centrate_signal_ox(samples_attenuation_smoothed, 0, samples_attenuation_smoothed.size());
+
 		updateGraph();
 	}
 }
 
-void
-MainWindow::approximate() {
-
-}
-
-void
+int
 MainWindow::estimate_contour_params() {
 	double w0, w;
 
@@ -638,7 +636,9 @@ MainWindow::estimate_contour_params() {
 	double a, b;
 
 	// Estimate attenuation signal parameters: exp low, q-factor, frequency.
-	signal_analyzer(&a, &b, &Q, &f_a);
+	if(signal_analyzer(&a, &b, &Q, &f_a) != 0) {
+	  return -1;
+	}
 
 	// Plot exponential asymptotes.
 	for(unsigned int i = radio_end_index; i < samples_attenuation_smoothed.size(); ++i) {
@@ -650,29 +650,20 @@ MainWindow::estimate_contour_params() {
 	addGraph2(exp_curve, graph_exp);
 	addGraph2(exp_curve_neg, graph_exp);
 
-	printf("f_a = %f\nQ = %f\n", f_a, Q);
-
 	// Estimate Umax, Imax.
 	U_max = find_max(samples_radio) - find_min(samples_radio);
-	printf("U_max = %f, mV\n", U_max * 1000);
 	I_max = 2 * exp_curve.front() / Rmeas;
-	printf("I_max = %f, mA\n", I_max * 1000);
 	Ra = U_max / I_max;
   w = 2 * M_PI * f_a;
 	double delta = -a / graph_attenuation.xScale;
-	double d = delta / f_a;
+	// double d = delta / f_a;
   La = Ra / (2 * delta);
   w0 = sqrt(w * w + delta * delta);
   Ca = 1.0 / (La * w0 * w0);
-  printf("delta = %.21f, d = %.21f\n", delta, d);
-  printf("F0 = %.21f\n", w0 / (2 * M_PI));
-  printf("Ra = %f\n", Ra);
-  printf("La = %.21f\n", La * 1e6);
-  printf("Ca = %.21f\n", Ca * 1e12);
   F0 = w0 / (2 * M_PI);
   C0 = Ca / ((FreqParRes * 1000 / F0) * (FreqParRes * 1000 / F0) - 1);
-  printf("C0 = %.21f\n", C0 * 1e12);
 
+  // Show message window.
   QString scout;
   scout = QObject::tr("Заданные параметры\n");
   scout += (QObject::tr("Rmeas:             ") + QString::number(Rmeas) + QObject::tr(", Ом;") + "\n");
@@ -691,17 +682,24 @@ MainWindow::estimate_contour_params() {
   scout += (QObject::tr("F, частота свободных колебаний:           ") + QString::number(w / (2000 * M_PI)) + QObject::tr(", кГц") + "\n");
 
   QMessageBox::information(this, QObject::tr("Протокол измерения параметров антенны"), scout);
+
+  return 0;
 }
 
 /**
  * Interface function for signal analysis.
  */
-void
+int
 MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq) {
 	unsigned int start = radio_end_index;
 	unsigned int finish = samples_attenuation_smoothed.size() - 1;
 
 	std::vector<unsigned int> zero_points = sign_changes(samples_attenuation_smoothed, start, finish);
+
+	if(zero_points.size() < 3) {
+	  QMessageBox::information(this, QObject::tr("Ошибка"), QObject::tr("Невозможно произвести рассчеты из-за малого числа пересечений с 0x."));
+	  return -1;
+	}
 
 	Peaks all_peaks = find_all_peaks(samples_attenuation_smoothed, zero_points);
 
@@ -713,26 +711,19 @@ MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq
 	estimate_quality_ls(a, b, samples_attenuation_smoothed, real_peaks, radio_end_index);
 
 	if(!verify_half_periods(zero_points)) {
-	  Samples fitted_data(samples_attenuation_smoothed.size());
-	  fit_in_exp_bound(fitted_data, samples_attenuation_smoothed, real_peaks, *a, *b, radio_end_index);
+	  fit_in_exp_bound(samples_attenuation_smoothed, samples_attenuation_smoothed, real_peaks, *a, *b, radio_end_index);
 	  updateGraph();
-	  GraphParams graph_exp = graph_attenuation;
-	  graph_exp.xOffset = graph_attenuation.xOffset + radio_end_index * graph_attenuation.xScale;
-	  addGraph2(fitted_data, graph_attenuation);
 	}
-
-	printf("graph_attenuation.xOffset = %f", graph_attenuation.xOffset);
 
 	*freq = estimate_frequency(real_peaks, graph_attenuation.xOffset, graph_attenuation.xScale);
 
-	*q_factor = estimate_quality(samples_attenuation_smoothed, real_peaks);
-	// estimate_quality_ls(a, b, samples_attenuation_smoothed, real_peaks, radio_end_index);
+	// *q_factor = estimate_quality(samples_attenuation_smoothed, real_peaks);
 
 	double d = - *a / (*freq * graph_attenuation.xScale);
 
 	*q_factor = M_PI / d;
 
-	printf("a = %f, f = %f, d = %.12f, Q = %f\n", *a, *freq, d, *q_factor);
+	return 0;
 }
 
 void

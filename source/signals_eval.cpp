@@ -14,16 +14,6 @@
 
 static const double eps = 1e-12;
 
-/*Intervals
-peaks2intervals(Peaks const& peaks) {
-	Intervals intervals;
-	for (int i = 0; i < peaks.size() - 1; ++i) {
-		intervals.push_back(std::make_pair());
-	}
-
-	return intervals;
-}*/
-
 template<typename T>
 T
 find_max(std::vector<T> data) {
@@ -162,12 +152,27 @@ find_radio_signal_termination(Samples const& data) {
     return end_time_stamp;
 }
 
+void
+centrate_signal_ox(Samples & data, unsigned int start, unsigned int end) {
+  end = end > data.size() ? data.size() : end;
+
+  double mean = 0.0;
+  for(unsigned int i = start; i < end; ++i) {
+    mean += data[i];
+  }
+  mean = mean / double(end - start);
+  printf("mean = %f\n", mean);
+
+  for(unsigned int i = start; i < end; ++i) {
+    data[i] -= mean;
+  }
+}
+
 /**
  * Intersections with zero finder.
  */
 Intervals
 find_all_zeros_indices(Samples const& data, unsigned int start, unsigned int end) {
-    printf ("find_all_zeros_indices - start\n"); // debug
     Intervals intervals;
 
     // Find abs min element.
@@ -176,23 +181,18 @@ find_all_zeros_indices(Samples const& data, unsigned int start, unsigned int end
         if(min > fabs(data[i]))
             min = fabs(data[i]);
 
-    printf("min = %.21f\n", min); // debug
-
     bool is_interval = false;
     for (unsigned int i = start; i < end - 1; ++i) {
         if (fabs(data[i]) < min + eps && fabs(data[i + 1]) < min + eps && !is_interval) {
             is_interval = true;
             intervals.push_back(std::make_pair(i, i + 1));
-            printf ("start = %d", i); // debug
         }
         else if (fabs(data[i]) < eps && fabs(data[i + 1]) > min + eps &&  is_interval) {
             is_interval = false;
             intervals.back().second = i;
-            printf (", end = %d\n", i); // debug
         }
     }
 
-    printf ("find_all_zeros_indices - end\n"); // debug
     return intervals;
 }
 
@@ -213,7 +213,6 @@ sign_changes(Samples const& data, unsigned int start, unsigned int end) {
  */
 Peaks
 find_all_peaks (Samples const& data, Intervals const& zero_intervals) {
-    printf("find_all_peaks - start\n"); // debug
     Peaks all_peaks;
 
     // Iterate over zero intervals.
@@ -231,14 +230,9 @@ find_all_peaks (Samples const& data, Intervals const& zero_intervals) {
                 extremum_index = j;
             }
         }
-        // peak.extremum_val = data[extremum_index];
         peak.extremum_index = extremum_index;
-        printf("max_val = %f\n", max_val);
-        printf("peak.extremum_val = %f\n", data[extremum_index]); // debug
         all_peaks.push_back(peak);
     }
-
-    printf("find_all_peaks - finish.\n"); // debug
 
     return all_peaks;
 }
@@ -352,8 +346,6 @@ find_real_peaks_double_check(std::vector<unsigned int> &zero_points, Samples con
       max_area = area;
   }
 
-  printf("max_area = %f\n", max_area);
-
   // Find all peaks with area larger than 0.05 * max_area.
   for(unsigned int i = 0; i < all_peaks.size() &&
                           !stop_flag; ++i) {
@@ -385,38 +377,15 @@ find_real_peaks_double_check(std::vector<unsigned int> &zero_points, Samples con
 }
 
 /**
- * Estimate period.
- */
-double
-estimate_period(Peaks const& peaks) {
-    unsigned int half_period_cumsum = 0;
-
-    for (unsigned int i = 0; i < peaks.size(); ++i) {
-        unsigned int half_period = peaks[i].end_index - peaks[i].start_index;
-        if(half_period > 0)
-            half_period_cumsum += half_period;
-        else
-            printf("Error: %dth period < 0\n", i);
-    }
-
-    // return 2.0 * double(half_period_cumsum) / double(peaks.size());
-    unsigned int first_index = peaks.front().start_index;
-    unsigned int last_index = peaks.back().end_index;
-    return 2.0 * double(last_index - first_index) / double(peaks.size());
-}
-
-/**
  * Estimate frequency.
  */
-/*double
+double
 estimate_frequency(Peaks const& peaks, double first, double step) {
     unsigned int first_index = peaks.front().start_index;
     unsigned int last_index = peaks.back().end_index;
 
-    printf("((last_index - first_index) = %d, step = %.21f\n", (last_index - first_index), step);
-
     return double (peaks.size()) / (double(last_index - first_index) * step * 2.0);
-}*/
+}
 /*double
 estimate_frequency(Peaks const& peaks, double first, double step) {
     unsigned int first_index = peaks.front().start_index;
@@ -430,12 +399,10 @@ estimate_frequency(Peaks const& peaks, double first, double step) {
     return (last_index - first_index) * step / period;
 }*/
 
-double
+/*double
 estimate_frequency(Peaks const& peaks, double first, double step) {
-    // unsigned int first_index = peaks.front().start_index;
     // Indices of the first and the last peaks.
     unsigned int first_index = peaks.front().start_index;
-    // unsigned int first_index = peaks[2].start_index;
     unsigned int last_index = peaks.back().end_index;
 
     printf("last_index - first_index = %d, ", last_index - first_index);
@@ -447,7 +414,7 @@ estimate_frequency(Peaks const& peaks, double first, double step) {
     printf("even_peaks_num = %d\n", even_peaks_num);
 
     return even_peaks_num / (2.0 * even_peaks_range * step);
-}
+}*/
 
 /**
  * Realization with Eigen3's fft.
@@ -455,7 +422,7 @@ estimate_frequency(Peaks const& peaks, double first, double step) {
 double
 estimate_frequency_fft(Samples const& data, double first, double step) {
   double Fs = 1.0 / step;
-  printf("Fs = %f\n", Fs);
+
   Eigen::FFT<Real> fft;
   std::vector<std::complex<Real> > freqvec;
 
@@ -622,48 +589,7 @@ fit_in_exp_bound(Samples & fitted_data, Samples const& data, Peaks const& peaks,
   printf("a_t = %21f, b_t = %21f\n", a_t, b_t);
 
   // Fit data.
-  for(int i = 0; i < data.size(); ++i) {
+  for(unsigned int i = 0; i < data.size(); ++i) {
     fitted_data[i] = data_copy[i] - exp(a_t * i + b_t) + shift;
   }
 }
-
-/*
-    std::vector<double> x, y;
-
-  // Plot exponential asymptotes.
-  for(unsigned int i = radio_end_index; i < samples_attenuation_smoothed.size(); ++i) {
-    exp_curve.push_back(exp(a * i + b));
-    exp_curve_neg.push_back(-exp(a * i + b));
-  }
-
-    for (unsigned int i = 0; i < peaks.size(); ++i) {
-        if(peaks[i].extremum_index > r_end_i) {
-            y.push_back(log(fabs(data[peaks[i].extremum_index])));
-            x.push_back(peaks[i].extremum_index);
-        }
-    }
-
-    linear_approximation(a, b, x, y);
-
-    printf("a = %f, b = %f\n", *a, *b);
-
-    return *a;
- */
-
-/**
- * Interface function for all previous functions.
- */
-/*void signal_analyzer(double *a, double *b, Samples const& data, double *q_factor, double *freq, double first, double step, unsigned int r_end_i) {
-    printf ("signal_analyzer - start\n");
-
-    Intervals zero_intervals = find_all_zeros_indices(data);
-
-    Peaks all_peaks = find_all_peaks(data, zero_intervals);
-
-    Peaks real_peaks = find_real_peaks(data, all_peaks, 0.05);
-
-    *freq = estimate_frequency(real_peaks, first, step);
-
-    *q_factor = estimate_quality(data, real_peaks);
-    estimate_quality_ls(a, b, data, real_peaks, first, step, r_end_i);
-}*/

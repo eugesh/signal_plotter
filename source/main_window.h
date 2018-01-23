@@ -80,14 +80,13 @@ private slots:;
   void mousePress();
   void mouseWheel();
   void smooth();
-  void approximate();
-  void estimate_contour_params();
+  int  estimate_contour_params();
 
 private:;
   void load_csv_radio();
   void load_csv_attenuation();
   Samples load_csv(QString filepath, GraphParams *graph_params);
-  void signal_analyzer(double *a, double *b, double *q_factor, double *freq);
+  int  signal_analyzer(double *a, double *b, double *q_factor, double *freq);
   void save_report(QString filepath);
   bool verify_half_periods(Intervals const& zero_intervals);
   bool verify_half_periods(std::vector<unsigned int> const& zero_points);

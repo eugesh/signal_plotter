@@ -23,9 +23,7 @@ typedef std::vector<Real> Samples;
 typedef std::vector<std::pair<unsigned int, unsigned int> > Intervals;
 typedef std::vector<Peak> Peaks;
 
-/**
- * Peaks finder.
- */
+void centrate_signal_ox(Samples & data, unsigned int start, unsigned int end);
 
 /**
  * Intersections with zero finder.
@@ -76,11 +74,6 @@ Peaks find_all_peaks(Samples const& data, std::vector<unsigned int> const& zero_
  */
 Peaks find_real_peaks(std::vector<unsigned int> &zero_points, Samples const& data, Peaks const& all_peaks, double threshold_ratio);
 Peaks find_real_peaks_double_check(std::vector<unsigned int> &zero_points, Samples const& data, Peaks const& all_peaks, double th_area_ratio, double th_period_ratio);
-
-/**
- * Estimate period.
- */
-double estimate_period(Peaks const& peaks);
 
 /**
  * Estimate frequency.
@@ -137,10 +130,5 @@ void half_periods_verificator(std::vector<unsigned int> const& zero_points, floa
  * Curve fitting in exponential boundaries.
  */
 void fit_in_exp_bound(Samples & fitted, Samples const& data, Peaks const& peaks, double a, double b, unsigned int r_end_i);
-
-/**
- * Antenna parameters estimator.
- *
- */
 
 #endif

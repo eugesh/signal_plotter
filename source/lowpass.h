@@ -55,8 +55,6 @@ vec_cf lp_freq(vec_cf const& vfreq, real Fs, real cut_f) {
 	if(cut_index > vfreq.size())
 		cut_index = vfreq.size() - 1;
 
-	// printf("vfreq.size() = %d, cut_index = %d\n", vfreq.size(), cut_index);
-
 	for(unsigned int i = 0; i < vfreq.size(); ++i) {
 		if(i < cut_index) {
 			out_vec[i] = vfreq[i];
@@ -115,8 +113,6 @@ vec_f lp_ampl(vec_f v_ampl, real step, real cut_f) {
 
 	// Sampling frequency.
   double Fs = 1.0 / step;
-  // printf("Fs = %f\n", Fs);
-  // printf("v_ampl.size() = %u\n", v_ampl.size());
 
   Eigen::FFT<Real> fft;
   std::vector<std::complex<real> > freqvec;
