@@ -41,7 +41,7 @@ if (NOT CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
 endif ()
 
 # Build without console application.
-# set(CMAKE_CXX_FLAGS "-mwindows")
+#set(CMAKE_CXX_FLAGS "-mwindows")
 
 message("CMAKE_CURRENT_SOURCE_DIR = " ${CMAKE_CURRENT_SOURCE_DIR})
 

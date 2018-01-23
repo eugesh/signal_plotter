@@ -72,7 +72,7 @@ Peaks find_all_peaks(Samples const& data, std::vector<unsigned int> const& zero_
 /*
  * Find relevant peaks.
  */
-Peaks find_real_peaks(std::vector<unsigned int> &zero_points, Samples const& data, Peaks const& all_peaks, double threshold_ratio);
+Peaks find_real_peaks(std::vector<unsigned int> & zero_points, Samples const& data, Peaks const& all_peaks, double threshold_ratio);
 Peaks find_real_peaks_double_check(std::vector<unsigned int> &zero_points, Samples const& data, Peaks const& all_peaks, double th_area_ratio, double th_period_ratio);
 
 /**

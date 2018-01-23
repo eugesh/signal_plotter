@@ -143,11 +143,12 @@ find_radio_signal_termination(Samples const& data) {
      */
     for(unsigned int i = interm_index; i < data.size(); ++i) {
         if ((fabs(data[i]) - min_val) < eps) {
-            printf("(fabs(data[i]) - min_val) = %.21f\n", (fabs(data[i]) - min_val));
             end_time_stamp = i;
             break;
         }
     }
+
+    printf("end_time_stamp = %d\n", end_time_stamp);
 
     return end_time_stamp;
 }
@@ -200,7 +201,7 @@ std::vector<unsigned int>
 sign_changes(Samples const& data, unsigned int start, unsigned int end) {
 	std::vector<unsigned int> zero_indices;
 
-	for(unsigned int i = start; i < end-1; ++i) {
+	for(unsigned int i = start; i < end - 1; ++i) {
 		if(copysign(1.0, (double)data[i]) != copysign(1.0, (double)data[i+1]))
 			zero_indices.push_back(i);
 	}
@@ -275,36 +276,48 @@ find_all_peaks (Samples const& data, std::vector<unsigned int> const& zero_point
  * \return vector of real peaks.
  */
 Peaks
-find_real_peaks(std::vector<unsigned int> &zero_points, Samples const& data, Peaks const& all_peaks, double threshold_ratio) {
-    Peaks peaks;
+find_real_peaks(std::vector<unsigned int> & zero_points, Samples const& data, Peaks const& all_peaks, double threshold_ratio) {
+  Peaks peaks;
+  bool stop = false;
 
-    // Calculate set of area and find max_area among peaks.
-    // Area is approximated as rectangle for simplicity.
-    std::vector<double> area_vec;
-    double max_area = 0.0;
-    for(unsigned int i = 0; i < all_peaks.size(); ++i) {
-        // Area of rectangle.
-        double area = 0.5 * (all_peaks[i].end_index - all_peaks[i].start_index) * fabs(data[all_peaks[i].extremum_index]);
-        area_vec.push_back(area);
-        if(max_area < area)
-            max_area = area;
-    }
+  // Calculate set of area and find max_area among peaks.
+  // Area is approximated as rectangle for simplicity.
+  std::vector<double> area_vec;
+  double max_area = 0.0;
+  for(unsigned int i = 0; i < all_peaks.size(); ++i) {
+    // Area of rectangle.
+    double area = 0.5 * double(all_peaks[i].end_index - all_peaks[i].start_index) * fabs(data[all_peaks[i].extremum_index]);
+    printf("all_peaks[i].end_index = %d\n", all_peaks[i].end_index);
+    printf("all_peaks[i].start_index = %d\n", all_peaks[i].start_index);
+    printf("all_peaks[i].extremum_index = %d\n", all_peaks[i].extremum_index);
+    printf("fabs(data[all_peaks[i].extremum_index]) = %f\n", fabs(data[all_peaks[i].extremum_index]));
+    printf("area = %d", area);
+    area_vec.push_back(area);
+    if(max_area < area)
+      max_area = area;
+  }
 
-    // Find all peaks with area larger than 0.05 * max_area.
-    for(unsigned int i = 0; i < all_peaks.size(); ++i) {
-        if (area_vec[i] > threshold_ratio * max_area) {
-            peaks.push_back(all_peaks[i]);
-        }
-    }
+  printf("area_vec.size() = %d\n", area_vec.size());
 
-    // Eliminate vector of zero pints. Remove all points to the right side of the last peak.
-    printf("peaks.back().end_index = %d\n", peaks.back().end_index);
-    for (int i = all_peaks.size(); i > 0 && peaks.back().end_index < zero_points.back(); i--) {
-    	zero_points.pop_back();
-    	printf("zero_points.back() = %d\n", zero_points.back());
-    }
+  // Find all peaks with area larger than 0.05 * max_area.
+  for(unsigned int i = 0; i < all_peaks.size() && !stop; ++i) {
+    if (area_vec[i] > threshold_ratio * max_area)
+      peaks.push_back(all_peaks[i]);
+    else
+      stop = true;
+  }
 
-    return peaks;
+  printf("peaks.size() = %d\n", peaks.size());
+
+  // Eliminate vector of zero pints. Remove all points to the right side of the last peak.
+  printf("peaks.back().end_index = %d\n", peaks.back().end_index);
+
+  for (unsigned int i = zero_points.size(); i > 0 && peaks.back().end_index < zero_points.back(); i--) {
+    zero_points.pop_back();
+  }
+  printf("zero_points.back() = %d\n", zero_points.back());
+
+  return peaks;
 }
 
 /*

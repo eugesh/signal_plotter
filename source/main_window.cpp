@@ -695,18 +695,27 @@ MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq
 	unsigned int finish = samples_attenuation_smoothed.size() - 1;
 
 	std::vector<unsigned int> zero_points = sign_changes(samples_attenuation_smoothed, start, finish);
+	printf("zero_points.size() = %d\n", zero_points.size());
 
-	if(zero_points.size() < 3) {
+	if(zero_points.size() < 4) {
 	  QMessageBox::information(this, QObject::tr("Ошибка"), QObject::tr("Невозможно произвести рассчеты из-за малого числа пересечений с 0x."));
 	  return -1;
 	}
 
 	Peaks all_peaks = find_all_peaks(samples_attenuation_smoothed, zero_points);
 
+	printf("all_peaks.size() = %d\n", all_peaks.size());
+
 	Peaks real_peaks = find_real_peaks(zero_points, samples_attenuation_smoothed, all_peaks, 0.3);
+
+	printf("real_peaks.size() = %d\n", real_peaks.size());
+
 	// Peaks real_peaks = find_real_peaks_double_check(zero_points, samples_attenuation_smoothed, all_peaks, 0.3, 0.1);
-	if(real_peaks.size() < 2)
-	  printf("Error: MainWindow::signal_analyzer: real_peaks.size() < 2");
+	if(real_peaks.size() < 3) {
+	  printf("Error: MainWindow::signal_analyzer: real_peaks.size() < 3");
+	  QMessageBox::information(this, QObject::tr("Ошибка"), QObject::tr("Невозможно произвести рассчеты из-за малого числа пересечений с 0x."));
+	  return -1;
+	}
 
 	estimate_quality_ls(a, b, samples_attenuation_smoothed, real_peaks, radio_end_index);
 
