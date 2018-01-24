@@ -5,17 +5,17 @@
 #include <vector>
 #include <utility> // pair
 
+
 /**
  * Peak of sinusoidal function.
  */
 struct Peak {
-    // Start index of peak, last index of zero interval.
-    unsigned int start_index;
-    // Last index of peak, first index of zero interval.
-    unsigned int end_index;
-    // Signed value: max or min.
-    // double extremum_val;
-    unsigned int extremum_index;
+  // Start index of peak, last index of zero interval.
+  unsigned int start_index;
+  // Last index of peak, first index of zero interval.
+  unsigned int end_index;
+  // Index of extremum value.
+  unsigned int extremum_index;
 };
 
 typedef double Real;
@@ -23,6 +23,10 @@ typedef std::vector<Real> Samples;
 typedef std::vector<std::pair<unsigned int, unsigned int> > Intervals;
 typedef std::vector<Peak> Peaks;
 
+
+/*
+ *
+ */
 void centrate_signal_ox(Samples & data, unsigned int start, unsigned int end);
 
 /**
@@ -89,9 +93,10 @@ double estimate_frequency_fft(Samples const& data, double first, double step);
  * Estimate quality of oscillation (Q factor = w0 / (2 * attenuation rate) ).
  *
  */
-double estimate_quality(Samples const& data, Peaks const& peaks);
-
 double estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peaks, unsigned int r_end_i);
+
+// Deprecated.
+double estimate_quality(Samples const& data, Peaks const& peaks);
 
 /**
  * Interface function for all previous functions.

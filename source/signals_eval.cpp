@@ -78,7 +78,7 @@ spectrum_analysis(std::vector<std::complex<T> > const& freqvec, T Fs) {
 /**
  * Finds median value of half-periods.
  */
-double half_period_median(std::vector<unsigned int> const&zero_points) {
+unsigned int half_period_median(std::vector<unsigned int> const&zero_points) {
   std::vector<unsigned int> half_periods;
 
   for(unsigned int i = 0; i < zero_points.size() - 1; ++i) {
@@ -134,8 +134,6 @@ find_radio_signal_termination(Samples const& data) {
             break;
         }
     }
-
-    printf("interm_index = %d\n", interm_index);
 
     /*
      * Go from time stamp found in previous step toward the end of not filtered signal.
@@ -257,7 +255,6 @@ find_all_peaks (Samples const& data, std::vector<unsigned int> const& zero_point
                 extremum_index = j;
             }
         }
-        // peak.extremum_val = data[extremum_index];
         peak.extremum_index = extremum_index;
         all_peaks.push_back(peak);
     }
@@ -265,7 +262,7 @@ find_all_peaks (Samples const& data, std::vector<unsigned int> const& zero_point
     return all_peaks;
 }
 
-/*
+/**
  * Find relevant peaks.
  * Get rid of outliers by area under curve thresholding.
  *
@@ -284,21 +281,18 @@ find_real_peaks(std::vector<unsigned int> & zero_points, Samples const& data, Pe
   // Area is approximated as rectangle for simplicity.
   std::vector<double> area_vec;
   double max_area = 0.0;
-  for(unsigned int i = 0; i < all_peaks.size(); ++i) {
-    // Area of rectangle.
-    double area = 0.5 * double(all_peaks[i].end_index - all_peaks[i].start_index) * fabs(data[all_peaks[i].extremum_index]);
-    printf("all_peaks[i].end_index = %d\n", all_peaks[i].end_index);
-    printf("all_peaks[i].start_index = %d\n", all_peaks[i].start_index);
-    printf("all_peaks[i].extremum_index = %d\n", all_peaks[i].extremum_index);
-    printf("fabs(data[all_peaks[i].extremum_index]) = %f\n", fabs(data[all_peaks[i].extremum_index]));
-    printf("area = %d", area);
+  for(unsigned int i = 0; i < all_peaks.size() && !stop; ++i) {
+    // Area of triangle.
+    unsigned int d_t = all_peaks[i].end_index - all_peaks[i].start_index;
+    double area = 0.5 * double(d_t) * fabs(data[all_peaks[i].extremum_index]);
     area_vec.push_back(area);
     if(max_area < area)
       max_area = area;
+    if (area < threshold_ratio * max_area && i > 0)
+      stop = true;
   }
 
-  printf("area_vec.size() = %d\n", area_vec.size());
-
+  stop = false;
   // Find all peaks with area larger than 0.05 * max_area.
   for(unsigned int i = 0; i < all_peaks.size() && !stop; ++i) {
     if (area_vec[i] > threshold_ratio * max_area)
@@ -307,15 +301,10 @@ find_real_peaks(std::vector<unsigned int> & zero_points, Samples const& data, Pe
       stop = true;
   }
 
-  printf("peaks.size() = %d\n", peaks.size());
-
   // Eliminate vector of zero pints. Remove all points to the right side of the last peak.
-  printf("peaks.back().end_index = %d\n", peaks.back().end_index);
-
   for (unsigned int i = zero_points.size(); i > 0 && peaks.back().end_index < zero_points.back(); i--) {
     zero_points.pop_back();
   }
-  printf("zero_points.back() = %d\n", zero_points.back());
 
   return peaks;
 }
@@ -345,8 +334,6 @@ find_real_peaks_double_check(std::vector<unsigned int> &zero_points, Samples con
   if(fabs(half_period_med - mean_half_period) / mean_half_period > thresh_period_ratio)
     mean_half_period = half_period_med;
 
-  printf("mean half period = %f, half_period_med = %f\n", mean_half_period, half_period_med);
-
   // Calculate set of area and find max_area among peaks.
   // Area is approximated as rectangle for simplicity.
   std::vector<double> area_vec;
@@ -360,10 +347,7 @@ find_real_peaks_double_check(std::vector<unsigned int> &zero_points, Samples con
   }
 
   // Find all peaks with area larger than 0.05 * max_area.
-  for(unsigned int i = 0; i < all_peaks.size() &&
-                          !stop_flag; ++i) {
-    printf("fabs((all_peaks[i].end_index - all_peaks[i].start_index) - mean_half_period) = %f", fabs((all_peaks[i].end_index - all_peaks[i].start_index) - mean_half_period));
-    printf("thresh_period_ratio * mean_half_period = %f", thresh_period_ratio * mean_half_period);
+  for(unsigned int i = 0; i < all_peaks.size() && !stop_flag; ++i) {
     // Eliminate by area and half-period difference.
     if (area_vec[i] > thresh_area_ratio * max_area &&
       fabs((all_peaks[i].end_index - all_peaks[i].start_index) - mean_half_period) < thresh_period_ratio * mean_half_period)
@@ -380,10 +364,8 @@ find_real_peaks_double_check(std::vector<unsigned int> &zero_points, Samples con
   }
 
   // Eliminate vector of zero points. Remove all points to the right side of the last peak.
-  printf("peaks.back().end_index = %d\n", peaks.back().end_index);
   for (int i = all_peaks.size(); i > 0 && peaks.back().end_index < zero_points.back(); i--) {
     zero_points.pop_back();
-    printf("zero_points.back() = %d\n", zero_points.back());
   }
 
   return peaks;
@@ -399,35 +381,6 @@ estimate_frequency(Peaks const& peaks, double first, double step) {
 
     return double (peaks.size()) / (double(last_index - first_index) * step * 2.0);
 }
-/*double
-estimate_frequency(Peaks const& peaks, double first, double step) {
-    unsigned int first_index = peaks.front().start_index;
-    unsigned int last_index = peaks.back().end_index;
-
-    unsigned int period = estimate_period(peaks);
-
-    printf("last_index - first_index = %d, ", last_index - first_index);
-    printf("period = %d, ", period);
-
-    return (last_index - first_index) * step / period;
-}*/
-
-/*double
-estimate_frequency(Peaks const& peaks, double first, double step) {
-    // Indices of the first and the last peaks.
-    unsigned int first_index = peaks.front().start_index;
-    unsigned int last_index = peaks.back().end_index;
-
-    printf("last_index - first_index = %d, ", last_index - first_index);
-
-    unsigned int even_peaks_num = peaks.size() - peaks.size() % 2;
-
-    double even_peaks_range = floor(double(last_index - first_index));
-
-    printf("even_peaks_num = %d\n", even_peaks_num);
-
-    return even_peaks_num / (2.0 * even_peaks_range * step);
-}*/
 
 /**
  * Realization with Eigen3's fft.
@@ -446,7 +399,7 @@ estimate_frequency_fft(Samples const& data, double first, double step) {
 
 /**
  * Estimate quality of oscillation (Q factor = w0 / (2 * attenuation rate) ).
- *
+ * deprecated
  */
 double
 estimate_quality(Samples const& data, Peaks const& peaks) {
@@ -458,12 +411,6 @@ estimate_quality(Samples const& data, Peaks const& peaks) {
     double n_of_periods = double(peaks.size() - 1) / 2.0;
     q_factor = M_PI * n_of_periods / (log(A0 / An));
 
-    printf("A0 = %f\n", A0);
-    printf("An = %f\n", An);
-    printf("log(A0 / An) = %f\n", log(A0 / An));
-    printf("n_of_periods = %f\n", n_of_periods);
-    printf("q_factor = %f\n", q_factor);
-
     return q_factor;
 }
 
@@ -472,13 +419,11 @@ estimate_quality(Samples const& data, Peaks const& peaks) {
  * model: sum((ln(y_i) - a * x_i + b)^2) -> min;
  * The problem is {[xi 1]} * [a; b] = {log(yi)}.
  *
- * \param a
- * \param b
- * \param data
- * \param peaks
- * \param first
- * \param step
- * \param r_end_i end of radio signal;
+ * \param a[out]
+ * \param b[out]
+ * \param data[in]
+ * \param peaks[in]
+ * \param r_end_i[in] end of radio signal;
  *
  * \returns *a
  */
@@ -489,13 +434,11 @@ estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peak
     for (unsigned int i = 0; i < peaks.size(); ++i) {
         if(peaks[i].extremum_index > r_end_i) {
             y.push_back(log(fabs(data[peaks[i].extremum_index])));
-            x.push_back(peaks[i].extremum_index);// * step + first);
+            x.push_back(peaks[i].extremum_index);
         }
     }
 
     linear_approximation(a, b, x, y);
-
-    printf("a = %f, b = %f\n", *a, *b);
 
     return *a;
 }
@@ -504,13 +447,13 @@ void
 half_periods_verificator(Intervals const& zero_intervals, float *max_dev, float *mean_dev) {
 	float sum = 0.0;
 	*mean_dev = 0, *max_dev = 0;
+
 	// Find half period mean.
 	for(unsigned int i = 0; i < zero_intervals.size() - 1; ++i) {
 		unsigned int zero_interval_left = zero_intervals[i].second - zero_intervals[i].first;
 		unsigned int zero_interval_right = zero_intervals[i + 1].second - zero_intervals[i + 1].first;
 		unsigned int half_period = zero_intervals[i + 1].first - zero_intervals[i].second;
 		unsigned int full_half_period = half_period + (zero_interval_left + zero_interval_right) / 2;
-		printf("zero_interval_left = %d, zero_interval_right = %d, full_half_period = %d\n", zero_interval_left, zero_interval_right, full_half_period);
 		sum += full_half_period;
 	}
 	float mean_full_half_period = sum / (zero_intervals.size() - 1);
@@ -538,7 +481,6 @@ half_periods_verificator(std::vector<unsigned int> const& zero_points, float *ma
 	// Find half period mean.
 	for(unsigned int i = 0; i < zero_points.size() - 1; ++i) {
 		unsigned int half_period = zero_points[i + 1] - zero_points[i];
-		printf("half_period = %d\n", half_period);
 		sum += half_period;
 	}
 	float mean_half_period = sum / (zero_points.size() - 1);
@@ -563,14 +505,12 @@ half_periods_verificator(std::vector<unsigned int> const& zero_points, float *ma
  * Safe for data input/output.
  *
  * \param[out] fitted_data output vector of fitted values,
- *             must be preallocated in advance. Can be input vector(in-place transformation).
- * \param data[in]
- * \param peaks[in] peaks of sine like curve;
- * \param a
- * \param b
- * \param r_end_i end of radio signal;
- *
- * \returns *a
+ *             must be preallocated in advance. Can be input vector(in-place transformation);
+ * \param data[in] input signal, time series;
+ * \param peaks[in] peaks of sinusoidal curve;
+ * \param a[in] factor of exponent degree e^(a*x + b)
+ * \param b[in] addition of exponent degree e^(a*x + b)
+ * \param r_end_i[in] end of radio signal;
  */
 void
 fit_in_exp_bound(Samples & fitted_data, Samples const& data, Peaks const& peaks, double a, double b, unsigned int r_end_i) {

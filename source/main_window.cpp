@@ -62,7 +62,7 @@ MainWindow::MainWindow(QWidget *parent) :
   FreqNominalAntenna = 600; // kHz
   radio_end_index = 0;
   median_mask_size = 99;
-  NumOfAnalysedPeaks = 4;
+  NumOfAnalysedPeaks = 0;
   samples_radio_show = false;
   samples_radio_smoothed_show = false;
   samples_attenuation_show = false;
@@ -150,10 +150,10 @@ MainWindow::MainWindow(QWidget *parent) :
   QIDRmeas->setOkButtonText(QObject::tr("Ввод"));
   QIDFreqParRes->setOkButtonText(QObject::tr("Ввод"));
   QIDNPeaks->setOkButtonText(QObject::tr("Ввод"));
-  QIDFreqNominal->setLabelText(QObject::tr("Введите величину номинальной частоты резонанса антенны: "));
-  QIDRmeas->setLabelText(QObject::tr("Укажите величину измерительного сопротивления: "));
-  QIDFreqParRes->setLabelText(QObject::tr("Введите величину частоты параллельного резонанса антенны: "));
-  QIDNPeaks->setLabelText(QObject::tr("Укажите число анализируемых полупериодов: "));
+  QIDFreqNominal->setLabelText(QObject::tr("Введите величину номинальной частоты резонанса антенны, кГц: "));
+  QIDRmeas->setLabelText(QObject::tr("Укажите величину измерительного сопротивления, Ом: "));
+  QIDFreqParRes->setLabelText(QObject::tr("Введите величину частоты параллельного резонанса антенны, кГц: "));
+  QIDNPeaks->setLabelText(QObject::tr("Укажите число анализируемых полупериодов, не менее 3: "));
   connect(QIDFreqNominal, SIGNAL(doubleValueChanged(double)), this, SLOT(changeFreqNominal(double)));
   connect(QIDFreqParRes, SIGNAL(doubleValueChanged(double)), this, SLOT(changeFreqParRes(double)));
   connect(QIDRmeas, SIGNAL(doubleValueChanged(double)), this, SLOT(changeRmeas(double)));
@@ -285,7 +285,6 @@ Samples MainWindow::load_csv(QString filepath, GraphParams *g_params) {
 			max = samples[i];
 	}
 	g_params->yScale = (max - min) < eps ? 1 : 1 / (max - min);
-	// g_params->yScale = (max - min) / (2 * samples.size() * 1.5);
 
 	return samples;
 }
@@ -330,8 +329,9 @@ MainWindow::SetRmeas() {
 
 void
 MainWindow::SetNPeaks() {
-  QIDNPeaks->setDoubleValue(NumOfAnalysedPeaks);
+  QIDNPeaks->setIntValue(NumOfAnalysedPeaks);
   QIDNPeaks->show();
+  ui->action_set_n_auto->setChecked(false);
 }
 
 /**
@@ -695,7 +695,6 @@ MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq
 	unsigned int finish = samples_attenuation_smoothed.size() - 1;
 
 	std::vector<unsigned int> zero_points = sign_changes(samples_attenuation_smoothed, start, finish);
-	printf("zero_points.size() = %d\n", zero_points.size());
 
 	if(zero_points.size() < 4) {
 	  QMessageBox::information(this, QObject::tr("Ошибка"), QObject::tr("Невозможно произвести рассчеты из-за малого числа пересечений с 0x."));
@@ -704,16 +703,18 @@ MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq
 
 	Peaks all_peaks = find_all_peaks(samples_attenuation_smoothed, zero_points);
 
-	printf("all_peaks.size() = %d\n", all_peaks.size());
+	Peaks real_peaks;
+	if(NumOfAnalysedPeaks > 2 && !ui->action_set_n_auto->isChecked()) {
+	  real_peaks = Peaks(all_peaks.begin(), all_peaks.begin() + NumOfAnalysedPeaks);
+	  zero_points = std::vector<unsigned int>(zero_points.begin(), zero_points.begin() + NumOfAnalysedPeaks + 1);
+	}
+	else {
+	  real_peaks = find_real_peaks(zero_points, samples_attenuation_smoothed, all_peaks, 0.3);
+	}
 
-	Peaks real_peaks = find_real_peaks(zero_points, samples_attenuation_smoothed, all_peaks, 0.3);
-
-	printf("real_peaks.size() = %d\n", real_peaks.size());
-
-	// Peaks real_peaks = find_real_peaks_double_check(zero_points, samples_attenuation_smoothed, all_peaks, 0.3, 0.1);
 	if(real_peaks.size() < 3) {
 	  printf("Error: MainWindow::signal_analyzer: real_peaks.size() < 3");
-	  QMessageBox::information(this, QObject::tr("Ошибка"), QObject::tr("Невозможно произвести рассчеты из-за малого числа пересечений с 0x."));
+	  QMessageBox::information(this, QObject::tr("Ошибка"), QObject::tr("Невозможно произвести расчеты из-за малого числа пересечений с Ox."));
 	  return -1;
 	}
 
@@ -725,8 +726,6 @@ MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq
 	}
 
 	*freq = estimate_frequency(real_peaks, graph_attenuation.xOffset, graph_attenuation.xScale);
-
-	// *q_factor = estimate_quality(samples_attenuation_smoothed, real_peaks);
 
 	double d = - *a / (*freq * graph_attenuation.xScale);
 
