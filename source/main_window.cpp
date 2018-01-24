@@ -178,10 +178,12 @@ void MainWindow::open_csv_radio_dialog() {
 		QMessageBox::information(this, QObject::tr("SignalPlotter"),
 														 QObject::tr("Файл не был открыт."));
 	}
+
+	open_csv_attenuation_dialog();
 }
 
 void MainWindow::open_csv_attenuation_dialog() {
-	path_to_attenuation_csv = QFileDialog::getOpenFileName(this, QObject::tr("Укажите путь к затухающему сигналу."), "/home/evgeny/workspace/hyscan5/signal-plotter/data", QObject::tr("(*.csv)"));
+	path_to_attenuation_csv = QFileDialog::getOpenFileName(this, QObject::tr("Укажите путь к затухающему сигналу."), "/home/evgeny/workspace/hyscan5/signal-plotter/data", QObject::tr("(*_CH2*);;(*.csv)"));
 
 	if(!path_to_attenuation_csv.isEmpty()) {
 		load_csv_attenuation();
@@ -189,6 +191,10 @@ void MainWindow::open_csv_attenuation_dialog() {
 		QMessageBox::information(this, QObject::tr("SignalPlotter"),
 														 QObject::tr("Файл не был открыт."));
 	}
+
+	ui->action_smooth->setEnabled(true);
+  // Disable parameter calculation option.
+  ui->action_estim_param->setEnabled(false);
 }
 
 void MainWindow::save_report_dialog() {
@@ -220,7 +226,7 @@ void MainWindow::load_csv_radio() {
 
 	samples_radio.erase(samples_radio.begin() + radio_end_index, samples_radio.end());
 
-	addGraph1(samples_radio, g_params);
+	addGraph1(samples_radio, g_params, QString(QObject::tr("Радиовоздействие")));
 }
 
 void MainWindow::load_csv_attenuation() {
@@ -230,7 +236,7 @@ void MainWindow::load_csv_attenuation() {
 	samples_attenuation = load_csv(path_to_attenuation_csv, &g_params);
 	graph_attenuation = g_params;
 
-	addGraph2(samples_attenuation, g_params);
+	addGraph2(samples_attenuation, g_params, QString(QObject::tr("Затухающий сигнал")));
 }
 
 /**
@@ -337,7 +343,7 @@ MainWindow::SetNPeaks() {
 /**
  * Add graph to left hand side Y scale.
  */
-void MainWindow::addGraph1(Samples data, GraphParams const& g_params) {
+void MainWindow::addGraph1(Samples data, GraphParams const& g_params, QString const& message) {
 	// Determine size of current plot. (number of points in graph).
 	int curSize;
 	curSize = data.size();
@@ -356,7 +362,7 @@ void MainWindow::addGraph1(Samples data, GraphParams const& g_params) {
   // ui->customPlot->yAxis2->setRange(-0.025, 0.025);
 
 	ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis);
-	ui->customPlot->graph()->setName(QString("New graph %1").arg(ui->customPlot->graphCount() - 1));
+	ui->customPlot->graph()->setName(message);
 	ui->customPlot->graph()->setData(x, y);
 	ui->customPlot->graph()->setLineStyle(QCPGraph::lsLine);
 	QPen graphPen;
@@ -369,7 +375,7 @@ void MainWindow::addGraph1(Samples data, GraphParams const& g_params) {
 /**
  * Add graph to right hand side Y scale.
  */
-void MainWindow::addGraph2(Samples data, GraphParams const& g_params) {
+void MainWindow::addGraph2(Samples data, GraphParams const& g_params, QString const& message) {
 	// Determine size of current plot. (number of points in graph).
 	int curSize;
 	curSize = data.size();
@@ -383,12 +389,16 @@ void MainWindow::addGraph2(Samples data, GraphParams const& g_params) {
 		y[i] = data[i] * g_params.yScale + g_params.yOffset;
 	}
 
-  ui->customPlot->xAxis->setRange(g_params.xOffset - 10 * g_params.xScale, (x.size() + 10) * g_params.xScale + g_params.xOffset);
+	double max = find_max(data) * g_params.yScale;
+	double min = find_min(data) * g_params.yScale;
+
+  ui->customPlot->xAxis->setRange(g_params.xOffset - x.size() * 0.1 * g_params.xScale, 1.1 * x.size() * g_params.xScale + g_params.xOffset);
   // ui->customPlot->yAxis2->setRange(g_params.yOffset - 10 * g_params.yScale, (y.size() + 10) * g_params.yScale + g_params.yOffset);
+  ui->customPlot->yAxis->setRange(1.5 * min, 1.5 * max);
 
 	// Attenuation graph has different y scale.
 	ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis2);
-	ui->customPlot->graph()->setName(QString("New graph %1").arg(ui->customPlot->graphCount() - 1));
+	ui->customPlot->graph()->setName(message);
 	ui->customPlot->graph()->setData(x, y);
 	ui->customPlot->graph()->setLineStyle(QCPGraph::lsLine);
 	QPen graphPen;
@@ -398,19 +408,51 @@ void MainWindow::addGraph2(Samples data, GraphParams const& g_params) {
 	ui->customPlot->replot();
 }
 
+void MainWindow::addGraph3(Samples data, GraphParams const& g_params, QString const& message) {
+  // Determine size of current plot. (number of points in graph).
+  int curSize;
+  curSize = data.size();
+
+  QVector<double> x(curSize);
+  QVector<double> y(curSize);
+
+  for (int i=0; i < curSize; i++)
+  {
+    x[i] = i * g_params.xScale + g_params.xOffset;
+    y[i] = data[i] * g_params.yScale + g_params.yOffset;
+  }
+
+  // double max = find_max(data) * g_params.yScale;
+  // double min = find_min(data) * g_params.yScale;
+
+  // ui->customPlot->xAxis->setRange(g_params.xOffset - x.size() * 0.1 * g_params.xScale, 1.1 * x.size() * g_params.xScale + g_params.xOffset);
+  // ui->customPlot->yAxis->setRange(1.5 * min, 1.5 * max);
+
+  // Attenuation graph has different y scale.
+  ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis2);
+  ui->customPlot->graph()->setName(message);
+  ui->customPlot->graph()->setData(x, y);
+  ui->customPlot->graph()->setLineStyle(QCPGraph::lsLine);
+  QPen graphPen;
+  graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
+  graphPen.setWidthF(1);
+  ui->customPlot->graph()->setPen(graphPen);
+  ui->customPlot->replot();
+}
+
 void MainWindow::updateGraph() {
   // Remove all graphs.
   removeAllGraphs();
 
   // Add graphs.
   if(!samples_radio.empty())
-    addGraph1(samples_radio, graph_radio);
+    addGraph1(samples_radio, graph_radio, QObject::tr("Радиовоздействие"));
   if(!samples_attenuation.empty())
-    addGraph2(samples_attenuation, graph_attenuation);
+    addGraph2(samples_attenuation, graph_attenuation, QObject::tr("Затухающий сигнал"));
   if(!samples_radio_smoothed.empty())
-    addGraph1(samples_radio_smoothed, graph_radio);
+    addGraph1(samples_radio_smoothed, graph_radio, QObject::tr("Радиовоздействие, ФНЧ"));
   if(!samples_attenuation_smoothed.empty())
-    addGraph2(samples_attenuation_smoothed, graph_attenuation);
+    addGraph2(samples_attenuation_smoothed, graph_attenuation, QObject::tr("Затухающий сигнал, ФНЧ"));
 }
 
 void MainWindow::titleDoubleClick(QMouseEvent* event)
@@ -626,6 +668,8 @@ MainWindow::smooth() {
 
 		updateGraph();
 	}
+	// Enable parameter calculation option.
+	ui->action_estim_param->setEnabled(true);
 }
 
 int
@@ -647,8 +691,8 @@ MainWindow::estimate_contour_params() {
 	}
 	GraphParams graph_exp = graph_attenuation;
 	graph_exp.xOffset = graph_attenuation.xOffset + radio_end_index * graph_attenuation.xScale;
-	addGraph2(exp_curve, graph_exp);
-	addGraph2(exp_curve_neg, graph_exp);
+	addGraph3(exp_curve, graph_exp, QString(QObject::tr("Асимптота верхняя")));
+	addGraph3(exp_curve_neg, graph_exp, QString(QObject::tr("Асимптота нижняя")));
 
 	// Estimate Umax, Imax.
 	U_max = find_max(samples_radio) - find_min(samples_radio);
@@ -757,7 +801,7 @@ MainWindow::verify_half_periods(std::vector<unsigned int> const& zero_points) {
 
 	if(max_dev > 0.03) {
 		QMessageBox::information(this, QObject::tr("SignalPlotter"),
-														 QObject::tr("Предупреждение: отклонение в измерении полупериодов превысило 3%!"));
+														 QObject::tr("Предупреждение: максимальное отклонение в измерении полупериодов превысило 3% и равно %1 %.").arg(max_dev * 100));
 		ret = false;
 	}
 

@@ -283,6 +283,9 @@
    </property>
   </action>
   <action name="actionArrow">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>Указатель</string>
    </property>
@@ -383,6 +386,9 @@
    </property>
   </action>
   <action name="actionRubber_2">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>Резиновая лента</string>
    </property>
@@ -428,11 +434,17 @@
    </property>
   </action>
   <action name="action_smooth">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Выполнить сглаживание</string>
    </property>
   </action>
   <action name="action_estim_param">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Рассчитать параметры</string>
    </property>
@@ -474,6 +486,9 @@
    </property>
   </action>
   <action name="action_radio_end_hand">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Указать момент оканчания радиовоздействия</string>
    </property>
