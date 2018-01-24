@@ -169,7 +169,7 @@ MainWindow::~MainWindow()
  * Reaction on menu button click.
  */
 void MainWindow::open_csv_radio_dialog() {
-	path_to_radio_csv = QFileDialog::getOpenFileName(this, QObject::tr("Укажите путь к радиоимпульсу."), "/home/evgeny/workspace/hyscan5/signal-plotter/data", QObject::tr("(*.csv)"));
+	path_to_radio_csv = QFileDialog::getOpenFileName(this, QObject::tr("Укажите путь к радиоимпульсу."), "./../data/", QObject::tr("(*.csv)"));
 
 	if(!path_to_radio_csv.isEmpty ()) {
 		load_csv_radio();
@@ -183,7 +183,7 @@ void MainWindow::open_csv_radio_dialog() {
 }
 
 void MainWindow::open_csv_attenuation_dialog() {
-	path_to_attenuation_csv = QFileDialog::getOpenFileName(this, QObject::tr("Укажите путь к затухающему сигналу."), "/home/evgeny/workspace/hyscan5/signal-plotter/data", QObject::tr("(*_CH2*);;(*.csv)"));
+	path_to_attenuation_csv = QFileDialog::getOpenFileName(this, QObject::tr("Укажите путь к затухающему сигналу."), path_to_radio_csv, QObject::tr("(*_CH2*);;(*.csv)"));
 
 	if(!path_to_attenuation_csv.isEmpty()) {
 		load_csv_attenuation();
@@ -200,7 +200,7 @@ void MainWindow::open_csv_attenuation_dialog() {
 void MainWindow::save_report_dialog() {
   path_to_report =
     QFileDialog::getSaveFileName(this, QObject::tr("Укажите путь для сохранения."),
-                                 "/home/evgeny/workspace/hyscan5/signal-plotter/data", QObject::tr("(*.txt)"));
+                                 "./../out/report.txt", QObject::tr("(*.txt)"));
 
   if(!path_to_report.isEmpty ()) {
     save_report(path_to_report);
@@ -779,9 +779,69 @@ MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq
 }
 
 void
-MainWindow::save_report(QString filepath) {
+MainWindow::save_report(QString const& filepath) {
 
+  QFile file(filepath.toStdString().c_str());
+
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+            return;
+
+  QTextStream out(&file);
+  // out.setCodec("Windows-1251");
+  out.setCodec("UTF-8");
+
+  // Print parameters to report;
+  QString scout;
+  scout = QObject::tr("Протокол измерения параметров антенны:\n\n");
+  scout += QObject::tr("Заданные параметры\n");
+  scout += (QObject::tr("Rmeas:             ") + QString::number(Rmeas) + QObject::tr(", Ом;") + "\n");
+  scout += (QObject::tr("Fnom:              ") + QString::number(FreqNominalAntenna) + QObject::tr(", кГц;") + "\n");
+  scout += (QObject::tr("F, пар. рез.:      ") + QString::number(FreqParRes) + QObject::tr(", кГц;") + "\n\n");
+  scout += QObject::tr("Измеренные вспомогательные параметры(по экспоненте)\n");
+  scout += (QObject::tr("Umax, размах:      ") + QString::number(U_max * 1000) + QObject::tr(", мВ;") + "\n");
+  scout += (QObject::tr("Imax, размах:      ") + QString::number(I_max * 1000) + QObject::tr(", мA;") + "\n");
+  scout += (QObject::tr("Добротность:       ") + QString::number(Q) + ";\n\n");
+  scout += QObject::tr("Параметры контура\n");
+  scout += ("Ra:     " + QString::number(Ra) + QObject::tr(", Oм;") + "\n");
+  scout += ("Ca:     " + QString::number(Ca * 1e12) + QObject::tr(", пФ;") + "\n");
+  scout += ("La:     " + QString::number(La * 1e6) + QObject::tr(", мкГн;") + "\n");
+  scout += ("C0:     " + QString::number(C0 * 1e12) + QObject::tr(", пФ;") + "\n");
+  scout += (QObject::tr("F0, частота колебательного контура:     ") + QString::number(F0 / 1000) + QObject::tr(", кГц;") + "\n");
+  scout += (QObject::tr("F, частота свободных колебаний:         ") + QString::number(f_a / 1000) + QObject::tr(", кГц") + "\n");
+
+  out << scout;
 }
+
+/*void
+MainWindow::save_report(QString const& filepath) {
+
+  FILE *fp;
+
+  fp = fopen(filepath.toStdString().c_str(), "w");
+
+  // Print parameters to report;
+  QString scout;
+  scout = QObject::tr("Протокол измерения параметров антенны:\n\n");
+  scout += QObject::tr("Заданные параметры\n");
+  scout += (QObject::tr("Rmeas:             ") + QString::number(Rmeas) + QObject::tr(", Ом;") + "\n");
+  scout += (QObject::tr("Fnom:              ") + QString::number(FreqNominalAntenna) + QObject::tr(", кГц;") + "\n");
+  scout += (QObject::tr("F, пар. рез.:     ") + QString::number(FreqParRes) + QObject::tr(", кГц;") + "\n\n");
+  scout += QObject::tr("Измеренные вспомогательные параметры(по экспоненте)\n");
+  scout += (QObject::tr("Umax, размах:     ") + QString::number(U_max * 1000) + QObject::tr(", мВ;") + "\n");
+  scout += (QObject::tr("Imax, размах:       ") + QString::number(I_max * 1000) + QObject::tr(", мA;") + "\n");
+  scout += (QObject::tr("Добротность:       ") + QString::number(Q) + ";\n\n");
+  scout += QObject::tr("Параметры контура\n");
+  scout += ("Ra:     " + QString::number(Ra) + QObject::tr(", Oм;") + "\n");
+  scout += ("Ca:     " + QString::number(Ca * 1e12) + QObject::tr(", пФ;") + "\n");
+  scout += ("La:     " + QString::number(La * 1e6) + QObject::tr(", мкГн;") + "\n");
+  scout += ("C0:     " + QString::number(C0 * 1e12) + QObject::tr(", пФ;") + "\n");
+  scout += (QObject::tr("F0, частота колебательного контура:     ") + QString::number(F0 / 1000) + QObject::tr(", кГц;") + "\n");
+  scout += (QObject::tr("F, частота свободных колебаний:           ") + QString::number(f_a / 1000) + QObject::tr(", кГц") + "\n");
+
+  fprintf(fp, "%s", scout.toStdString().c_str());
+
+  fclose(fp);
+}*/
 
 bool
 MainWindow::verify_half_periods(std::vector<unsigned int> const& zero_points) {
