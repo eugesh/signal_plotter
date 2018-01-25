@@ -84,6 +84,7 @@ private slots:;
   int  estimate_contour_params();
 
 private:;
+  void create_parameters_setting_dialog();
   void load_csv_radio();
   void load_csv_attenuation();
   Samples load_csv(QString filepath, GraphParams *graph_params);
@@ -100,6 +101,7 @@ private:;
   QInputDialog *QIDRmeas; // Измерительное сопротивление.
   QInputDialog *QIDFreqParRes; // Частота при параллельном резонансе.
   QInputDialog *QIDNPeaks; // Число анализируемых пиков.
+  QDialog *QDParamDialog; // Диалог задания всех параметров.
   double Rmeas;
   double FreqParRes;
   double FreqNominalAntenna;

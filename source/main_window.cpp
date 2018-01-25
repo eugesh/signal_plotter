@@ -28,6 +28,21 @@
 
 const static double eps = 1e-10;
 
+QString path_from_fullname(QString const& fullpath) {
+  QString filePath;
+
+  QRegExp csv_regexp(".csv");
+  QString fullPathBuf = fullpath;
+  fullPathBuf.remove(csv_regexp);
+  QString name = fullPathBuf.split('/').back();
+
+  filePath = fullPathBuf.remove(name);
+
+  std::cout << "filePath: " << qPrintable(filePath) << std::endl;
+
+  return filePath;
+}
+
 template<typename T>
 T
 find_max(std::vector<T> vec) {
@@ -160,6 +175,54 @@ MainWindow::MainWindow(QWidget *parent) :
   connect(QIDNPeaks, SIGNAL(intValueChanged(int)), this, SLOT(changeNPeaks(int)));
 }
 
+void
+MainWindow::create_parameters_setting_dialog() {
+  QDParamDialog = new QDialog(this);
+  QDParamDialog->setWindowTitle(QObject::tr("Значения параметров"));
+  QDParamDialog->setMinimumSize(250, 100);
+
+  QVBoxLayout *layout = new QVBoxLayout;
+
+  QLabel *QLFreqNom = new QLabel(QObject::tr("Введите величину номинальной частоты резонанса антенны, кГц: "));
+  QDoubleSpinBox *QSBFreqNominal = new QDoubleSpinBox();
+
+  QLabel *QLRmeas = new QLabel(QObject::tr("Укажите величину измерительного сопротивления, Ом: "));
+  QDoubleSpinBox *QSBRmeas = new QDoubleSpinBox();
+
+  QLabel *QLFreqParaRes = new QLabel(QObject::tr("Введите величину частоты параллельного резонанса антенны, кГц: "));
+  QDoubleSpinBox *QSBFreqParaRes = new QDoubleSpinBox();
+
+  connect(QSBFreqNominal, SIGNAL(valueChanged(double)), this, SLOT(changeFreqNominal(double)));
+  connect(QSBRmeas, SIGNAL(valueChanged(double)), this, SLOT(changeRmeas(double)));
+  connect(QSBFreqParaRes, SIGNAL(valueChanged(double)), this, SLOT(changeFreqParRes(double)));
+
+  QSBFreqNominal->setMaximum(10000.0);
+  QSBRmeas->setMaximum(1000.0);
+  QSBFreqParaRes->setMaximum(10000.0);
+
+  QSBFreqNominal->setMinimum(.001);
+  QSBRmeas->setMinimum(0.001);
+  QSBFreqParaRes->setMinimum(.001);
+
+  QSBFreqNominal->setValue(FreqNominalAntenna);
+  QSBRmeas->setValue(Rmeas);
+  QSBFreqParaRes->setValue(FreqParRes);
+
+  QPushButton *button_ok = new QPushButton("Ok");
+  connect(button_ok, SIGNAL(pressed()), QDParamDialog, SLOT(hide()));
+
+  layout->addWidget(QLFreqNom);
+  layout->addWidget(QSBFreqNominal);
+  layout->addWidget(QLRmeas);
+  layout->addWidget(QSBRmeas);
+  layout->addWidget(QLFreqParaRes);
+  layout->addWidget(QSBFreqParaRes);
+  layout->addWidget(button_ok);
+
+  QDParamDialog->setLayout(layout);
+  QDParamDialog->show();
+}
+
 MainWindow::~MainWindow()
 {
     delete ui;
@@ -195,12 +258,15 @@ void MainWindow::open_csv_attenuation_dialog() {
 	ui->action_smooth->setEnabled(true);
   // Disable parameter calculation option.
   ui->action_estim_param->setEnabled(false);
+
+  // Dialog for all paameters.
+  create_parameters_setting_dialog();
 }
 
 void MainWindow::save_report_dialog() {
   path_to_report =
-    QFileDialog::getSaveFileName(this, QObject::tr("Укажите путь для сохранения."),
-                                 "./../out/report.txt", QObject::tr("(*.txt)"));
+      QFileDialog::getSaveFileName(this, QObject::tr("Укажите путь для сохранения."),
+                                   QObject::tr("./../out/report.txt"), QObject::tr("(*.txt)"));
 
   if(!path_to_report.isEmpty ()) {
     save_report(path_to_report);
@@ -727,6 +793,17 @@ MainWindow::estimate_contour_params() {
 
   QMessageBox::information(this, QObject::tr("Протокол измерения параметров антенны"), scout);
 
+  // Save report into folder with data.
+  QString report_path;
+  QString report_name;
+
+  QDateTime cur_date = QDateTime::currentDateTime();
+  report_path = path_from_fullname(path_to_attenuation_csv);
+  report_name =
+      QString("report_%1_%2_%3_%4").arg(cur_date.date().month()).arg(cur_date.date().year()).arg(cur_date.date().day()).arg(cur_date.time().secsTo(QTime(0, 0)));
+
+  save_report(QString(report_path + report_name + ".txt"));
+
   return 0;
 }
 
@@ -792,16 +869,16 @@ MainWindow::save_report(QString const& filepath) {
 
   // Print parameters to report;
   QString scout;
-  scout = QObject::tr("Протокол измерения параметров антенны:\n\n");
-  scout += QObject::tr("Заданные параметры\n");
+  scout = QObject::tr("Протокол измерения параметров антенны\n\n");
+  scout += QObject::tr("Заданные параметры:\n");
   scout += (QObject::tr("Rmeas:             ") + QString::number(Rmeas) + QObject::tr(", Ом;") + "\n");
   scout += (QObject::tr("Fnom:              ") + QString::number(FreqNominalAntenna) + QObject::tr(", кГц;") + "\n");
   scout += (QObject::tr("F, пар. рез.:      ") + QString::number(FreqParRes) + QObject::tr(", кГц;") + "\n\n");
-  scout += QObject::tr("Измеренные вспомогательные параметры(по экспоненте)\n");
+  scout += QObject::tr("Измеренные вспомогательные параметры(по экспоненте):\n");
   scout += (QObject::tr("Umax, размах:      ") + QString::number(U_max * 1000) + QObject::tr(", мВ;") + "\n");
   scout += (QObject::tr("Imax, размах:      ") + QString::number(I_max * 1000) + QObject::tr(", мA;") + "\n");
   scout += (QObject::tr("Добротность:       ") + QString::number(Q) + ";\n\n");
-  scout += QObject::tr("Параметры контура\n");
+  scout += QObject::tr("Параметры контура:\n");
   scout += ("Ra:     " + QString::number(Ra) + QObject::tr(", Oм;") + "\n");
   scout += ("Ca:     " + QString::number(Ca * 1e12) + QObject::tr(", пФ;") + "\n");
   scout += ("La:     " + QString::number(La * 1e6) + QObject::tr(", мкГн;") + "\n");
