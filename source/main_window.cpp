@@ -751,6 +751,7 @@ MainWindow::estimate_contour_params() {
 	}
 
 	// Plot exponential asymptotes.
+	updateGraph();
 	for(unsigned int i = radio_end_index; i < samples_attenuation_smoothed.size(); ++i) {
 		exp_curve.push_back(exp(a * i + b));
 		exp_curve_neg.push_back(-exp(a * i + b));
@@ -766,7 +767,6 @@ MainWindow::estimate_contour_params() {
 	Ra = U_max / I_max;
   w = 2 * M_PI * f_a;
 	double delta = -a / graph_attenuation.xScale;
-	// double d = delta / f_a;
   La = Ra / (2 * delta);
   w0 = sqrt(w * w + delta * delta);
   Ca = 1.0 / (La * w0 * w0);
@@ -799,8 +799,10 @@ MainWindow::estimate_contour_params() {
 
   QDateTime cur_date = QDateTime::currentDateTime();
   report_path = path_from_fullname(path_to_attenuation_csv);
-  report_name =
-      QString("report_%1_%2_%3_%4").arg(cur_date.date().month()).arg(cur_date.date().year()).arg(cur_date.date().day()).arg(cur_date.time().secsTo(QTime(0, 0)));
+  report_name = QString("report_%1_%2_%3_%4").arg(cur_date.date().month())
+                                             .arg(cur_date.date().year())
+                                             .arg(cur_date.date().day())
+                                             .arg(cur_date.time().secsTo(QTime(0, 0)));
 
   save_report(QString(report_path + report_name + ".txt"));
 
@@ -888,37 +890,6 @@ MainWindow::save_report(QString const& filepath) {
 
   out << scout;
 }
-
-/*void
-MainWindow::save_report(QString const& filepath) {
-
-  FILE *fp;
-
-  fp = fopen(filepath.toStdString().c_str(), "w");
-
-  // Print parameters to report;
-  QString scout;
-  scout = QObject::tr("Протокол измерения параметров антенны:\n\n");
-  scout += QObject::tr("Заданные параметры\n");
-  scout += (QObject::tr("Rmeas:             ") + QString::number(Rmeas) + QObject::tr(", Ом;") + "\n");
-  scout += (QObject::tr("Fnom:              ") + QString::number(FreqNominalAntenna) + QObject::tr(", кГц;") + "\n");
-  scout += (QObject::tr("F, пар. рез.:     ") + QString::number(FreqParRes) + QObject::tr(", кГц;") + "\n\n");
-  scout += QObject::tr("Измеренные вспомогательные параметры(по экспоненте)\n");
-  scout += (QObject::tr("Umax, размах:     ") + QString::number(U_max * 1000) + QObject::tr(", мВ;") + "\n");
-  scout += (QObject::tr("Imax, размах:       ") + QString::number(I_max * 1000) + QObject::tr(", мA;") + "\n");
-  scout += (QObject::tr("Добротность:       ") + QString::number(Q) + ";\n\n");
-  scout += QObject::tr("Параметры контура\n");
-  scout += ("Ra:     " + QString::number(Ra) + QObject::tr(", Oм;") + "\n");
-  scout += ("Ca:     " + QString::number(Ca * 1e12) + QObject::tr(", пФ;") + "\n");
-  scout += ("La:     " + QString::number(La * 1e6) + QObject::tr(", мкГн;") + "\n");
-  scout += ("C0:     " + QString::number(C0 * 1e12) + QObject::tr(", пФ;") + "\n");
-  scout += (QObject::tr("F0, частота колебательного контура:     ") + QString::number(F0 / 1000) + QObject::tr(", кГц;") + "\n");
-  scout += (QObject::tr("F, частота свободных колебаний:           ") + QString::number(f_a / 1000) + QObject::tr(", кГц") + "\n");
-
-  fprintf(fp, "%s", scout.toStdString().c_str());
-
-  fclose(fp);
-}*/
 
 bool
 MainWindow::verify_half_periods(std::vector<unsigned int> const& zero_points) {
