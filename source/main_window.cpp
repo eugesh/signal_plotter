@@ -78,10 +78,7 @@ MainWindow::MainWindow(QWidget *parent) :
   radio_end_index = 0;
   median_mask_size = 99;
   NumOfAnalysedPeaks = 0;
-  samples_radio_show = false;
-  samples_radio_smoothed_show = false;
-  samples_attenuation_show = false;
-  samples_attenuation_smoothed_show = false;
+  report_comment = QString("");
 
   ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes |
                                 QCP::iSelectLegend | QCP::iSelectPlottables);
@@ -141,38 +138,59 @@ MainWindow::MainWindow(QWidget *parent) :
   connect(ui->action_set_Resonance_Freq, SIGNAL(triggered()), this, SLOT(SetFreqParRes()));
   connect(ui->action_set_R_meas, SIGNAL(triggered()), this, SLOT(SetRmeas()));
   connect(ui->action_set_n, SIGNAL(triggered()), this, SLOT(SetNPeaks()));
+  connect(ui->action_comment, SIGNAL(triggered()), this, SLOT(SetComment()));
+
   QIDFreqNominal = new QInputDialog(this);
   QIDRmeas = new QInputDialog(this);
   QIDFreqParRes = new QInputDialog(this);
   QIDNPeaks = new QInputDialog(this); // Число анализируемых пиков.
+  QIDComment = new QInputDialog(this); // Комментарий.
+
+  QIDFreqNominal->setInputMode(QInputDialog::DoubleInput);
+  QIDRmeas->setInputMode(QInputDialog::DoubleInput);
+  QIDFreqParRes->setInputMode(QInputDialog::DoubleInput);
+  QIDNPeaks->setInputMode(QInputDialog::IntInput);
+  QIDComment->setInputMode(QInputDialog::TextInput);
+
   QIDFreqNominal->setComboBoxEditable(true);
   QIDRmeas->setComboBoxEditable(true);
   QIDFreqParRes->setComboBoxEditable(true);
   QIDNPeaks->setComboBoxEditable(true);
+  // QIDComment->setComboBoxEditable(true);
+
   QIDFreqNominal->setDoubleMaximum(10000.0);
   QIDRmeas->setDoubleMaximum(1000.0);
   QIDFreqParRes->setDoubleMaximum(10000.0);
   QIDNPeaks->setIntMaximum(100);
+
   QIDFreqNominal->setDoubleMinimum(.001);
   QIDRmeas->setDoubleMinimum(0.001);
   QIDFreqParRes->setDoubleMinimum(.001);
   QIDNPeaks->setIntMinimum(1);
+
   QIDFreqNominal->setCancelButtonText(QObject::tr("Отмена"));
   QIDRmeas->setCancelButtonText(QObject::tr("Отмена"));
   QIDFreqParRes->setCancelButtonText(QObject::tr("Отмена"));
   QIDNPeaks->setCancelButtonText(QObject::tr("Отмена"));
+  QIDComment->setCancelButtonText(QObject::tr("Отмена"));
+
   QIDFreqNominal->setOkButtonText(QObject::tr("Ввод"));
   QIDRmeas->setOkButtonText(QObject::tr("Ввод"));
   QIDFreqParRes->setOkButtonText(QObject::tr("Ввод"));
   QIDNPeaks->setOkButtonText(QObject::tr("Ввод"));
+  QIDComment->setOkButtonText(QObject::tr("Ввод"));
+
   QIDFreqNominal->setLabelText(QObject::tr("Введите величину номинальной частоты резонанса антенны, кГц: "));
   QIDRmeas->setLabelText(QObject::tr("Укажите величину измерительного сопротивления, Ом: "));
   QIDFreqParRes->setLabelText(QObject::tr("Введите величину частоты параллельного резонанса антенны, кГц: "));
   QIDNPeaks->setLabelText(QObject::tr("Укажите число анализируемых полупериодов, не менее 3: "));
+  QIDComment->setLabelText(QObject::tr("Комментарий: "));
+
   connect(QIDFreqNominal, SIGNAL(doubleValueChanged(double)), this, SLOT(changeFreqNominal(double)));
   connect(QIDFreqParRes, SIGNAL(doubleValueChanged(double)), this, SLOT(changeFreqParRes(double)));
   connect(QIDRmeas, SIGNAL(doubleValueChanged(double)), this, SLOT(changeRmeas(double)));
   connect(QIDNPeaks, SIGNAL(intValueChanged(int)), this, SLOT(changeNPeaks(int)));
+  connect(QIDComment, SIGNAL(textValueChanged(QString)), this, SLOT(changeComment(QString)));
 }
 
 void
@@ -192,9 +210,13 @@ MainWindow::create_parameters_setting_dialog() {
   QLabel *QLFreqParaRes = new QLabel(QObject::tr("Введите величину частоты параллельного резонанса антенны, кГц: "));
   QDoubleSpinBox *QSBFreqParaRes = new QDoubleSpinBox();
 
+  QLabel *QLComment = new QLabel(QObject::tr("Комментарий: "));
+  QLineEdit *QLEComment = new QLineEdit();
+
   connect(QSBFreqNominal, SIGNAL(valueChanged(double)), this, SLOT(changeFreqNominal(double)));
   connect(QSBRmeas, SIGNAL(valueChanged(double)), this, SLOT(changeRmeas(double)));
   connect(QSBFreqParaRes, SIGNAL(valueChanged(double)), this, SLOT(changeFreqParRes(double)));
+  connect(QLEComment, SIGNAL(textChanged(QString)), this, SLOT(changeComment(QString)));
 
   QSBFreqNominal->setMaximum(10000.0);
   QSBRmeas->setMaximum(1000.0);
@@ -217,6 +239,8 @@ MainWindow::create_parameters_setting_dialog() {
   layout->addWidget(QSBRmeas);
   layout->addWidget(QLFreqParaRes);
   layout->addWidget(QSBFreqParaRes);
+  layout->addWidget(QLComment);
+  layout->addWidget(QLEComment);
   layout->addWidget(button_ok);
 
   QDParamDialog->setLayout(layout);
@@ -382,6 +406,11 @@ MainWindow::changeNPeaks(int val) {
 }
 
 void
+MainWindow::changeComment(QString text) {
+  report_comment = text;
+}
+
+void
 MainWindow::SetFreqNominal() {
   QIDFreqNominal->setDoubleValue(FreqNominalAntenna);
   QIDFreqNominal->show();
@@ -404,6 +433,12 @@ MainWindow::SetNPeaks() {
   QIDNPeaks->setIntValue(NumOfAnalysedPeaks);
   QIDNPeaks->show();
   ui->action_set_n_auto->setChecked(false);
+}
+
+void
+MainWindow::SetComment() {
+  QIDComment->setTextValue(report_comment);
+  QIDComment->show();
 }
 
 /**
@@ -776,6 +811,7 @@ MainWindow::estimate_contour_params() {
   // Show message window.
   QString scout;
   scout = QObject::tr("Заданные параметры\n");
+  scout += QString(report_comment + "\n\n");
   scout += (QObject::tr("Rmeas:             ") + QString::number(Rmeas) + QObject::tr(", Ом;") + "\n");
   scout += (QObject::tr("Fnom:              ") + QString::number(FreqNominalAntenna) + QObject::tr(", кГц;") + "\n");
   scout += (QObject::tr("F, пар. рез.:     ") + QString::number(FreqParRes) + QObject::tr(", кГц;") + "\n\n");
@@ -872,6 +908,7 @@ MainWindow::save_report(QString const& filepath) {
   // Print parameters to report;
   QString scout;
   scout = QObject::tr("Протокол измерения параметров антенны\n\n");
+  scout += QString(report_comment + "\n\n");
   scout += QObject::tr("Заданные параметры:\n");
   scout += (QObject::tr("Rmeas:             ") + QString::number(Rmeas) + QObject::tr(", Ом;") + "\n");
   scout += (QObject::tr("Fnom:              ") + QString::number(FreqNominalAntenna) + QObject::tr(", кГц;") + "\n");

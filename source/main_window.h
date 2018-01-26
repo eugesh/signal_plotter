@@ -56,10 +56,12 @@ private slots:;
   void changeFreqParRes(double);
   void changeRmeas(double);
   void changeNPeaks(int);
+  void changeComment(QString);
   void SetFreqNominal();
   void SetFreqParRes();
   void SetRmeas();
   void SetNPeaks();
+  void SetComment();
 
   void open_csv_radio_dialog();
   void open_csv_attenuation_dialog();
@@ -101,11 +103,13 @@ private:;
   QInputDialog *QIDRmeas; // Измерительное сопротивление.
   QInputDialog *QIDFreqParRes; // Частота при параллельном резонансе.
   QInputDialog *QIDNPeaks; // Число анализируемых пиков.
+  QInputDialog *QIDComment; // Число анализируемых пиков.
   QDialog *QDParamDialog; // Диалог задания всех параметров.
   double Rmeas;
   double FreqParRes;
   double FreqNominalAntenna;
   unsigned int NumOfAnalysedPeaks;
+  QString report_comment;
   float decimation_factor;
   unsigned int median_mask_size;
   // The end of radio impulse.
@@ -115,13 +119,9 @@ private:;
   QString path_to_attenuation_csv;
   QString path_to_report;
   Samples samples_radio;
-  bool samples_radio_show;
   Samples samples_radio_smoothed;
-  bool samples_radio_smoothed_show;
   Samples samples_attenuation;
-  bool samples_attenuation_show;
   Samples samples_attenuation_smoothed;
-  bool samples_attenuation_smoothed_show;
   GraphParams graph_radio;
   GraphParams graph_attenuation;
   // Calculated parameters.
