@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>766</width>
-    <height>628</height>
+    <width>838</width>
+    <height>686</height>
    </rect>
   </property>
   <property name="acceptDrops">
@@ -143,7 +143,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>766</width>
+     <width>838</width>
      <height>22</height>
     </rect>
    </property>
@@ -207,6 +207,7 @@
     <addaction name="action_smooth"/>
     <addaction name="action_estim_param"/>
     <addaction name="action_radio_end_hand"/>
+    <addaction name="action_fit_curve"/>
    </widget>
    <addaction name="menu_Open"/>
    <addaction name="menuCursor"/>
@@ -491,6 +492,17 @@
    </property>
    <property name="text">
     <string>Указать момент оканчания радиовоздействия</string>
+   </property>
+  </action>
+  <action name="action_fit_curve">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Вписать кривую</string>
    </property>
   </action>
  </widget>

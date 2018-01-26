@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <QVector>
+#include <QDoubleSpinBox>
 #include "../custom_plot/qcustomplot.h"
 #include "signals_eval.h"
 
@@ -28,6 +29,7 @@
 static const double freq_warn_prec = 0.03;
 static const double freq_error_prec = 0.05;
 static const unsigned int freq_factor_to_pass = 2;
+static const unsigned int fit_curve_size = 200;
 
 namespace Ui {
 class MainWindow;
@@ -60,6 +62,11 @@ private slots:;
   void SetFreqParRes();
   void SetRmeas();
   void SetNPeaks();
+  void change_cy0(double);
+  void change_ca0(double);
+  void change_cw(double);
+  void change_ct0(double);
+  void change_cth(double);
 
   void open_csv_radio_dialog();
   void open_csv_attenuation_dialog();
@@ -69,9 +76,10 @@ private slots:;
   void legendDoubleClick(QCPLegend* legend, QCPAbstractLegendItem* item);
   void selectionChanged();
   void graphClicked(QCPAbstractPlottable *plottable, int dataIndex);
-  void addGraph1(Samples data, GraphParams const& graph_params, QString const& mes);
-  void addGraph2(Samples data, GraphParams const& graph_params, QString const& mes);
-  void addGraph3(Samples data, GraphParams const& graph_params, QString const& mes);
+  void addGraph1(Samples data, GraphParams const& graph_params, QString const& mes); // Radio.
+  void addGraph2(Samples data, GraphParams const& graph_params, QString const& mes); // Osc.
+  void addGraph3(Samples data, GraphParams const& graph_params, QString const& mes); // Exp.
+  void addGraph4(Samples data, GraphParams const& graph_params, QString const& mes); // FitCurve.
   void updateGraph();
   void contextMenuRequest(QPoint pos);
   void showSelectedGraph();
@@ -82,9 +90,11 @@ private slots:;
   void mouseWheel();
   void smooth();
   int  estimate_contour_params();
+  void open_fit_curve_toolbar();
 
 private:;
   void create_parameters_setting_dialog();
+  void create_fit_curve_toolbar();
   void load_csv_radio();
   void load_csv_attenuation();
   Samples load_csv(QString filepath, GraphParams *graph_params);
@@ -93,6 +103,8 @@ private:;
   bool verify_half_periods(Intervals const& zero_intervals);
   bool verify_half_periods(std::vector<unsigned int> const& zero_points);
   void plot_points(std::vector<QPoint> const& xy_points, GraphParams const& g_params);
+  void recalculate_param_curve();
+  double y(double x);
 
 private:;
   Ui::MainWindow *ui;
@@ -102,6 +114,12 @@ private:;
   QInputDialog *QIDFreqParRes; // Частота при параллельном резонансе.
   QInputDialog *QIDNPeaks; // Число анализируемых пиков.
   QDialog *QDParamDialog; // Диалог задания всех параметров.
+  QToolBar *QTBCurveFit;
+  QDoubleSpinBox *QDSB_cy0;
+  QDoubleSpinBox *QDSB_ca0;
+  QDoubleSpinBox *QDSB_cw;
+  QDoubleSpinBox *QDSB_ct0;
+  QDoubleSpinBox *QDSB_cth;
   double Rmeas;
   double FreqParRes;
   double FreqNominalAntenna;
@@ -115,17 +133,17 @@ private:;
   QString path_to_attenuation_csv;
   QString path_to_report;
   Samples samples_radio;
-  bool samples_radio_show;
   Samples samples_radio_smoothed;
-  bool samples_radio_smoothed_show;
   Samples samples_attenuation;
-  bool samples_attenuation_show;
   Samples samples_attenuation_smoothed;
-  bool samples_attenuation_smoothed_show;
+  Samples fitting_curve;
   GraphParams graph_radio;
   GraphParams graph_attenuation;
+  GraphParams graph_fitting_curve;
   // Calculated parameters.
-  double Q, f_a, Ra, La, Ca, C0, U_max, I_max, F0;
+  double Q, f_a, Ra, La, Ca, C0, U_max, I_max, F0, t0;
+  // Fitting curve parameters.
+  double c_y0, c_w, c_t0, c_th, c_a0;
 };
 
 #endif

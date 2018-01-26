@@ -75,13 +75,16 @@ MainWindow::MainWindow(QWidget *parent) :
   Rmeas = 2.55; // Om
   FreqParRes = 600; // kHz
   FreqNominalAntenna = 600; // kHz
+  f_a = FreqNominalAntenna;
   radio_end_index = 0;
   median_mask_size = 99;
   NumOfAnalysedPeaks = 0;
-  samples_radio_show = false;
-  samples_radio_smoothed_show = false;
-  samples_attenuation_show = false;
-  samples_attenuation_smoothed_show = false;
+  t0 = 1;
+  c_y0 = 0;
+  c_w = FreqNominalAntenna;
+  c_t0 = 1;
+  c_th = 0;
+  c_a0 = 1;
 
   ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes |
                                 QCP::iSelectLegend | QCP::iSelectPlottables);
@@ -135,6 +138,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
   connect(ui->action_smooth, SIGNAL(triggered()), this, SLOT(smooth()));
   connect(ui->action_estim_param, SIGNAL(triggered()), this, SLOT(estimate_contour_params()));
+  connect(ui->action_fit_curve, SIGNAL(triggered()), this, SLOT(open_fit_curve_toolbar()));
 
   // Parameters setting menus.
   connect(ui->action_set_f_nom, SIGNAL(triggered()), this, SLOT(SetFreqNominal()));
@@ -173,6 +177,8 @@ MainWindow::MainWindow(QWidget *parent) :
   connect(QIDFreqParRes, SIGNAL(doubleValueChanged(double)), this, SLOT(changeFreqParRes(double)));
   connect(QIDRmeas, SIGNAL(doubleValueChanged(double)), this, SLOT(changeRmeas(double)));
   connect(QIDNPeaks, SIGNAL(intValueChanged(int)), this, SLOT(changeNPeaks(int)));
+
+  create_fit_curve_toolbar();
 }
 
 void
@@ -258,8 +264,10 @@ void MainWindow::open_csv_attenuation_dialog() {
 	ui->action_smooth->setEnabled(true);
   // Disable parameter calculation option.
   ui->action_estim_param->setEnabled(false);
+  // Enable manual curve fitting.
+  ui->action_fit_curve->setEnabled(true);
 
-  // Dialog for all paameters.
+  // Dialog for all parameters.
   create_parameters_setting_dialog();
 }
 
@@ -364,6 +372,7 @@ Samples MainWindow::load_csv(QString filepath, GraphParams *g_params) {
 void
 MainWindow::changeFreqNominal(double val) {
   FreqNominalAntenna = val;
+  f_a = val;
 }
 
 void
@@ -406,8 +415,39 @@ MainWindow::SetNPeaks() {
   ui->action_set_n_auto->setChecked(false);
 }
 
+void
+MainWindow::change_cy0(double val) {
+  c_y0 = val;
+  updateGraph();
+}
+
+void
+MainWindow::change_ca0(double val) {
+  c_a0 = val;
+  updateGraph();
+}
+
+void
+MainWindow::change_cw(double val) {
+  c_w = val;
+  updateGraph();
+}
+
+void
+MainWindow::change_ct0(double val) {
+  c_t0 = val;
+  updateGraph();
+}
+
+void
+MainWindow::change_cth(double val) {
+  c_th = val;
+  updateGraph();
+}
+
 /**
  * Add graph to left hand side Y scale.
+ * For radio signal.
  */
 void MainWindow::addGraph1(Samples data, GraphParams const& g_params, QString const& message) {
 	// Determine size of current plot. (number of points in graph).
@@ -440,6 +480,7 @@ void MainWindow::addGraph1(Samples data, GraphParams const& g_params, QString co
 
 /**
  * Add graph to right hand side Y scale.
+ * For damping oscillation.
  */
 void MainWindow::addGraph2(Samples data, GraphParams const& g_params, QString const& message) {
 	// Determine size of current plot. (number of points in graph).
@@ -474,6 +515,9 @@ void MainWindow::addGraph2(Samples data, GraphParams const& g_params, QString co
 	ui->customPlot->replot();
 }
 
+/*
+ * For exponential asimptots.
+ */
 void MainWindow::addGraph3(Samples data, GraphParams const& g_params, QString const& message) {
   // Determine size of current plot. (number of points in graph).
   int curSize;
@@ -488,11 +532,31 @@ void MainWindow::addGraph3(Samples data, GraphParams const& g_params, QString co
     y[i] = data[i] * g_params.yScale + g_params.yOffset;
   }
 
-  // double max = find_max(data) * g_params.yScale;
-  // double min = find_min(data) * g_params.yScale;
+  // Attenuation graph has different y scale.
+  ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis2);
+  ui->customPlot->graph()->setName(message);
+  ui->customPlot->graph()->setData(x, y);
+  ui->customPlot->graph()->setLineStyle(QCPGraph::lsLine);
+  QPen graphPen;
+  graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
+  graphPen.setWidthF(1);
+  ui->customPlot->graph()->setPen(graphPen);
+  ui->customPlot->replot();
+}
 
-  // ui->customPlot->xAxis->setRange(g_params.xOffset - x.size() * 0.1 * g_params.xScale, 1.1 * x.size() * g_params.xScale + g_params.xOffset);
-  // ui->customPlot->yAxis->setRange(1.5 * min, 1.5 * max);
+void MainWindow::addGraph4(Samples data, GraphParams const& g_params, QString const& message) {
+  // Determine size of current plot. (number of points in graph).
+  int curSize;
+  curSize = data.size();
+
+  QVector<double> x(curSize);
+  QVector<double> y(curSize);
+
+  for (int i=0; i < curSize; i++)
+  {
+    x[i] = i * g_params.xScale + g_params.xOffset;
+    y[i] = data[i] * g_params.yScale + g_params.yOffset;
+  }
 
   // Attenuation graph has different y scale.
   ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis2);
@@ -519,6 +583,11 @@ void MainWindow::updateGraph() {
     addGraph1(samples_radio_smoothed, graph_radio, QObject::tr("Радиовоздействие, ФНЧ"));
   if(!samples_attenuation_smoothed.empty())
     addGraph2(samples_attenuation_smoothed, graph_attenuation, QObject::tr("Затухающий сигнал, ФНЧ"));
+
+  if(!fitting_curve.empty() && ui->action_fit_curve->isChecked()) {
+    recalculate_param_curve();
+    addGraph4(fitting_curve, graph_fitting_curve, QObject::tr("Параметрическая кривая"));
+  }
 }
 
 void MainWindow::titleDoubleClick(QMouseEvent* event)
@@ -750,6 +819,8 @@ MainWindow::estimate_contour_params() {
 	  return -1;
 	}
 
+	t0 = a;
+
 	// Plot exponential asymptotes.
 	updateGraph();
 	for(unsigned int i = radio_end_index; i < samples_attenuation_smoothed.size(); ++i) {
@@ -858,6 +929,116 @@ MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq
 }
 
 void
+MainWindow::create_fit_curve_toolbar() {
+  // y = c_y0 + c_a0 * exp(c_t0 * x) * sin(c_w * x + c_th)
+  QTBCurveFit = addToolBar(tr("Curve Fit"));
+  QTBCurveFit->setAllowedAreas(Qt::RightToolBarArea);
+  QWidget *QWCurveFitWidget = new QWidget(this);
+
+  QGridLayout *gridLayout = new QGridLayout;
+
+  QWCurveFitWidget->setLayout(gridLayout);
+
+  QLabel *QLBL_y0 = new QLabel("y0:");
+  QDSB_cy0 = new QDoubleSpinBox();
+  QLabel *QLBL_a0 = new QLabel("a0:");
+  QDSB_ca0 = new QDoubleSpinBox();
+  QLabel *QLBL_w = new QLabel("w:");
+  QDSB_cw = new QDoubleSpinBox();
+  QLabel *QLBL_t0 = new QLabel("t0:");
+  QDSB_ct0 = new QDoubleSpinBox();
+  QLabel *QLBL_th = new QLabel("theta:");
+  QDSB_cth = new QDoubleSpinBox();
+
+  QDSB_cy0->setMaximum(10000.0);
+  QDSB_ca0->setMaximum(10000.0);
+  QDSB_ct0->setMaximum(100000000.0);
+  QDSB_cw->setMaximum(10000000.0);
+  QDSB_cth->setMaximum(100000000.0);
+
+  QDSB_cy0->setMinimum(-10000.0);
+  QDSB_ca0->setMinimum(0.0);
+  QDSB_ct0->setMinimum(-100000000.0);
+  QDSB_cw->setMinimum(.00001);
+  QDSB_cth->setMinimum(-100000000.0);
+
+  QDSB_cy0->setSingleStep(0.001);
+  QDSB_ca0->setSingleStep(0.001);
+  QDSB_ct0->setSingleStep(0.0000000001);
+  QDSB_cw->setSingleStep(0.1);
+  QDSB_cth->setSingleStep(0.01);
+
+  QDSB_cy0->setValue(c_y0);
+  QDSB_ca0->setValue(c_a0);
+  QDSB_ct0->setValue(c_t0);
+  QDSB_cw->setValue(c_w);
+  QDSB_cth->setValue(c_th);
+
+  connect(QDSB_cy0, SIGNAL(valueChanged(double)), this, SLOT(change_cy0(double)));
+  connect(QDSB_ca0, SIGNAL(valueChanged(double)), this, SLOT(change_ca0(double)));
+  connect(QDSB_ct0, SIGNAL(valueChanged(double)), this, SLOT(change_ct0(double)));
+  connect(QDSB_cw, SIGNAL(valueChanged(double)), this, SLOT(change_cw(double)));
+  connect(QDSB_cth, SIGNAL(valueChanged(double)), this, SLOT(change_cth(double)));
+
+  gridLayout->addWidget(QLBL_y0, 0, 0);
+  gridLayout->addWidget(QDSB_cy0, 0, 1);
+  gridLayout->addWidget(QLBL_a0, 1, 0);
+  gridLayout->addWidget(QDSB_ca0, 1, 1);
+  gridLayout->addWidget(QLBL_w, 2, 0);
+  gridLayout->addWidget(QDSB_cw, 2, 1);
+  gridLayout->addWidget(QLBL_t0, 3, 0);
+  gridLayout->addWidget(QDSB_ct0, 3, 1);
+  gridLayout->addWidget(QLBL_th, 4, 0);
+  gridLayout->addWidget(QDSB_cth, 4, 1);
+
+  QTBCurveFit->addWidget(QWCurveFitWidget);
+  QTBCurveFit->hide();
+}
+
+void
+MainWindow::open_fit_curve_toolbar() {
+  if(ui->action_fit_curve->isChecked()) {
+    c_a0 = find_max(samples_attenuation_smoothed);
+    c_t0 = t0;
+    c_y0 = c_a0 - fabs(find_min(samples_attenuation_smoothed));
+    c_w = f_a;
+    c_th = 0;
+
+    QDSB_cy0->setValue(c_y0);
+    QDSB_ca0->setValue(c_a0);
+    QDSB_ct0->setValue(c_t0);
+    QDSB_cw->setValue(c_w);
+    QDSB_cth->setValue(c_th);
+    QTBCurveFit->show();
+    recalculate_param_curve();
+  }
+  else {
+    QTBCurveFit->hide();
+  }
+}
+
+void
+MainWindow::recalculate_param_curve() {
+  std::vector<double> x(fit_curve_size);
+
+  fitting_curve.clear();
+
+  int dec_factor = int(double(samples_attenuation.size()) / fit_curve_size);
+
+  // Form x and y vector.
+  for(unsigned int i = radio_end_index; i < samples_attenuation.size(); ++i) {
+    if(i % dec_factor == 0) {
+      x.push_back(i * graph_attenuation.xScale + graph_attenuation.xOffset + radio_end_index * graph_attenuation.xScale);
+      fitting_curve.push_back(y(x.back()));
+    }
+  }
+
+  graph_fitting_curve = graph_attenuation;
+  graph_fitting_curve.xScale = graph_attenuation.xScale * dec_factor;
+  graph_fitting_curve.xOffset = graph_attenuation.xOffset + radio_end_index * graph_attenuation.xScale;
+}
+
+void
 MainWindow::save_report(QString const& filepath) {
 
   QFile file(filepath.toStdString().c_str());
@@ -960,6 +1141,11 @@ MainWindow::verify_half_periods(Intervals const& zero_intervals) {
 	}
 
   return ret;
+}
+
+double
+MainWindow::y(double x) {
+  return c_y0 + c_a0 * exp(c_t0 * x / graph_attenuation.xScale) * sin(c_w * 1000 * x / (2 * M_PI) - c_th);
 }
 
 #endif
