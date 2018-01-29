@@ -847,7 +847,6 @@ MainWindow::smooth() {
 	}
 	// Enable parameter calculation option.
 	ui->action_estim_param->setEnabled(true);
-	estimate_contour_params();
 }
 
 int
