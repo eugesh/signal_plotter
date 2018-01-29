@@ -10,6 +10,7 @@
 #include <QCursor>
 #include <QPointF>
 #include <QString>
+#include <QStringList>
 #include <QFile>
 #include <QByteArray>
 #include <QMouseEvent>
@@ -905,10 +906,16 @@ MainWindow::save_report(QString const& filepath) {
   // out.setCodec("Windows-1251");
   out.setCodec("UTF-8");
 
+  // Extract folder name.
+  QStringList qsl_full_path = filepath.split("/");
+  qsl_full_path.pop_back();
+  QString folder_name = qsl_full_path.back();
+
   // Print parameters to report;
   QString scout;
   scout = QObject::tr("Протокол измерения параметров антенны\n\n");
   scout += QString(report_comment + "\n\n");
+  scout += QString(QObject::tr("Папка: ") + folder_name + ".\n\n");
   scout += QObject::tr("Заданные параметры:\n");
   scout += (QObject::tr("Rmeas:             ") + QString::number(Rmeas) + QObject::tr(", Ом;") + "\n");
   scout += (QObject::tr("Fnom:              ") + QString::number(FreqNominalAntenna) + QObject::tr(", кГц;") + "\n");
