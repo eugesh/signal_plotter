@@ -199,6 +199,7 @@
     <addaction name="menuR"/>
     <addaction name="menu_f_par_res"/>
     <addaction name="menu_n"/>
+    <addaction name="action_comment"/>
    </widget>
    <widget class="QMenu" name="menu_3">
     <property name="title">
@@ -503,6 +504,11 @@
    </property>
    <property name="text">
     <string>Вписать кривую</string>
+   </property>
+  </action>
+  <action name="action_comment">
+   <property name="text">
+    <string>Комментарий</string>
    </property>
   </action>
  </widget>

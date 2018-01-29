@@ -58,10 +58,12 @@ private slots:;
   void changeFreqParRes(double);
   void changeRmeas(double);
   void changeNPeaks(int);
+  void changeComment(QString);
   void SetFreqNominal();
   void SetFreqParRes();
   void SetRmeas();
   void SetNPeaks();
+  void SetComment();
   void change_cy0(double);
   void change_ca0(double);
   void change_cw(double);
@@ -113,6 +115,7 @@ private:;
   QInputDialog *QIDRmeas; // Измерительное сопротивление.
   QInputDialog *QIDFreqParRes; // Частота при параллельном резонансе.
   QInputDialog *QIDNPeaks; // Число анализируемых пиков.
+  QInputDialog *QIDComment; // Число анализируемых пиков.
   QDialog *QDParamDialog; // Диалог задания всех параметров.
   QToolBar *QTBCurveFit;
   QDoubleSpinBox *QDSB_cy0;
@@ -124,6 +127,7 @@ private:;
   double FreqParRes;
   double FreqNominalAntenna;
   unsigned int NumOfAnalysedPeaks;
+  QString report_comment;
   float decimation_factor;
   unsigned int median_mask_size;
   // The end of radio impulse.
