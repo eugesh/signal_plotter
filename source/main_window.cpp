@@ -200,7 +200,8 @@ MainWindow::create_parameters_setting_dialog() {
   QDParamDialog->setWindowTitle(QObject::tr("Значения параметров"));
   QDParamDialog->setMinimumSize(250, 100);
 
-  QVBoxLayout *layout = new QVBoxLayout;
+  // QVBoxLayout *layout = new QVBoxLayout;
+  QGridLayout *gridLayout = new QGridLayout;
 
   QLabel *QLFreqNom = new QLabel(QObject::tr("Введите величину номинальной частоты резонанса антенны, кГц: "));
   QDoubleSpinBox *QSBFreqNominal = new QDoubleSpinBox();
@@ -234,17 +235,17 @@ MainWindow::create_parameters_setting_dialog() {
   QPushButton *button_ok = new QPushButton("Ok");
   connect(button_ok, SIGNAL(pressed()), QDParamDialog, SLOT(hide()));
 
-  layout->addWidget(QLFreqNom);
-  layout->addWidget(QSBFreqNominal);
-  layout->addWidget(QLRmeas);
-  layout->addWidget(QSBRmeas);
-  layout->addWidget(QLFreqParaRes);
-  layout->addWidget(QSBFreqParaRes);
-  layout->addWidget(QLComment);
-  layout->addWidget(QLEComment);
-  layout->addWidget(button_ok);
+  gridLayout->addWidget(QLFreqNom, 0, 0);
+  gridLayout->addWidget(QSBFreqNominal, 0, 1);
+  gridLayout->addWidget(QLRmeas, 1, 0);
+  gridLayout->addWidget(QSBRmeas, 1, 1);
+  gridLayout->addWidget(QLFreqParaRes, 2, 0);
+  gridLayout->addWidget(QSBFreqParaRes), 2, 1;
+  gridLayout->addWidget(QLComment, 3, 0);
+  gridLayout->addWidget(QLEComment, 3, 1);
+  gridLayout->addWidget(button_ok, 4, 1);
 
-  QDParamDialog->setLayout(layout);
+  QDParamDialog->setLayout(gridLayout);
   QDParamDialog->show();
 }
 
