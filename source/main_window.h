@@ -29,7 +29,7 @@
 static const double freq_warn_prec = 0.03;
 static const double freq_error_prec = 0.05;
 static const unsigned int freq_factor_to_pass = 2;
-static const unsigned int fit_curve_size = 200;
+static const unsigned int fit_curve_size = 1000;
 
 namespace Ui {
 class MainWindow;
@@ -145,7 +145,7 @@ private:;
   GraphParams graph_attenuation;
   GraphParams graph_fitting_curve;
   // Calculated parameters.
-  double Q, f_a, Ra, La, Ca, C0, U_max, I_max, F0, t0;
+  double Q, f_a, Ra, La, Ca, C0, U_max, I_max, F0, t0, theta;
   // Fitting curve parameters.
   double c_y0, c_w, c_t0, c_th, c_a0;
 };

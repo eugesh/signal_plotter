@@ -68,6 +68,18 @@ find_min(std::vector<T> vec) {
 	return min;
 }
 
+template<typename T>
+T
+find_mean(std::vector<T> vec) {
+  T mean = 0;
+  for(unsigned int i = 0; i < vec.size(); ++i) {
+      mean += vec[i];
+  }
+
+  return mean / vec.size();
+}
+
+
 MainWindow::MainWindow(QWidget *parent) :
                        QMainWindow(parent),
                        ui(new Ui::MainWindow)
@@ -851,23 +863,20 @@ MainWindow::smooth() {
 
 int
 MainWindow::estimate_contour_params() {
-	double w0, w;
+	double w0, w, b;
 
 	Samples exp_curve, exp_curve_neg;
-	double a, b;
 
 	// Estimate attenuation signal parameters: exp low, q-factor, frequency.
-	if(signal_analyzer(&a, &b, &Q, &f_a) != 0) {
+	if(signal_analyzer(&t0, &b, &Q, &f_a) != 0) {
 	  return -1;
 	}
-
-	t0 = a;
 
 	// Plot exponential asymptotes.
 	updateGraph();
 	for(unsigned int i = radio_end_index; i < samples_attenuation_smoothed.size(); ++i) {
-		exp_curve.push_back(exp(a * i + b));
-		exp_curve_neg.push_back(-exp(a * i + b));
+		exp_curve.push_back(exp(t0 * i + b));
+		exp_curve_neg.push_back(-exp(t0 * i + b));
 	}
 	GraphParams graph_exp = graph_attenuation;
 	graph_exp.xOffset = graph_attenuation.xOffset + radio_end_index * graph_attenuation.xScale;
@@ -879,7 +888,7 @@ MainWindow::estimate_contour_params() {
 	I_max = 2 * exp_curve.front() / Rmeas;
 	Ra = U_max / I_max;
   w = 2 * M_PI * f_a;
-	double delta = -a / graph_attenuation.xScale;
+	double delta = -t0 / graph_attenuation.xScale;
   La = Ra / (2 * delta);
   w0 = sqrt(w * w + delta * delta);
   Ca = 1.0 / (La * w0 * w0);
@@ -962,6 +971,8 @@ MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq
 	  updateGraph();
 	}
 
+	theta = (zero_points.front() - radio_end_index) * graph_attenuation.xScale;
+
 	*freq = estimate_frequency(real_peaks, graph_attenuation.xOffset, graph_attenuation.xScale);
 
 	double d = - *a / (*freq * graph_attenuation.xScale);
@@ -996,20 +1007,26 @@ MainWindow::create_fit_curve_toolbar() {
   QDSB_cy0->setMaximum(10000.0);
   QDSB_ca0->setMaximum(10000.0);
   QDSB_ct0->setMaximum(100000000.0);
-  QDSB_cw->setMaximum(10000000.0);
+  QDSB_cw->setMaximum(1000000000.0);
   QDSB_cth->setMaximum(100000000.0);
 
   QDSB_cy0->setMinimum(-10000.0);
   QDSB_ca0->setMinimum(0.0);
   QDSB_ct0->setMinimum(-100000000.0);
-  QDSB_cw->setMinimum(.00001);
+  QDSB_cw->setMinimum(.0001);
   QDSB_cth->setMinimum(-100000000.0);
 
-  QDSB_cy0->setSingleStep(0.001);
+  QDSB_cy0->setSingleStep(0.0001);
   QDSB_ca0->setSingleStep(0.001);
-  QDSB_ct0->setSingleStep(0.0000000001);
+  QDSB_ct0->setSingleStep(0.0000025);
   QDSB_cw->setSingleStep(0.1);
-  QDSB_cth->setSingleStep(0.01);
+  QDSB_cth->setSingleStep(0.0000001);
+
+  QDSB_cy0->setDecimals(18);
+  QDSB_ca0->setDecimals(5);
+  QDSB_ct0->setDecimals(8);
+  QDSB_cw->setDecimals(2);
+  QDSB_cth->setDecimals(9);
 
   QDSB_cy0->setValue(c_y0);
   QDSB_ca0->setValue(c_a0);
@@ -1043,9 +1060,10 @@ MainWindow::open_fit_curve_toolbar() {
   if(ui->action_fit_curve->isChecked()) {
     c_a0 = find_max(samples_attenuation_smoothed);
     c_t0 = t0;
+    printf("c_t0 = %f\n", c_t0);
     c_y0 = c_a0 - fabs(find_min(samples_attenuation_smoothed));
-    c_w = f_a;
-    c_th = 0;
+    c_w = f_a * (2 * M_PI);
+    c_th = theta;
 
     QDSB_cy0->setValue(c_y0);
     QDSB_ca0->setValue(c_a0);
@@ -1054,6 +1072,7 @@ MainWindow::open_fit_curve_toolbar() {
     QDSB_cth->setValue(c_th);
     QTBCurveFit->show();
     recalculate_param_curve();
+    updateGraph();
   }
   else {
     QTBCurveFit->hide();
@@ -1071,7 +1090,7 @@ MainWindow::recalculate_param_curve() {
   // Form x and y vector.
   for(unsigned int i = radio_end_index; i < samples_attenuation.size(); ++i) {
     if(i % dec_factor == 0) {
-      x.push_back(i * graph_attenuation.xScale + graph_attenuation.xOffset + radio_end_index * graph_attenuation.xScale);
+      x.push_back(i * graph_attenuation.xScale + graph_attenuation.xOffset);// + radio_end_index * graph_attenuation.xScale);
       fitting_curve.push_back(y(x.back()));
     }
   }
@@ -1118,6 +1137,23 @@ MainWindow::save_report(QString const& filepath) {
   scout += ("C0:     " + QString::number(C0 * 1e12) + QObject::tr(", пФ;") + "\n");
   scout += (QObject::tr("F0, частота колебательного контура:     ") + QString::number(F0 / 1000) + QObject::tr(", кГц;") + "\n");
   scout += (QObject::tr("F, частота свободных колебаний:         ") + QString::number(f_a / 1000) + QObject::tr(", кГц") + "\n");
+
+  if(ui->action_fit_curve->isChecked()) {
+    scout += QObject::tr("\nПараметры, рассчитанные по параметрической кривой: \n");
+
+    scout += QObject::tr("\nПараметры кривой (отладочная информация): \n");
+    scout += (QString("c_y0 = %1\n, c_w = %2\n, c_t0 = %3\n, c_th = %4\n, c_a0 = %5").arg(c_y0, 0, 'E', 21)
+                                                                                     .arg(c_w, 0, 'E', 21)
+                                                                                     .arg(c_t0, 0, 'E', 21)
+                                                                                     .arg(c_th, 0, 'E', 21)
+                                                                                     .arg(c_a0, 0, 'E', 21) + "\n");
+
+    scout += QObject::tr("Соотвтетствующие вычисленные параметры: \n");
+    scout += (QString("y0 = %1, f_a = %2, t0 = %3, c_a0 = %4").arg(find_mean(samples_attenuation_smoothed), 0, 'E', 21)
+                                                              .arg(f_a, 0, 'E', 21)
+                                                              .arg(t0, 0, 'E', 21)
+                                                              .arg(find_max(samples_attenuation_smoothed), 0, 'E', 21) + "\n");
+  }
 
   out << scout;
 }
@@ -1195,7 +1231,9 @@ MainWindow::verify_half_periods(Intervals const& zero_intervals) {
 
 double
 MainWindow::y(double x) {
-  return c_y0 + c_a0 * exp(c_t0 * x / graph_attenuation.xScale) * sin(c_w * 1000 * x / (2 * M_PI) - c_th);
+  double i = (x - graph_attenuation.xOffset - radio_end_index * graph_attenuation.xScale) / graph_attenuation.xScale;
+
+  return c_y0 + c_a0 * exp(c_t0 * i) * sin(c_w * (x - c_th));
 }
 
 #endif
