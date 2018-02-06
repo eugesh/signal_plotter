@@ -85,6 +85,7 @@ MainWindow::MainWindow(QWidget *parent) :
                        ui(new Ui::MainWindow)
 {
   ui->setupUi(this);
+  U_max = I_max = 0;
   Rmeas = 2.55; // Om
   FreqParRes = 600; // kHz
   FreqNominalAntenna = 600; // kHz
@@ -612,6 +613,13 @@ void MainWindow::addGraph4(Samples data, GraphParams const& g_params, QString co
     y[i] = data[i] * g_params.yScale + g_params.yOffset;
   }
 
+  double max = find_max(data) * g_params.yScale;
+  double min = find_min(data) * g_params.yScale;
+
+  // ui->customPlot->xAxis->setRange(g_params.xOffset - x.size() * 0.1 * g_params.xScale, 1.1 * x.size() * g_params.xScale + g_params.xOffset);
+  // ui->customPlot->yAxis2->setRange(g_params.yOffset - 10 * g_params.yScale, (y.size() + 10) * g_params.yScale + g_params.yOffset);
+  ui->customPlot->yAxis->setRange(1.5 * min, 1.5 * max);
+
   // Attenuation graph has different y scale.
   ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis2);
   ui->customPlot->graph()->setName(message);
@@ -889,6 +897,9 @@ MainWindow::estimate_contour_params() {
 	Ra = U_max / I_max;
   w = 2 * M_PI * f_a;
 	double delta = -t0 / graph_attenuation.xScale;
+	printf("t0 = %f\n", t0);
+	printf("Amax = %f\n", find_max(Samples(samples_attenuation_smoothed.begin() + radio_end_index, samples_attenuation_smoothed.end())));
+	printf("Amax_exp = %f\n", exp_curve.front());
   La = Ra / (2 * delta);
   w0 = sqrt(w * w + delta * delta);
   Ca = 1.0 / (La * w0 * w0);
@@ -1058,10 +1069,17 @@ MainWindow::create_fit_curve_toolbar() {
 void
 MainWindow::open_fit_curve_toolbar() {
   if(ui->action_fit_curve->isChecked()) {
-    c_a0 = find_max(samples_attenuation_smoothed);
+    if (I_max != 0) {
+      c_a0 = I_max * Rmeas / 2;
+      // c_a0 = find_max(Samples(samples_attenuation_smoothed.begin() + radio_end_index, samples_attenuation_smoothed.end())); // debug
+    } else {
+      c_a0 = find_max(Samples(samples_attenuation_smoothed.begin() + radio_end_index, samples_attenuation_smoothed.end()));
+    }
     c_t0 = t0;
     printf("c_t0 = %f\n", c_t0);
-    c_y0 = c_a0 - fabs(find_min(samples_attenuation_smoothed));
+    // c_y0 = c_a0 - fabs(find_min(samples_attenuation_smoothed));
+    // c_y0 = find_mean(samples_attenuation_smoothed);
+    c_y0 = fabs(find_min(samples_attenuation_smoothed)) - fabs(find_max(samples_attenuation_smoothed));
     c_w = f_a * (2 * M_PI);
     c_th = theta;
 
@@ -1085,13 +1103,14 @@ MainWindow::recalculate_param_curve() {
 
   fitting_curve.clear();
 
+  // Decimation factor.
   int dec_factor = int(double(samples_attenuation.size()) / fit_curve_size);
 
   // Form x and y vector.
   for(unsigned int i = radio_end_index; i < samples_attenuation.size(); ++i) {
     if(i % dec_factor == 0) {
-      x.push_back(i * graph_attenuation.xScale + graph_attenuation.xOffset);// + radio_end_index * graph_attenuation.xScale);
-      fitting_curve.push_back(y(x.back()));
+      x.push_back(i * graph_attenuation.xScale + graph_attenuation.xOffset); // + radio_end_index * graph_attenuation.xScale);
+      fitting_curve.push_back( y(x.back()) );
     }
   }
 

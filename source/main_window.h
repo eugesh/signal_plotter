@@ -44,6 +44,7 @@ struct GraphParams {
   double xScale;
   double yOffset;
   double yScale;
+  QColor color;
 };
 
 class MainWindow : public QMainWindow {
