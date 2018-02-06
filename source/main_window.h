@@ -79,10 +79,10 @@ private slots:;
   void legendDoubleClick(QCPLegend* legend, QCPAbstractLegendItem* item);
   void selectionChanged();
   void graphClicked(QCPAbstractPlottable *plottable, int dataIndex);
-  void addGraph1(Samples data, GraphParams const& graph_params, QString const& mes); // Radio.
-  void addGraph2(Samples data, GraphParams const& graph_params, QString const& mes); // Osc.
-  void addGraph3(Samples data, GraphParams const& graph_params, QString const& mes); // Exp.
-  void addGraph4(Samples data, GraphParams const& graph_params, QString const& mes); // FitCurve.
+  void addGraph1(Samples data, GraphParams const& graph_params, QString const& mes, bool centralize=false); // Radio.
+  void addGraph2(Samples data, GraphParams const& graph_params, QString const& mes, bool centralize=false); // Osc.
+  void addGraph3(Samples data, GraphParams const& graph_params, QString const& mes, bool centralize=false); // Exp.
+  void addGraph4(Samples data, GraphParams const& graph_params, QString const& mes, bool centralize=false); // FitCurve.
   void updateGraph();
   void contextMenuRequest(QPoint pos);
   void showSelectedGraph();

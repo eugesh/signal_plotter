@@ -354,7 +354,7 @@ void MainWindow::load_csv_attenuation() {
 	samples_attenuation = load_csv(path_to_attenuation_csv, &g_params);
 	graph_attenuation = g_params;
 
-	addGraph2(samples_attenuation, g_params, QString(QObject::tr("Затухающий сигнал")));
+	addGraph2(samples_attenuation, g_params, QString(QObject::tr("Затухающий сигнал")), true);
 }
 
 /**
@@ -504,7 +504,7 @@ MainWindow::change_cth(double val) {
  * Add graph to left hand side Y scale.
  * For radio signal.
  */
-void MainWindow::addGraph1(Samples data, GraphParams const& g_params, QString const& message) {
+void MainWindow::addGraph1(Samples data, GraphParams const& g_params, QString const& message, bool centralize) {
 	// Determine size of current plot. (number of points in graph).
 	int curSize;
 	curSize = data.size();
@@ -537,7 +537,7 @@ void MainWindow::addGraph1(Samples data, GraphParams const& g_params, QString co
  * Add graph to right hand side Y scale.
  * For damping oscillation.
  */
-void MainWindow::addGraph2(Samples data, GraphParams const& g_params, QString const& message) {
+void MainWindow::addGraph2(Samples data, GraphParams const& g_params, QString const& message, bool centralize) {
 	// Determine size of current plot. (number of points in graph).
 	int curSize;
 	curSize = data.size();
@@ -554,9 +554,11 @@ void MainWindow::addGraph2(Samples data, GraphParams const& g_params, QString co
 	double max = find_max(data) * g_params.yScale;
 	double min = find_min(data) * g_params.yScale;
 
-  ui->customPlot->xAxis->setRange(g_params.xOffset - x.size() * 0.1 * g_params.xScale, 1.1 * x.size() * g_params.xScale + g_params.xOffset);
-  // ui->customPlot->yAxis2->setRange(g_params.yOffset - 10 * g_params.yScale, (y.size() + 10) * g_params.yScale + g_params.yOffset);
-  ui->customPlot->yAxis->setRange(1.5 * min, 1.5 * max);
+	if(centralize) {
+    ui->customPlot->xAxis->setRange(g_params.xOffset - x.size() * 0.1 * g_params.xScale, 1.1 * x.size() * g_params.xScale + g_params.xOffset);
+    // ui->customPlot->yAxis2->setRange(g_params.yOffset - 10 * g_params.yScale, (y.size() + 10) * g_params.yScale + g_params.yOffset);
+    ui->customPlot->yAxis->setRange(1.5 * min, 1.5 * max);
+	}
 
 	// Attenuation graph has different y scale.
 	ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis2);
@@ -573,7 +575,7 @@ void MainWindow::addGraph2(Samples data, GraphParams const& g_params, QString co
 /*
  * For exponential asimptots.
  */
-void MainWindow::addGraph3(Samples data, GraphParams const& g_params, QString const& message) {
+void MainWindow::addGraph3(Samples data, GraphParams const& g_params, QString const& message, bool centralize) {
   // Determine size of current plot. (number of points in graph).
   int curSize;
   curSize = data.size();
@@ -599,7 +601,7 @@ void MainWindow::addGraph3(Samples data, GraphParams const& g_params, QString co
   ui->customPlot->replot();
 }
 
-void MainWindow::addGraph4(Samples data, GraphParams const& g_params, QString const& message) {
+void MainWindow::addGraph4(Samples data, GraphParams const& g_params, QString const& message, bool centralize) {
   // Determine size of current plot. (number of points in graph).
   int curSize;
   curSize = data.size();
@@ -615,10 +617,6 @@ void MainWindow::addGraph4(Samples data, GraphParams const& g_params, QString co
 
   double max = find_max(data) * g_params.yScale;
   double min = find_min(data) * g_params.yScale;
-
-  // ui->customPlot->xAxis->setRange(g_params.xOffset - x.size() * 0.1 * g_params.xScale, 1.1 * x.size() * g_params.xScale + g_params.xOffset);
-  // ui->customPlot->yAxis2->setRange(g_params.yOffset - 10 * g_params.yScale, (y.size() + 10) * g_params.yScale + g_params.yOffset);
-  ui->customPlot->yAxis->setRange(1.5 * min, 1.5 * max);
 
   // Attenuation graph has different y scale.
   ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis2);
