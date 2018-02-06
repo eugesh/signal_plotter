@@ -27,7 +27,7 @@
 #include "lowpass.h"
 #include "signals_eval.h"
 
-const static double eps = 1e-10;
+const static double eps = 1e-12;
 
 QString path_from_fullname(QString const& fullpath) {
   QString filePath;
@@ -152,7 +152,7 @@ MainWindow::MainWindow(QWidget *parent) :
   connect(ui->action_save_report, SIGNAL(triggered()), this, SLOT(save_report_dialog()));
 
   connect(ui->action_smooth, SIGNAL(triggered()), this, SLOT(smooth()));
-  connect(ui->action_estim_param, SIGNAL(triggered()), this, SLOT(estimate_contour_params()));
+  connect(ui->action_estim_param, SIGNAL(triggered()), this, SLOT(estimate_params()));
   connect(ui->action_fit_curve, SIGNAL(triggered()), this, SLOT(open_fit_curve_toolbar()));
 
   // Parameters setting menus.
@@ -865,7 +865,23 @@ MainWindow::smooth() {
 }
 
 int
+MainWindow::estimate_params() {
+  int ret = 0;
+  if(ui->action_fit_curve->isChecked()) {
+    printf("estimate_contour_params_hand sig - start\n");
+    ret = estimate_contour_params_hand();
+  }
+  else {
+    printf("estimate_contour_params sig - start\n");
+    ret = estimate_contour_params();
+  }
+
+  return ret;
+}
+
+int
 MainWindow::estimate_contour_params() {
+  printf("estimate_contour_params\n");
 	double w0, w, b;
 
 	Samples exp_curve, exp_curve_neg;
@@ -919,6 +935,107 @@ MainWindow::estimate_contour_params() {
   scout += ("C0:     " + QString::number(C0 * 1e12) + QObject::tr(", пФ;") + "\n");
   scout += (QObject::tr("F0, частота колебательного контура:     ") + QString::number(F0 / 1000) + QObject::tr(", кГц;") + "\n");
   scout += (QObject::tr("F, частота свободных колебаний:           ") + QString::number(w / (2000 * M_PI)) + QObject::tr(", кГц") + "\n");
+
+  QMessageBox::information(this, QObject::tr("Протокол измерения параметров антенны"), scout);
+
+  // Save report into folder with data.
+  QString report_path;
+  QString report_name;
+
+  QDateTime cur_date = QDateTime::currentDateTime();
+  report_path = path_from_fullname(path_to_attenuation_csv);
+  report_name = QString("report_%1_%2_%3_%4").arg(cur_date.date().month())
+                                             .arg(cur_date.date().year())
+                                             .arg(cur_date.date().day())
+                                             .arg(cur_date.time().secsTo(QTime(0, 0)));
+
+  save_report(QString(report_path + report_name + ".txt"));
+
+  return 0;
+}
+
+
+int
+MainWindow::estimate_contour_params_hand() {
+  double w0;
+
+  Samples exp_curve, exp_curve_neg;
+
+  // Plot exponential asymptotes.
+  for(unsigned int i = radio_end_index; i < samples_attenuation_smoothed.size(); ++i) {
+    // double x = ((i - radio_end_index) ) / graph_attenuation.xScale;
+    double x = (i - radio_end_index);
+    exp_curve.push_back(c_a0 * exp(c_t0 * x));
+    exp_curve_neg.push_back(-c_a0 * exp(c_t0 * x));
+  }
+  GraphParams graph_exp = graph_attenuation;
+  graph_exp.xOffset = graph_attenuation.xOffset + radio_end_index * graph_attenuation.xScale;
+  addGraph3(exp_curve, graph_exp, QString(QObject::tr("Асимптота верхняя")), QColor(QString("gray")));
+  addGraph3(exp_curve_neg, graph_exp, QString(QObject::tr("Асимптота нижняя")), QColor(QString("gray")));
+
+  // Estimate Umax, Imax.
+  U_max = find_max(samples_radio) - find_min(samples_radio);
+  printf("Rmeas = %f\n", Rmeas);
+  I_max = 2 * exp_curve.front() / Rmeas;
+  if(fabs(I_max) > eps) {
+    Ra = U_max / I_max;
+  }
+  else {
+    printf("Error: estimate_contour_params_hand: division by zero I_max = %f\n", I_max);
+    return -1;
+  }
+
+  double delta = 0;
+  if(fabs(graph_attenuation.xScale) > eps) {
+    delta = -c_t0 / graph_attenuation.xScale;
+  }
+  else {
+    printf("Error: estimate_contour_params_hand: division by zero, graph_attenuation.xScale = %.51f\n", graph_attenuation.xScale);
+    return -1;
+  }
+
+  if(fabs(delta) > eps) {
+    double d = -c_t0 * 2 * M_PI / (c_w * graph_attenuation.xScale);
+    Q = M_PI / d;
+    printf("t0 = %f\n", t0);
+    printf("Amax = %f\n", find_max(Samples(samples_attenuation_smoothed.begin() + radio_end_index, samples_attenuation_smoothed.end())));
+    printf("Amax_exp = %f\n", exp_curve.front());
+    La = Ra / (2 * delta);
+  }
+  else {
+    printf("Error: estimate_contour_params_hand: division by zero, delta = %f\n", delta);
+    return -1;
+  }
+
+  w0 = sqrt(c_w * c_w + delta * delta);
+  if (fabs(La) > eps || w0 > eps) {
+    Ca = 1.0 / (La * w0 * w0);
+    F0 = w0 / (2 * M_PI);
+    C0 = Ca / ((FreqParRes * 1000 / F0) * (FreqParRes * 1000 / F0) - 1);
+  }
+  else {
+    printf("Error: estimate_contour_params_hand: division by zero, w0 = %f || La = %f \n", w0, La);
+    return -1;
+  }
+
+  // Show message window.
+  QString scout;
+  scout = QObject::tr("Заданные параметры\n");
+  scout += QString(report_comment + "\n\n");
+  scout += (QObject::tr("Rmeas:             ") + QString::number(Rmeas) + QObject::tr(", Ом;") + "\n");
+  scout += (QObject::tr("Fnom:              ") + QString::number(FreqNominalAntenna) + QObject::tr(", кГц;") + "\n");
+  scout += (QObject::tr("F, пар. рез.:     ") + QString::number(FreqParRes) + QObject::tr(", кГц;") + "\n\n");
+  scout += QObject::tr("Измеренные вспомогательные параметры(по экспоненте)\n");
+  scout += (QObject::tr("Umax, размах:     ") + QString::number(U_max * 1000) + QObject::tr(", мВ;") + "\n");
+  scout += (QObject::tr("Imax, размах:       ") + QString::number(I_max * 1000) + QObject::tr(", мA;") + "\n");
+  scout += (QObject::tr("Добротность:       ") + QString::number(Q) + ";\n\n");
+  scout += QObject::tr("Параметры контура\n");
+  scout += ("Ra:     " + QString::number(Ra) + QObject::tr(", Oм;") + "\n");
+  scout += ("Ca:     " + QString::number(Ca * 1e12) + QObject::tr(", пФ;") + "\n");
+  scout += ("La:     " + QString::number(La * 1e6) + QObject::tr(", мкГн;") + "\n");
+  scout += ("C0:     " + QString::number(C0 * 1e12) + QObject::tr(", пФ;") + "\n");
+  scout += (QObject::tr("F0, частота колебательного контура:     ") + QString::number(F0 / 1000) + QObject::tr(", кГц;") + "\n");
+  scout += (QObject::tr("F, частота свободных колебаний:           ") + QString::number(c_w / (2000 * M_PI)) + QObject::tr(", кГц") + "\n");
 
   QMessageBox::information(this, QObject::tr("Протокол измерения параметров антенны"), scout);
 

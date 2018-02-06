@@ -91,7 +91,9 @@ private slots:;
   void mousePress();
   void mouseWheel();
   void smooth();
-  int  estimate_contour_params();
+  int estimate_params();
+  int estimate_contour_params();
+  int estimate_contour_params_hand();
   void open_fit_curve_toolbar();
 
 private:;
