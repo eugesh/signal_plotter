@@ -44,7 +44,6 @@ struct GraphParams {
   double xScale;
   double yOffset;
   double yScale;
-  QColor color;
 };
 
 class MainWindow : public QMainWindow {
@@ -79,10 +78,10 @@ private slots:;
   void legendDoubleClick(QCPLegend* legend, QCPAbstractLegendItem* item);
   void selectionChanged();
   void graphClicked(QCPAbstractPlottable *plottable, int dataIndex);
-  void addGraph1(Samples data, GraphParams const& graph_params, QString const& mes, bool centralize=false); // Radio.
-  void addGraph2(Samples data, GraphParams const& graph_params, QString const& mes, bool centralize=false); // Osc.
-  void addGraph3(Samples data, GraphParams const& graph_params, QString const& mes, bool centralize=false); // Exp.
-  void addGraph4(Samples data, GraphParams const& graph_params, QString const& mes, bool centralize=false); // FitCurve.
+  void addGraph1(Samples data, GraphParams const& graph_params, QString const& mes, QColor color = QColor(QString("black")), bool centralize=false); // Radio.
+  void addGraph2(Samples data, GraphParams const& graph_params, QString const& mes, QColor color = QColor(QString("black")), bool centralize=false); // Osc.
+  void addGraph3(Samples data, GraphParams const& graph_params, QString const& mes, QColor color = QColor(QString("black")), bool centralize=false); // Exp.
+  void addGraph4(Samples data, GraphParams const& graph_params, QString const& mes, QColor color = QColor(QString("black")), bool centralize=false); // FitCurve.
   void updateGraph();
   void contextMenuRequest(QPoint pos);
   void showSelectedGraph();
@@ -145,6 +144,7 @@ private:;
   GraphParams graph_radio;
   GraphParams graph_attenuation;
   GraphParams graph_fitting_curve;
+  GraphParams graph_exp;
   // Calculated parameters.
   double Q, f_a, Ra, La, Ca, C0, U_max, I_max, F0, t0, theta;
   // Fitting curve parameters.

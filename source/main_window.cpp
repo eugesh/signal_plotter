@@ -344,7 +344,7 @@ void MainWindow::load_csv_radio() {
 
 	samples_radio.erase(samples_radio.begin() + radio_end_index, samples_radio.end());
 
-	addGraph1(samples_radio, g_params, QString(QObject::tr("Радиовоздействие")));
+	addGraph1(samples_radio, g_params, QString(QObject::tr("Радиовоздействие")), QColor(QString("green")));
 }
 
 void MainWindow::load_csv_attenuation() {
@@ -354,7 +354,7 @@ void MainWindow::load_csv_attenuation() {
 	samples_attenuation = load_csv(path_to_attenuation_csv, &g_params);
 	graph_attenuation = g_params;
 
-	addGraph2(samples_attenuation, g_params, QString(QObject::tr("Затухающий сигнал")), true);
+	addGraph2(samples_attenuation, g_params, QString(QObject::tr("Затухающий сигнал")), QColor(QString("blue")), true);
 }
 
 /**
@@ -504,7 +504,7 @@ MainWindow::change_cth(double val) {
  * Add graph to left hand side Y scale.
  * For radio signal.
  */
-void MainWindow::addGraph1(Samples data, GraphParams const& g_params, QString const& message, bool centralize) {
+void MainWindow::addGraph1(Samples data, GraphParams const& g_params, QString const& message, QColor color, bool centralize) {
 	// Determine size of current plot. (number of points in graph).
 	int curSize;
 	curSize = data.size();
@@ -518,16 +518,13 @@ void MainWindow::addGraph1(Samples data, GraphParams const& g_params, QString co
 		y[i] = data[i] * g_params.yScale + g_params.yOffset;
 	}
 
-  // ui->customPlot->xAxis->setRange(g_params.xOffset - 10 * g_params.xScale, (x.size() + 10) * g_params.xScale + g_params.xOffset);
-  // ui->customPlot->yAxis->setRange(g_params.yOffset - 10 * g_params.yScale, (y.size() + 10) * g_params.yScale + g_params.yOffset);
-  // ui->customPlot->yAxis2->setRange(-0.025, 0.025);
-
 	ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis);
 	ui->customPlot->graph()->setName(message);
 	ui->customPlot->graph()->setData(x, y);
 	ui->customPlot->graph()->setLineStyle(QCPGraph::lsLine);
 	QPen graphPen;
-	graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
+	// graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
+	graphPen.setColor(color);
 	graphPen.setWidthF(1);
 	ui->customPlot->graph()->setPen(graphPen);
 	ui->customPlot->replot();
@@ -537,7 +534,7 @@ void MainWindow::addGraph1(Samples data, GraphParams const& g_params, QString co
  * Add graph to right hand side Y scale.
  * For damping oscillation.
  */
-void MainWindow::addGraph2(Samples data, GraphParams const& g_params, QString const& message, bool centralize) {
+void MainWindow::addGraph2(Samples data, GraphParams const& g_params, QString const& message, QColor color, bool centralize) {
 	// Determine size of current plot. (number of points in graph).
 	int curSize;
 	curSize = data.size();
@@ -566,7 +563,8 @@ void MainWindow::addGraph2(Samples data, GraphParams const& g_params, QString co
 	ui->customPlot->graph()->setData(x, y);
 	ui->customPlot->graph()->setLineStyle(QCPGraph::lsLine);
 	QPen graphPen;
-	graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
+	// graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
+	graphPen.setColor(color);
 	graphPen.setWidthF(1);
 	ui->customPlot->graph()->setPen(graphPen);
 	ui->customPlot->replot();
@@ -575,7 +573,7 @@ void MainWindow::addGraph2(Samples data, GraphParams const& g_params, QString co
 /*
  * For exponential asimptots.
  */
-void MainWindow::addGraph3(Samples data, GraphParams const& g_params, QString const& message, bool centralize) {
+void MainWindow::addGraph3(Samples data, GraphParams const& g_params, QString const& message, QColor color, bool centralize) {
   // Determine size of current plot. (number of points in graph).
   int curSize;
   curSize = data.size();
@@ -595,13 +593,14 @@ void MainWindow::addGraph3(Samples data, GraphParams const& g_params, QString co
   ui->customPlot->graph()->setData(x, y);
   ui->customPlot->graph()->setLineStyle(QCPGraph::lsLine);
   QPen graphPen;
-  graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
+  // graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
+  graphPen.setColor(color);
   graphPen.setWidthF(1);
   ui->customPlot->graph()->setPen(graphPen);
   ui->customPlot->replot();
 }
 
-void MainWindow::addGraph4(Samples data, GraphParams const& g_params, QString const& message, bool centralize) {
+void MainWindow::addGraph4(Samples data, GraphParams const& g_params, QString const& message, QColor color, bool centralize) {
   // Determine size of current plot. (number of points in graph).
   int curSize;
   curSize = data.size();
@@ -615,17 +614,15 @@ void MainWindow::addGraph4(Samples data, GraphParams const& g_params, QString co
     y[i] = data[i] * g_params.yScale + g_params.yOffset;
   }
 
-  double max = find_max(data) * g_params.yScale;
-  double min = find_min(data) * g_params.yScale;
-
   // Attenuation graph has different y scale.
   ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis2);
   ui->customPlot->graph()->setName(message);
   ui->customPlot->graph()->setData(x, y);
   ui->customPlot->graph()->setLineStyle(QCPGraph::lsLine);
   QPen graphPen;
-  graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
-  graphPen.setWidthF(1);
+  // graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
+  graphPen.setColor(color);
+  graphPen.setWidthF(3);
   ui->customPlot->graph()->setPen(graphPen);
   ui->customPlot->replot();
 }
@@ -636,17 +633,17 @@ void MainWindow::updateGraph() {
 
   // Add graphs.
   if(!samples_radio.empty())
-    addGraph1(samples_radio, graph_radio, QObject::tr("Радиовоздействие"));
+    addGraph1(samples_radio, graph_radio, QObject::tr("Радиовоздействие"), QColor(QString("green")));
   if(!samples_attenuation.empty())
-    addGraph2(samples_attenuation, graph_attenuation, QObject::tr("Затухающий сигнал"));
+    addGraph2(samples_attenuation, graph_attenuation, QObject::tr("Затухающий сигнал"), QColor(QString("blue")));
   if(!samples_radio_smoothed.empty())
-    addGraph1(samples_radio_smoothed, graph_radio, QObject::tr("Радиовоздействие, ФНЧ"));
+    addGraph1(samples_radio_smoothed, graph_radio, QObject::tr("Радиовоздействие, ФНЧ"), QColor(QString("yellow")));
   if(!samples_attenuation_smoothed.empty())
-    addGraph2(samples_attenuation_smoothed, graph_attenuation, QObject::tr("Затухающий сигнал, ФНЧ"));
+    addGraph2(samples_attenuation_smoothed, graph_attenuation, QObject::tr("Затухающий сигнал, ФНЧ"), QColor(QString("red")));
 
   if(!fitting_curve.empty() && ui->action_fit_curve->isChecked()) {
     recalculate_param_curve();
-    addGraph4(fitting_curve, graph_fitting_curve, QObject::tr("Параметрическая кривая"));
+    addGraph4(fitting_curve, graph_fitting_curve, QObject::tr("Параметрическая кривая"), QColor(QString("orange")));
   }
 }
 
@@ -886,8 +883,8 @@ MainWindow::estimate_contour_params() {
 	}
 	GraphParams graph_exp = graph_attenuation;
 	graph_exp.xOffset = graph_attenuation.xOffset + radio_end_index * graph_attenuation.xScale;
-	addGraph3(exp_curve, graph_exp, QString(QObject::tr("Асимптота верхняя")));
-	addGraph3(exp_curve_neg, graph_exp, QString(QObject::tr("Асимптота нижняя")));
+	addGraph3(exp_curve, graph_exp, QString(QObject::tr("Асимптота верхняя")), QColor(QString("gray")));
+	addGraph3(exp_curve_neg, graph_exp, QString(QObject::tr("Асимптота нижняя")), QColor(QString("gray")));
 
 	// Estimate Umax, Imax.
 	U_max = find_max(samples_radio) - find_min(samples_radio);
