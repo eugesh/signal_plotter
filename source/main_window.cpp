@@ -465,46 +465,97 @@ MainWindow::SetNPeaks() {
 }
 
 void
-MainWindow::change_cy0(double val) {
-  c_y0 = val;
-  updateGraph();
-}
-
-void
 MainWindow::SetComment() {
   QIDComment->setTextValue(report_comment);
   QIDComment->show();
 }
 
+/*
+ * DoubleSpinBox - tuners.
+ */
 void
-MainWindow::change_ca0(double val) {
-  c_a0 = val;
-  updateGraph();
+MainWindow::change_cy0_tune(double val) {
+  c_y0 = val / 1000.0;
+  // QSlider_cy0->setValue((int)round(val * 100));
+  // updateGraph();
+  updateParametrivCurve();
 }
 
 void
-MainWindow::change_cw(double val) {
+MainWindow::change_ca0_tune(double val) {
+  c_a0 = val / 1000.0;
+  // updateGraph();
+  updateParametrivCurve();
+  // QSlider_ca0->setValue((int)round(val));
+}
+
+void
+MainWindow::change_cw_tune(double val) {
   c_w = val;
-  updateGraph();
+  // updateGraph();
+  updateParametrivCurve();
+  // QSlider_cw->setValue((int)round(val));
 }
 
 void
-MainWindow::change_ct0(double val) {
+MainWindow::change_ct0_tune(double val) {
   c_t0 = val;
-  updateGraph();
+  // updateGraph();
+  updateParametrivCurve();
+  // QSlider_ct0->setValue((int)round(val));
 }
 
 void
-MainWindow::change_cth(double val) {
-  c_th = val;
-  updateGraph();
+MainWindow::change_cth_tune(double val) {
+  c_th = val / 1e6;
+  // updateGraph();
+  updateParametrivCurve();
+  // QSlider_cth->setValue((int)round(val * 100));
+}
+/*
+ * Slider - adjusters.
+ */
+void
+MainWindow::change_cy0_rough(int val) {
+  c_y0 = val / 100000;
+  // updateGraph();
+  QDSB_cy0->setValue(double(val) / 100.0);
+}
+
+void
+MainWindow::change_ca0_rough(int val) {
+  c_a0 = val / 1000;
+  // updateGraph();
+  QDSB_ca0->setValue(val);
+}
+
+void
+MainWindow::change_cw_rough(int val) {
+  c_w = val;
+  // updateGraph();
+  QDSB_cw->setValue(val);
+}
+
+void
+MainWindow::change_ct0_rough(int val) {
+  c_t0 = val;
+  // updateGraph();
+  QDSB_ct0->setValue(val);
+}
+
+void
+MainWindow::change_cth_rough(int val) {
+  c_th = val / 1e8;
+  // updateGraph();
+  QDSB_cth->setValue(double(val) / 100.0);
 }
 
 /**
  * Add graph to left hand side Y scale.
  * For radio signal.
  */
-void MainWindow::addGraph1(Samples data, GraphParams const& g_params, QString const& message, QColor color, bool centralize) {
+void
+MainWindow::addGraph1(Samples data, GraphParams const& g_params, QString const& message, QColor color, bool centralize) {
 	// Determine size of current plot. (number of points in graph).
 	int curSize;
 	curSize = data.size();
@@ -534,7 +585,8 @@ void MainWindow::addGraph1(Samples data, GraphParams const& g_params, QString co
  * Add graph to right hand side Y scale.
  * For damping oscillation.
  */
-void MainWindow::addGraph2(Samples data, GraphParams const& g_params, QString const& message, QColor color, bool centralize) {
+void
+MainWindow::addGraph2(Samples data, GraphParams const& g_params, QString const& message, QColor color, bool centralize) {
 	// Determine size of current plot. (number of points in graph).
 	int curSize;
 	curSize = data.size();
@@ -573,7 +625,8 @@ void MainWindow::addGraph2(Samples data, GraphParams const& g_params, QString co
 /*
  * For exponential asimptots.
  */
-void MainWindow::addGraph3(Samples data, GraphParams const& g_params, QString const& message, QColor color, bool centralize) {
+void
+MainWindow::addGraph3(Samples data, GraphParams const& g_params, QString const& message, QColor color, bool centralize) {
   // Determine size of current plot. (number of points in graph).
   int curSize;
   curSize = data.size();
@@ -600,7 +653,8 @@ void MainWindow::addGraph3(Samples data, GraphParams const& g_params, QString co
   ui->customPlot->replot();
 }
 
-void MainWindow::addGraph4(Samples data, GraphParams const& g_params, QString const& message, QColor color, bool centralize) {
+void
+MainWindow::addGraph4(Samples data, GraphParams const& g_params, QString const& message, QColor color, bool centralize) {
   // Determine size of current plot. (number of points in graph).
   int curSize;
   curSize = data.size();
@@ -627,7 +681,8 @@ void MainWindow::addGraph4(Samples data, GraphParams const& g_params, QString co
   ui->customPlot->replot();
 }
 
-void MainWindow::updateGraph() {
+void
+MainWindow::updateGraph() {
   // Remove all graphs.
   removeAllGraphs();
 
@@ -647,7 +702,28 @@ void MainWindow::updateGraph() {
   }
 }
 
-void MainWindow::titleDoubleClick(QMouseEvent* event)
+void
+MainWindow::updateParametrivCurve() {
+  // Remove parametric curve.
+  for (int i=0; i < ui->customPlot->graphCount(); ++i)
+  {
+    QCPGraph *graph = ui->customPlot->graph(i);
+
+    if (graph->name() == QObject::tr("Параметрическая кривая"))
+    {
+      ui->customPlot->removeGraph(graph);
+    }
+  }
+
+  // Replot parametric curve.
+  if(!fitting_curve.empty() && ui->action_fit_curve->isChecked()) {
+    recalculate_param_curve();
+    addGraph4(fitting_curve, graph_fitting_curve, QObject::tr("Параметрическая кривая"), QColor(QString("orange")));
+  }
+}
+
+void
+MainWindow::titleDoubleClick(QMouseEvent* event)
 {
   Q_UNUSED(event)
   if (QCPTextElement *title = qobject_cast<QCPTextElement*>(sender()))
@@ -975,7 +1051,7 @@ MainWindow::estimate_contour_params_hand() {
   // Estimate Umax, Imax.
   U_max = find_max(samples_radio) - find_min(samples_radio);
   printf("Rmeas = %f\n", Rmeas);
-  I_max = 2 * exp_curve.front() / Rmeas;
+  I_max = (exp_curve.front() - exp_curve_neg.front())/ Rmeas;
   if(fabs(I_max) > eps) {
     Ra = U_max / I_max;
   }
@@ -1118,63 +1194,79 @@ MainWindow::create_fit_curve_toolbar() {
   QWCurveFitWidget->setLayout(vertical_layout);
 
   QLabel *QLBL_formulae = new QLabel("y = y0 + A0 * exp(-t / t0) * sin(w * (t - theta))");
-  QLabel *QLBL_y0 = new QLabel(QObject::tr("y0, В:"));
+  QLabel *QLBL_y0 = new QLabel(QObject::tr("y0, мВ:"));
   QDSB_cy0 = new QDoubleSpinBox();
-  QLabel *QLBL_a0 = new QLabel(QObject::tr("A0, В:"));
+  QSlider_cy0 = new QSlider(Qt::Horizontal);
+  QLabel *QLBL_a0 = new QLabel(QObject::tr("A0, мВ:"));
   QDSB_ca0 = new QDoubleSpinBox();
+  QSlider_ca0 = new QSlider(Qt::Horizontal);
   QLabel *QLBL_w = new QLabel(QObject::tr("w, рад/с:"));
   QDSB_cw = new QDoubleSpinBox();
+  QSlider_cw = new QSlider(Qt::Horizontal);
   QLabel *QLBL_t0 = new QLabel(QObject::tr("t0, с:"));
   QDSB_ct0 = new QDoubleSpinBox();
-  QLabel *QLBL_th = new QLabel(QObject::tr("theta, с:"));
+  QSlider_ct0 = new QSlider(Qt::Horizontal);
+  QLabel *QLBL_th = new QLabel(QObject::tr("theta, мкс:"));
   QDSB_cth = new QDoubleSpinBox();
+  QSlider_cth = new QSlider(Qt::Horizontal);
 
-  QDSB_cy0->setMaximum(10000.0);
-  QDSB_ca0->setMaximum(10000.0);
-  QDSB_ct0->setMaximum(100000000.0);
-  QDSB_cw->setMaximum(1000000000.0);
-  QDSB_cth->setMaximum(100000000.0);
+  QDSB_cy0->setMaximum(10.0);         QSlider_cy0->setMaximum(1000.0);
+  QDSB_ca0->setMaximum(100.0);        QSlider_ca0->setMaximum(100.0);
+  QDSB_ct0->setMaximum(1000000.0);    QSlider_ct0->setMaximum(1000000.0);
+  QDSB_cw->setMaximum(10000000.0);    QSlider_cw->setMaximum(10000000.0);
+  QDSB_cth->setMaximum(1.0);          QSlider_cth->setMaximum(100.0);
 
-  QDSB_cy0->setMinimum(-10000.0);
-  QDSB_ca0->setMinimum(0.0);
-  QDSB_ct0->setMinimum(-100000000.0);
-  QDSB_cw->setMinimum(.0001);
-  QDSB_cth->setMinimum(-100000000.0);
+  QDSB_cy0->setMinimum(-10.0);        QSlider_cy0->setMinimum(-1000.0);
+  QDSB_ca0->setMinimum(0.0);          QSlider_ca0->setMinimum(0.0);
+  QDSB_ct0->setMinimum(0.0);          QSlider_ct0->setMinimum(0.0);
+  QDSB_cw->setMinimum(0.0);           QSlider_cw->setMinimum(0.0);
+  QDSB_cth->setMinimum(-1.0);         QSlider_cth->setMinimum(-100.0);
 
-  QDSB_cy0->setSingleStep(0.0001);
-  QDSB_ca0->setSingleStep(0.001);
-  QDSB_ct0->setSingleStep(0.0000025);
-  QDSB_cw->setSingleStep(0.1);
-  QDSB_cth->setSingleStep(0.0000001);
+  QDSB_cy0->setSingleStep(0.01);
+  QDSB_ca0->setSingleStep(0.01);
+  QDSB_ct0->setSingleStep(0.1);
+  QDSB_cw->setSingleStep(1);
+  QDSB_cth->setSingleStep(0.01);
 
-  QDSB_cy0->setDecimals(18);
-  QDSB_ca0->setDecimals(5);
-  QDSB_ct0->setDecimals(8);
+  QDSB_cy0->setDecimals(2);
+  QDSB_ca0->setDecimals(2);
+  QDSB_ct0->setDecimals(2);
   QDSB_cw->setDecimals(2);
-  QDSB_cth->setDecimals(9);
+  QDSB_cth->setDecimals(2);
 
-  QDSB_cy0->setValue(c_y0);
-  QDSB_ca0->setValue(c_a0);
-  QDSB_ct0->setValue(c_t0);
-  QDSB_cw->setValue(c_w);
-  QDSB_cth->setValue(c_th);
+  QDSB_cy0->setValue(c_y0 * 1000);   QSlider_cy0->setValue(c_y0 * 100000);
+  QDSB_ca0->setValue(c_a0 * 1000);   QSlider_ca0->setValue(c_a0 * 1000);
+  QDSB_ct0->setValue(c_t0);          QSlider_ct0->setValue(c_t0);
+  QDSB_cw->setValue(c_w);            QSlider_cw->setValue(c_w);
+  QDSB_cth->setValue(c_th * 1e6);    QSlider_cth->setValue(c_th * 1e8);
 
-  connect(QDSB_cy0, SIGNAL(valueChanged(double)), this, SLOT(change_cy0(double)));
-  connect(QDSB_ca0, SIGNAL(valueChanged(double)), this, SLOT(change_ca0(double)));
-  connect(QDSB_ct0, SIGNAL(valueChanged(double)), this, SLOT(change_ct0(double)));
-  connect(QDSB_cw, SIGNAL(valueChanged(double)), this, SLOT(change_cw(double)));
-  connect(QDSB_cth, SIGNAL(valueChanged(double)), this, SLOT(change_cth(double)));
+  connect(QDSB_cy0, SIGNAL(valueChanged(double)), this, SLOT(change_cy0_tune(double)));
+  connect(QDSB_ca0, SIGNAL(valueChanged(double)), this, SLOT(change_ca0_tune(double)));
+  connect(QDSB_ct0, SIGNAL(valueChanged(double)), this, SLOT(change_ct0_tune(double)));
+  connect(QDSB_cw, SIGNAL(valueChanged(double)), this, SLOT(change_cw_tune(double)));
+  connect(QDSB_cth, SIGNAL(valueChanged(double)), this, SLOT(change_cth_tune(double)));
+
+  connect(QSlider_cy0, SIGNAL(valueChanged(int)), this, SLOT(change_cy0_rough(int)));
+  connect(QSlider_ca0, SIGNAL(valueChanged(int)), this, SLOT(change_ca0_rough(int)));
+  connect(QSlider_ct0, SIGNAL(valueChanged(int)), this, SLOT(change_ct0_rough(int)));
+  connect(QSlider_cw, SIGNAL(valueChanged(int)), this, SLOT(change_cw_rough(int)));
+  connect(QSlider_cth, SIGNAL(valueChanged(int)), this, SLOT(change_cth_rough(int)));
 
   gridLayout->addWidget(QLBL_y0, 0, 0);
   gridLayout->addWidget(QDSB_cy0, 0, 1);
+  gridLayout->addWidget(QSlider_cy0, 0, 2);
   gridLayout->addWidget(QLBL_a0, 1, 0);
   gridLayout->addWidget(QDSB_ca0, 1, 1);
+  gridLayout->addWidget(QSlider_ca0, 1, 2);
   gridLayout->addWidget(QLBL_w, 2, 0);
   gridLayout->addWidget(QDSB_cw, 2, 1);
+  gridLayout->addWidget(QSlider_cw, 2, 2);
   gridLayout->addWidget(QLBL_t0, 3, 0);
   gridLayout->addWidget(QDSB_ct0, 3, 1);
+  gridLayout->addWidget(QSlider_ct0, 3, 2);
   gridLayout->addWidget(QLBL_th, 4, 0);
   gridLayout->addWidget(QDSB_cth, 4, 1);
+  gridLayout->addWidget(QSlider_cth, 4, 2);
 
   vertical_layout->addWidget(QLBL_formulae);
   vertical_layout->addLayout(gridLayout);
@@ -1188,23 +1280,27 @@ MainWindow::open_fit_curve_toolbar() {
   if(ui->action_fit_curve->isChecked()) {
     if (I_max != 0) {
       c_a0 = I_max * Rmeas / 2;
-      // c_a0 = find_max(Samples(samples_attenuation_smoothed.begin() + radio_end_index, samples_attenuation_smoothed.end())); // debug
     } else {
       c_a0 = find_max(Samples(samples_attenuation_smoothed.begin() + radio_end_index, samples_attenuation_smoothed.end()));
     }
     c_t0 = - 1 / t0;
     printf("c_t0 = %f\n", c_t0);
-    // c_y0 = c_a0 - fabs(find_min(samples_attenuation_smoothed));
-    // c_y0 = find_mean(samples_attenuation_smoothed);
     c_y0 = fabs(find_min(samples_attenuation_smoothed)) - fabs(find_max(samples_attenuation_smoothed));
     c_w = f_a * (2 * M_PI);
     c_th = theta;
 
-    QDSB_cy0->setValue(c_y0);
-    QDSB_ca0->setValue(c_a0);
+    QDSB_cy0->setValue(c_y0 * 1000);
+    QDSB_ca0->setValue(c_a0 * 1000);
     QDSB_ct0->setValue(c_t0);
     QDSB_cw->setValue(c_w);
-    QDSB_cth->setValue(c_th);
+    QDSB_cth->setValue(c_th * 1e6);
+
+    QSlider_cy0->setValue(c_y0 * 100000);
+    QSlider_ca0->setValue(c_a0 * 1000);
+    QSlider_ct0->setValue(c_t0);
+    QSlider_cw->setValue(c_w);
+    QSlider_cth->setValue(c_th * 1e8);
+
     QTBCurveFit->show();
     recalculate_param_curve();
     updateGraph();
@@ -1249,7 +1345,7 @@ MainWindow::save_report(QString const& filepath) {
   out.setCodec("UTF-8");
 
   // Extract folder name.
-  QStringList qsl_full_path = filepath.split("/");
+  QStringList qsl_full_path = path_to_attenuation_csv.split("/");
   qsl_full_path.pop_back();
   QString folder_name = qsl_full_path.back();
 

@@ -22,6 +22,7 @@
 #include <iostream>
 #include <QVector>
 #include <QDoubleSpinBox>
+#include <QSlider>
 #include "../custom_plot/qcustomplot.h"
 #include "signals_eval.h"
 
@@ -64,11 +65,17 @@ private slots:;
   void SetRmeas();
   void SetNPeaks();
   void SetComment();
-  void change_cy0(double);
-  void change_ca0(double);
-  void change_cw(double);
-  void change_ct0(double);
-  void change_cth(double);
+  void change_cy0_tune(double);
+  void change_ca0_tune(double);
+  void change_cw_tune(double);
+  void change_ct0_tune(double);
+  void change_cth_tune(double);
+
+  void change_cy0_rough(int);
+  void change_ca0_rough(int);
+  void change_cw_rough(int);
+  void change_ct0_rough(int);
+  void change_cth_rough(int);
 
   void open_csv_radio_dialog();
   void open_csv_attenuation_dialog();
@@ -83,6 +90,7 @@ private slots:;
   void addGraph3(Samples data, GraphParams const& graph_params, QString const& mes, QColor color = QColor(QString("black")), bool centralize=false); // Exp.
   void addGraph4(Samples data, GraphParams const& graph_params, QString const& mes, QColor color = QColor(QString("black")), bool centralize=false); // FitCurve.
   void updateGraph();
+  void updateParametrivCurve();
   void contextMenuRequest(QPoint pos);
   void showSelectedGraph();
   void hideSelectedGraph();
@@ -125,6 +133,11 @@ private:;
   QDoubleSpinBox *QDSB_cw;
   QDoubleSpinBox *QDSB_ct0;
   QDoubleSpinBox *QDSB_cth;
+  QSlider *QSlider_cy0;
+  QSlider *QSlider_ca0;
+  QSlider *QSlider_cw;
+  QSlider *QSlider_ct0;
+  QSlider *QSlider_cth;
   double Rmeas;
   double FreqParRes;
   double FreqNominalAntenna;
