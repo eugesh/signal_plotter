@@ -1,4 +1,3 @@
-
 cmake_minimum_required (VERSION 2.8.11)
 
 project (scanline_viewer CXX)
@@ -41,25 +40,11 @@ if (NOT CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
 endif ()
 
 # Build without console application.
-# set(CMAKE_CXX_FLAGS "-mwindows")
+set(CMAKE_CXX_FLAGS "-mwindows")
 
 message("CMAKE_CURRENT_SOURCE_DIR = " ${CMAKE_CURRENT_SOURCE_DIR})
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/source")
-
-#find_package( OpenCV REQUIRED )
-
-#IF(NOT OpenCV_FOUND)
-#    MESSAGE(FATAL_ERROR "OpenCV not found")
-#ENDIF()
-#set(OpenCV_LIBS opencv_core opencv_highgui opencv_imgproc opencv_videoio opencv_contrib opencv_calib3d opencv_features2d opencv_gpu opencv_flann opencv_photo)
-
-#include_directories( ${OpenCV_INCLUDE_DIRS} )
-
-#if(CMAKE_VERSION VERSION_LESS "2.8.11")
-#    include_directories(${OpenCV_INCLUDE_DIRS})
-#endif()
-
 
 if( WIN32 )
 	set (QTLIBS QtGui4 QtCore4)

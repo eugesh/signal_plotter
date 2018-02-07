@@ -965,8 +965,8 @@ MainWindow::estimate_contour_params_hand() {
   for(unsigned int i = radio_end_index; i < samples_attenuation_smoothed.size(); ++i) {
     // double x = ((i - radio_end_index) ) / graph_attenuation.xScale;
     double x = (i - radio_end_index);
-    exp_curve.push_back(c_a0 * exp(c_t0 * x));
-    exp_curve_neg.push_back(-c_a0 * exp(c_t0 * x));
+    exp_curve.push_back(c_y0 + c_a0 * exp(c_t0 * x));
+    exp_curve_neg.push_back(c_y0 - c_a0 * exp(c_t0 * x));
   }
   GraphParams graph_exp = graph_attenuation;
   graph_exp.xOffset = graph_attenuation.xOffset + radio_end_index * graph_attenuation.xScale;
@@ -1113,9 +1113,12 @@ MainWindow::create_fit_curve_toolbar() {
   QWidget *QWCurveFitWidget = new QWidget(this);
 
   QGridLayout *gridLayout = new QGridLayout;
+  QVBoxLayout *vertical_layout = new QVBoxLayout;
 
-  QWCurveFitWidget->setLayout(gridLayout);
+  // QWCurveFitWidget->setLayout(gridLayout);
+  QWCurveFitWidget->setLayout(vertical_layout);
 
+  QLabel *QLBL_formulae = new QLabel("y = y0 + A0 * exp(-t/t0) * sin(w * (t - theta))");
   QLabel *QLBL_y0 = new QLabel("y0:");
   QDSB_cy0 = new QDoubleSpinBox();
   QLabel *QLBL_a0 = new QLabel("a0:");
@@ -1173,6 +1176,9 @@ MainWindow::create_fit_curve_toolbar() {
   gridLayout->addWidget(QDSB_ct0, 3, 1);
   gridLayout->addWidget(QLBL_th, 4, 0);
   gridLayout->addWidget(QDSB_cth, 4, 1);
+
+  vertical_layout->addWidget(QLBL_formulae);
+  vertical_layout->addLayout(gridLayout);
 
   QTBCurveFit->addWidget(QWCurveFitWidget);
   QTBCurveFit->hide();
