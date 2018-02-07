@@ -963,10 +963,9 @@ MainWindow::estimate_contour_params_hand() {
 
   // Plot exponential asymptotes.
   for(unsigned int i = radio_end_index; i < samples_attenuation_smoothed.size(); ++i) {
-    // double x = ((i - radio_end_index) ) / graph_attenuation.xScale;
     double x = (i - radio_end_index);
-    exp_curve.push_back(c_y0 + c_a0 * exp(c_t0 * x));
-    exp_curve_neg.push_back(c_y0 - c_a0 * exp(c_t0 * x));
+    exp_curve.push_back(c_y0 + c_a0 * exp(-x / c_t0));
+    exp_curve_neg.push_back(c_y0 - c_a0 * exp(-x / c_t0));
   }
   GraphParams graph_exp = graph_attenuation;
   graph_exp.xOffset = graph_attenuation.xOffset + radio_end_index * graph_attenuation.xScale;
@@ -987,7 +986,7 @@ MainWindow::estimate_contour_params_hand() {
 
   double delta = 0;
   if(fabs(graph_attenuation.xScale) > eps) {
-    delta = -c_t0 / graph_attenuation.xScale;
+    delta = 1 /(c_t0 * graph_attenuation.xScale);
   }
   else {
     printf("Error: estimate_contour_params_hand: division by zero, graph_attenuation.xScale = %.51f\n", graph_attenuation.xScale);
@@ -995,7 +994,7 @@ MainWindow::estimate_contour_params_hand() {
   }
 
   if(fabs(delta) > eps) {
-    double d = -c_t0 * 2 * M_PI / (c_w * graph_attenuation.xScale);
+    double d = 2 * M_PI / (c_t0 * c_w * graph_attenuation.xScale);
     Q = M_PI / d;
     printf("t0 = %f\n", t0);
     printf("Amax = %f\n", find_max(Samples(samples_attenuation_smoothed.begin() + radio_end_index, samples_attenuation_smoothed.end())));
@@ -1118,16 +1117,16 @@ MainWindow::create_fit_curve_toolbar() {
   // QWCurveFitWidget->setLayout(gridLayout);
   QWCurveFitWidget->setLayout(vertical_layout);
 
-  QLabel *QLBL_formulae = new QLabel("y = y0 + A0 * exp(-t/t0) * sin(w * (t - theta))");
-  QLabel *QLBL_y0 = new QLabel("y0:");
+  QLabel *QLBL_formulae = new QLabel("y = y0 + A0 * exp(-t / t0) * sin(w * (t - theta))");
+  QLabel *QLBL_y0 = new QLabel(QObject::tr("y0, В:"));
   QDSB_cy0 = new QDoubleSpinBox();
-  QLabel *QLBL_a0 = new QLabel("a0:");
+  QLabel *QLBL_a0 = new QLabel(QObject::tr("A0, В:"));
   QDSB_ca0 = new QDoubleSpinBox();
-  QLabel *QLBL_w = new QLabel("w:");
+  QLabel *QLBL_w = new QLabel(QObject::tr("w, рад/с:"));
   QDSB_cw = new QDoubleSpinBox();
-  QLabel *QLBL_t0 = new QLabel("t0:");
+  QLabel *QLBL_t0 = new QLabel(QObject::tr("t0, с:"));
   QDSB_ct0 = new QDoubleSpinBox();
-  QLabel *QLBL_th = new QLabel("theta:");
+  QLabel *QLBL_th = new QLabel(QObject::tr("theta, с:"));
   QDSB_cth = new QDoubleSpinBox();
 
   QDSB_cy0->setMaximum(10000.0);
@@ -1193,7 +1192,7 @@ MainWindow::open_fit_curve_toolbar() {
     } else {
       c_a0 = find_max(Samples(samples_attenuation_smoothed.begin() + radio_end_index, samples_attenuation_smoothed.end()));
     }
-    c_t0 = t0;
+    c_t0 = - 1 / t0;
     printf("c_t0 = %f\n", c_t0);
     // c_y0 = c_a0 - fabs(find_min(samples_attenuation_smoothed));
     // c_y0 = find_mean(samples_attenuation_smoothed);
@@ -1370,7 +1369,7 @@ double
 MainWindow::y(double x) {
   double i = (x - graph_attenuation.xOffset - radio_end_index * graph_attenuation.xScale) / graph_attenuation.xScale;
 
-  return c_y0 + c_a0 * exp(c_t0 * i) * sin(c_w * (x - c_th));
+  return c_y0 + c_a0 * exp(-i / c_t0) * sin(c_w * (x - c_th));
 }
 
 #endif
