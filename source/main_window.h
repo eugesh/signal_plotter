@@ -53,6 +53,8 @@ class MainWindow : public QMainWindow {
 public:;
   explicit MainWindow(QWidget *parent=0);
   ~MainWindow();
+  void ReadInit(QString const& Path);
+  void SaveInit(QString const& Path);
 
 private slots:;
   void changeFreqNominal(double);
@@ -118,7 +120,7 @@ private:;
   bool verify_half_periods(Intervals const& zero_intervals);
   bool verify_half_periods(std::vector<unsigned int> const& zero_points);
   void plot_points(std::vector<QPoint> const& xy_points, GraphParams const& g_params);
-  void recalculate_param_curve();
+  void recalculate_parametric_curve();
   double y(double x);
 
 private:;
@@ -147,7 +149,6 @@ private:;
   unsigned int NumOfAnalysedPeaks;
   QString report_comment;
   float decimation_factor;
-  unsigned int median_mask_size;
   // The end of radio impulse.
   unsigned int radio_end_index;
   // Paths to opened .csv files.

@@ -21,6 +21,7 @@
 #include <QGraphicsSceneMouseEvent>
 #include <QImage>
 #include <QPixmap>
+
 #include "main_window.h"
 #include "ui_mainwindow.h"
 #include "median.h"
@@ -28,7 +29,7 @@
 #include "lowpass.h"
 #include "signals_eval.h"
 
-const static double eps = 1e-12;
+const static double eps = 1e-21;
 
 QString path_from_fullname(QString const& fullpath) {
   QString filePath;
@@ -40,7 +41,7 @@ QString path_from_fullname(QString const& fullpath) {
 
   filePath = fullPathBuf.remove(name);
 
-  std::cout << "filePath: " << qPrintable(filePath) << std::endl;
+  std::cout << "filePath: " << qPrintable(filePath) << '\n';
 
   return filePath;
 }
@@ -92,7 +93,6 @@ MainWindow::MainWindow(QWidget *parent) :
   FreqNominalAntenna = 600; // kHz
   f_a = FreqNominalAntenna;
   radio_end_index = 0;
-  median_mask_size = 99;
   NumOfAnalysedPeaks = 0;
   report_comment = QString("");
   t0 = 1;
@@ -217,6 +217,7 @@ MainWindow::MainWindow(QWidget *parent) :
   connect(QIDComment, SIGNAL(textValueChanged(QString)), this, SLOT(changeComment(QString)));
 
   create_fit_curve_toolbar();
+  ReadInit("init.txt");
 }
 
 void
@@ -277,7 +278,96 @@ MainWindow::create_parameters_setting_dialog() {
 
 MainWindow::~MainWindow()
 {
-    delete ui;
+  SaveInit("init.txt");
+
+  delete ui;
+}
+
+/*
+  QFile file(Path);
+  if (!file.open(QIODevice::ReadOnly)) {
+    fprintf(stdout,"CViewer::Read : Can't read <%s>\n", qPrintable(Path)) ;
+    return ;
+  } ;
+
+  QString Path1 ;
+  QString Path2 ;
+  int step_x, step_y ;
+  int width0, height0 ;
+  double scale_coeff ;
+  int num_scales ;
+  double angle1, angle2, angle_step ;
+
+  //С‡РёС‚Р°РµРј РґР°РЅРЅС‹Рµ РёР· С„Р°Р№Р»Р°
+  {
+    QTextStream ts(&file);
+    ts>>Path1 ;
+    ts>>Path2 ;
+    ts>>step_x>>step_y ;
+    ts>>width0>>height0 ;
+    ts>>scale_coeff>>num_scales ;
+    ts>>angle1>>angle2>>angle_step ;
+    ts>>cur_session;
+
+    last_dest_path = Path2;
+
+    fprintf(stdout,"SDialogSettings::Read : Path1 = <%s>\n", qPrintable(Path1)) ;
+    fprintf(stdout,"SDialogSettings::Read : Path2  = <%s>\n", qPrintable(Path2)) ;
+    fprintf(stdout,"SDialogSettings::Read : step_x = %d ; step_y = %d\n", step_x, step_y) ;
+    fprintf(stdout,"SDialogSettings::Read : width0 = %d ; height0 = %d\n", width0, height0) ;
+    fprintf(stdout,"SDialogSettings::Read : scale_coeff = %lf ; num_scales = %d\n", scale_coeff, num_scales) ;
+    fprintf(stdout,"SDialogSettings::Read : angle1 = %lf - angle2 = %lf - angle_step = %lf\n", angle1, angle2, angle_step) ;
+  } ;
+
+  lineEdit_raster_path->setText(Path1) ;
+  lineEdit_classifier_path->setText(Path2) ;
+
+  spinBox_step_x->setValue(step_x) ;
+  spinBox_step_y->setValue(step_y) ;
+
+  spinBox_width0->setValue(width0) ;
+  spinBox_height0->setValue(height0) ;
+
+  doubleSpinBox_scale_coefficient->setValue(scale_coeff) ;
+  spinBox_num_scales->setValue(num_scales) ;
+
+  doubleSpinBox_angle1->setValue(angle1) ;
+  doubleSpinBox_angle2->setValue(angle2) ;
+  doubleSpinBox_angle_step->setValue(angle_step) ;
+*/
+
+void
+MainWindow::ReadInit(QString const& Path) {
+  QFile file(Path);
+  if(!file.open(QIODevice::ReadOnly)) {
+    printf("CViewer::Save : there is not <%s>\n", qPrintable(Path)) ;
+    return ;
+  } ;
+
+  QTextStream ts(&file);
+  ts >> Rmeas;
+  ts >> FreqParRes;
+  ts >> FreqNominalAntenna;
+
+  ts >> path_to_attenuation_csv;
+  ts >> path_to_report;
+}
+
+void
+MainWindow::SaveInit(QString const& Path) {
+  QFile file(Path);
+  if(!file.open(QIODevice::WriteOnly)) {
+    printf("CViewer::Save : there is not <%s>\n", qPrintable(Path)) ;
+    return ;
+  } ;
+
+  QTextStream ts(&file) ;
+  ts << Rmeas << '\n';
+  ts << FreqParRes << '\n';
+  ts << FreqNominalAntenna << '\n';
+
+  ts << path_to_attenuation_csv << '\n';
+  ts << path_to_report;
 }
 
 /**
@@ -285,7 +375,7 @@ MainWindow::~MainWindow()
  */
 void
 MainWindow::open_csv_radio_dialog() {
-	path_to_radio_csv = QFileDialog::getOpenFileName(this, QObject::tr("Укажите путь к радиоимпульсу."), "./../data/", QObject::tr("(*.csv)"));
+	path_to_radio_csv = QFileDialog::getOpenFileName(this, QObject::tr("Укажите путь к радиоимпульсу."), path_to_attenuation_csv, QObject::tr("(*.csv)"));
 
 	if(!path_to_radio_csv.isEmpty ()) {
 		load_csv_radio();
@@ -295,12 +385,19 @@ MainWindow::open_csv_radio_dialog() {
 														 QObject::tr("Файл не был открыт."));
 	}
 
+	if(ui->action_fit_curve->isChecked()) {
+	  ui->action_fit_curve->setChecked(false);
+	}
+	ui->action_fit_curve->setEnabled(false);
+	QTBCurveFit->hide();
+
 	open_csv_attenuation_dialog();
 }
 
 void
 MainWindow::open_csv_attenuation_dialog() {
-	path_to_attenuation_csv = QFileDialog::getOpenFileName(this, QObject::tr("Укажите путь к затухающему сигналу."), path_to_radio_csv, QObject::tr("(*_CH2*);;(*.csv)"));
+	path_to_attenuation_csv = QFileDialog::getOpenFileName(this, QObject::tr("Укажите путь к затухающему сигналу."),
+	                                                       path_to_radio_csv, QObject::tr("(*_CH2*);;(*.csv)"));
 
 	if(!path_to_attenuation_csv.isEmpty()) {
 		load_csv_attenuation();
@@ -321,9 +418,8 @@ MainWindow::open_csv_attenuation_dialog() {
 
 void
 MainWindow::save_report_dialog() {
-  path_to_report =
-      QFileDialog::getSaveFileName(this, QObject::tr("Укажите путь для сохранения."),
-                                   QObject::tr("./../out/report.txt"), QObject::tr("(*.txt)"));
+  path_to_report = QFileDialog::getSaveFileName(this, QObject::tr("Укажите путь для сохранения."),
+                                                path_to_report, QObject::tr("(*.txt)"));
 
   if(!path_to_report.isEmpty ()) {
     save_report(path_to_report);
@@ -491,7 +587,7 @@ MainWindow::SetComment() {
 }
 
 /*
- * DoubleSpinBox - tuners.
+ * QDoubleSpinBox - tuners.
  */
 void
 MainWindow::change_cy0_tune(double val) {
@@ -532,8 +628,9 @@ MainWindow::change_cth_tune(double val) {
   updateParametrivCurve();
   // QSlider_cth->setValue((int)round(val * 100));
 }
+
 /*
- * Slider - adjusters.
+ * QSlider - adjusters.
  */
 void
 MainWindow::change_cy0_rough(int val) {
@@ -551,9 +648,9 @@ MainWindow::change_ca0_rough(int val) {
 
 void
 MainWindow::change_cw_rough(int val) {
-  c_w = val * (2000 * M_PI);
+  c_w = val * (2 * M_PI);
   // updateGraph();
-  QDSB_cw->setValue(val);
+  QDSB_cw->setValue(c_w / (2000 * M_PI));
 }
 
 void
@@ -717,7 +814,7 @@ MainWindow::updateGraph() {
     addGraph2(samples_attenuation_smoothed, graph_attenuation, QObject::tr("Затухающий сигнал, ФНЧ"), QColor(QString("red")));
 
   if(!fitting_curve.empty() && ui->action_fit_curve->isChecked()) {
-    recalculate_param_curve();
+    recalculate_parametric_curve();
     addGraph4(fitting_curve, graph_fitting_curve, QObject::tr("Параметрическая кривая"), QColor(QString("orange")));
   }
 }
@@ -737,7 +834,7 @@ MainWindow::updateParametrivCurve() {
 
   // Replot parametric curve.
   if(!fitting_curve.empty() && ui->action_fit_curve->isChecked()) {
-    recalculate_param_curve();
+    recalculate_parametric_curve();
     addGraph4(fitting_curve, graph_fitting_curve, QObject::tr("Параметрическая кривая"), QColor(QString("orange")));
   }
 }
@@ -1000,7 +1097,7 @@ MainWindow::estimate_contour_params() {
 
 	// Estimate Umax, Imax.
 	U_max = find_max(samples_radio) - find_min(samples_radio);
-	I_max = 2 * exp_curve.front() / Rmeas;
+	I_max = (exp_curve.front() - exp_curve_neg.front()) / Rmeas;
 	Ra = U_max / I_max;
   w = 2 * M_PI * f_a;
 	double delta = -t0 / graph_attenuation.xScale;
@@ -1071,7 +1168,7 @@ MainWindow::estimate_contour_params_hand() {
   // Estimate Umax, Imax.
   U_max = find_max(samples_radio) - find_min(samples_radio);
   printf("Rmeas = %f\n", Rmeas);
-  I_max = (exp_curve.front() - exp_curve_neg.front())/ Rmeas;
+  I_max = (exp_curve.front() - exp_curve_neg.front()) / Rmeas;
   if(fabs(I_max) > eps) {
     Ra = U_max / I_max;
   }
@@ -1082,7 +1179,7 @@ MainWindow::estimate_contour_params_hand() {
 
   double delta = 0;
   if(fabs(graph_attenuation.xScale) > eps) {
-    delta = 1 /(c_t0 * graph_attenuation.xScale);
+    delta = 1 / (c_t0 * graph_attenuation.xScale);
   }
   else {
     printf("Error: estimate_contour_params_hand: division by zero, graph_attenuation.xScale = %.51f\n", graph_attenuation.xScale);
@@ -1103,7 +1200,7 @@ MainWindow::estimate_contour_params_hand() {
   }
 
   w0 = sqrt(c_w * c_w + delta * delta);
-  if (fabs(La) > eps || w0 > eps) {
+  if (fabs(La) > eps && w0 > eps) {
     Ca = 1.0 / (La * w0 * w0);
     F0 = w0 / (2 * M_PI);
     C0 = Ca / ((FreqParRes * 1000 / F0) * (FreqParRes * 1000 / F0) - 1);
@@ -1233,19 +1330,19 @@ MainWindow::create_fit_curve_toolbar() {
   QDSB_cy0->setMaximum(10.0);         QSlider_cy0->setMaximum(1000.0);
   QDSB_ca0->setMaximum(100.0);        QSlider_ca0->setMaximum(100.0);
   QDSB_ct0->setMaximum(1e6);          QSlider_ct0->setMaximum(1e6);
-  QDSB_cw->setMaximum(1500);           QSlider_cw->setMaximum(1500);
-  QDSB_cth->setMaximum(1.0);          QSlider_cth->setMaximum(100.0);
+  QDSB_cw->setMaximum(1500);          QSlider_cw->setMaximum(1500000);
+  QDSB_cth->setMaximum(5.0);          QSlider_cth->setMaximum(500.0);
 
   QDSB_cy0->setMinimum(-10.0);        QSlider_cy0->setMinimum(-1000.0);
   QDSB_ca0->setMinimum(0.0);          QSlider_ca0->setMinimum(0.0);
   QDSB_ct0->setMinimum(0.0);          QSlider_ct0->setMinimum(0.0);
-  QDSB_cw->setMinimum(50);           QSlider_cw->setMinimum(50);
-  QDSB_cth->setMinimum(-1.0);         QSlider_cth->setMinimum(-100.0);
+  QDSB_cw->setMinimum(50);            QSlider_cw->setMinimum(50000);
+  QDSB_cth->setMinimum(-5.0);         QSlider_cth->setMinimum(-500.0);
 
   QDSB_cy0->setSingleStep(0.01);
   QDSB_ca0->setSingleStep(0.01);
-  QDSB_ct0->setSingleStep(0.1);
-  QDSB_cw->setSingleStep(1);
+  QDSB_ct0->setSingleStep(0.01);
+  QDSB_cw->setSingleStep(0.01);
   QDSB_cth->setSingleStep(0.01);
 
   QDSB_cy0->setDecimals(2);
@@ -1254,11 +1351,11 @@ MainWindow::create_fit_curve_toolbar() {
   QDSB_cw->setDecimals(2);
   QDSB_cth->setDecimals(2);
 
-  QDSB_cy0->setValue(c_y0 * 1000);   QSlider_cy0->setValue(c_y0 * 1e5);
-  QDSB_ca0->setValue(c_a0 * 1000);   QSlider_ca0->setValue(c_a0 * 1000);
-  QDSB_ct0->setValue(c_t0);          QSlider_ct0->setValue(c_t0);
-  QDSB_cw->setValue(c_w / (2000 * M_PI));            QSlider_cw->setValue(c_w / (2000 * M_PI));
-  QDSB_cth->setValue(c_th * 1e6);    QSlider_cth->setValue(c_th * 1e8);
+  QDSB_cy0->setValue(c_y0 * 1000);            QSlider_cy0->setValue(c_y0 * 1e5);
+  QDSB_ca0->setValue(c_a0 * 1000);            QSlider_ca0->setValue(c_a0 * 1000);
+  QDSB_ct0->setValue(c_t0);                   QSlider_ct0->setValue(c_t0);
+  QDSB_cw->setValue(c_w / (2000 * M_PI));     QSlider_cw->setValue(c_w / (2 * M_PI));
+  QDSB_cth->setValue(c_th * 1e6);             QSlider_cth->setValue(c_th * 1e8);
 
   connect(QDSB_cy0, SIGNAL(valueChanged(double)), this, SLOT(change_cy0_tune(double)));
   connect(QDSB_ca0, SIGNAL(valueChanged(double)), this, SLOT(change_ca0_tune(double)));
@@ -1322,7 +1419,7 @@ MainWindow::open_fit_curve_toolbar() {
     QSlider_cth->setValue(c_th * 1e8);
 
     QTBCurveFit->show();
-    recalculate_param_curve();
+    recalculate_parametric_curve();
     updateGraph();
   }
   else {
@@ -1331,7 +1428,7 @@ MainWindow::open_fit_curve_toolbar() {
 }
 
 void
-MainWindow::recalculate_param_curve() {
+MainWindow::recalculate_parametric_curve() {
   std::vector<double> x(fit_curve_size);
 
   fitting_curve.clear();
@@ -1401,45 +1498,6 @@ MainWindow::save_report(QString const& filepath) {
 
   // Print parameters to report;
   QString scout = do_report_string();
-  /*scout = QObject::tr("Протокол измерения параметров антенны\n\n");
-  if(ui->action_fit_curve->isChecked())
-    scout += QObject::tr("Ручной режим.\n");
-  else
-    scout += QObject::tr("Автоматический режим.\n");
-  scout += QString(report_comment + "\n\n");
-  scout += QString(QObject::tr("Папка: ") + folder_name + ".\n\n");
-  scout += QObject::tr("Заданные параметры:\n");
-  scout += (QObject::tr("Rmeas:             ") + QString::number(Rmeas) + QObject::tr(", Ом;") + "\n");
-  scout += (QObject::tr("Fnom:              ") + QString::number(FreqNominalAntenna) + QObject::tr(", кГц;") + "\n");
-  scout += (QObject::tr("F, пар. рез.:      ") + QString::number(FreqParRes) + QObject::tr(", кГц;") + "\n\n");
-  scout += QObject::tr("Измеренные вспомогательные параметры(по экспоненте):\n");
-  scout += (QObject::tr("Umax, размах:      ") + QString::number(U_max * 1000) + QObject::tr(", мВ;") + "\n");
-  scout += (QObject::tr("Imax, размах:      ") + QString::number(I_max * 1000) + QObject::tr(", мA;") + "\n");
-  scout += (QObject::tr("Добротность:       ") + QString::number(Q) + ";\n\n");
-  scout += QObject::tr("Параметры контура:\n");
-  scout += ("Ra:     " + QString::number(Ra) + QObject::tr(", Oм;") + "\n");
-  scout += ("Ca:     " + QString::number(Ca * 1e12) + QObject::tr(", пФ;") + "\n");
-  scout += ("La:     " + QString::number(La * 1e6) + QObject::tr(", мкГн;") + "\n");
-  scout += ("C0:     " + QString::number(C0 * 1e12) + QObject::tr(", пФ;") + "\n");
-  scout += (QObject::tr("F0, частота колебательного контура:     ") + QString::number(F0 / 1000) + QObject::tr(", кГц;") + "\n");
-  scout += (QObject::tr("F, частота свободных колебаний:         ") + QString::number(f_a / 1000) + QObject::tr(", кГц") + "\n");
-
-  /*if(ui->action_fit_curve->isChecked()) {
-    scout += QObject::tr("\nПараметры, рассчитанные по параметрической кривой: \n");
-
-    scout += QObject::tr("\nПараметры кривой (отладочная информация): \n");
-    scout += (QString("c_y0 = %1\n, c_w = %2\n, c_t0 = %3\n, c_th = %4\n, c_a0 = %5").arg(c_y0, 0, 'E', 21)
-                                                                                     .arg(c_w, 0, 'E', 21)
-                                                                                     .arg(c_t0, 0, 'E', 21)
-                                                                                     .arg(c_th, 0, 'E', 21)
-                                                                                     .arg(c_a0, 0, 'E', 21) + "\n");
-
-    scout += QObject::tr("Соотвтетствующие вычисленные параметры: \n");
-    scout += (QString("y0 = %1, f_a = %2, t0 = %3, c_a0 = %4").arg(find_mean(samples_attenuation_smoothed), 0, 'E', 21)
-                                                              .arg(f_a, 0, 'E', 21)
-                                                              .arg(t0, 0, 'E', 21)
-                                                              .arg(find_max(samples_attenuation_smoothed), 0, 'E', 21) + "\n");
-  }*/
 
   out << scout;
 }
@@ -1470,7 +1528,6 @@ MainWindow::save_report_pdf(QString const& filepath) {
   // Print parameters to report;
   scout = QObject::tr("Протокол измерения параметров антенны\n\n");
 
-  // fillRect ( int x, int y, int width, int height, const QBrush & brush )
   painter.fillRect(1, 1, 500, 25, QColor(QString("white")));
 
   QFont font("Times", 10, QFont::Bold);;
@@ -1484,14 +1541,6 @@ MainWindow::save_report_pdf(QString const& filepath) {
 
   painter.end();
 }
-
-/*
-  if (! printer.newPage()) {
-    qWarning("failed in flushing page to disk, disk full?");
-    return 1;
-  }
-  painter.drawText(10, 10, "Test 2");
- */
 
 bool
 MainWindow::verify_half_periods(std::vector<unsigned int> const& zero_points) {
