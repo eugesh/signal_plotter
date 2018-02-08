@@ -180,9 +180,9 @@ MainWindow::MainWindow(QWidget *parent) :
   QIDNPeaks->setComboBoxEditable(true);
   // QIDComment->setComboBoxEditable(true);
 
-  QIDFreqNominal->setDoubleMaximum(10000.0);
+  QIDFreqNominal->setDoubleMaximum(1e4);
   QIDRmeas->setDoubleMaximum(1000.0);
-  QIDFreqParRes->setDoubleMaximum(10000.0);
+  QIDFreqParRes->setDoubleMaximum(1e4);
   QIDNPeaks->setIntMaximum(100);
 
   QIDFreqNominal->setDoubleMinimum(.001);
@@ -243,9 +243,9 @@ MainWindow::create_parameters_setting_dialog() {
   connect(QSBFreqParaRes, SIGNAL(valueChanged(double)), this, SLOT(changeFreqParRes(double)));
   connect(QLEComment, SIGNAL(textChanged(QString)), this, SLOT(changeComment(QString)));
 
-  QSBFreqNominal->setMaximum(10000.0);
+  QSBFreqNominal->setMaximum(1e4);
   QSBRmeas->setMaximum(1000.0);
-  QSBFreqParaRes->setMaximum(10000.0);
+  QSBFreqParaRes->setMaximum(1e4);
 
   QSBFreqNominal->setMinimum(.001);
   QSBRmeas->setMinimum(0.001);
@@ -491,7 +491,7 @@ MainWindow::change_ca0_tune(double val) {
 
 void
 MainWindow::change_cw_tune(double val) {
-  c_w = val;
+  c_w = val * (2000 * M_PI);
   // updateGraph();
   updateParametrivCurve();
   // QSlider_cw->setValue((int)round(val));
@@ -517,7 +517,7 @@ MainWindow::change_cth_tune(double val) {
  */
 void
 MainWindow::change_cy0_rough(int val) {
-  c_y0 = val / 100000;
+  c_y0 = val / 1e5;
   // updateGraph();
   QDSB_cy0->setValue(double(val) / 100.0);
 }
@@ -531,7 +531,7 @@ MainWindow::change_ca0_rough(int val) {
 
 void
 MainWindow::change_cw_rough(int val) {
-  c_w = val;
+  c_w = val * (2000 * M_PI);
   // updateGraph();
   QDSB_cw->setValue(val);
 }
@@ -1193,14 +1193,14 @@ MainWindow::create_fit_curve_toolbar() {
   // QWCurveFitWidget->setLayout(gridLayout);
   QWCurveFitWidget->setLayout(vertical_layout);
 
-  QLabel *QLBL_formulae = new QLabel("y = y0 + A0 * exp(-t / t0) * sin(w * (t - theta))");
+  QLabel *QLBL_formulae = new QLabel("y = y0 + A0 * exp(-t / t0) * sin(2 * pi * F * (t - theta))");
   QLabel *QLBL_y0 = new QLabel(QObject::tr("y0, мВ:"));
   QDSB_cy0 = new QDoubleSpinBox();
   QSlider_cy0 = new QSlider(Qt::Horizontal);
   QLabel *QLBL_a0 = new QLabel(QObject::tr("A0, мВ:"));
   QDSB_ca0 = new QDoubleSpinBox();
   QSlider_ca0 = new QSlider(Qt::Horizontal);
-  QLabel *QLBL_w = new QLabel(QObject::tr("w, рад/с:"));
+  QLabel *QLBL_w = new QLabel(QObject::tr("F, кГц:"));
   QDSB_cw = new QDoubleSpinBox();
   QSlider_cw = new QSlider(Qt::Horizontal);
   QLabel *QLBL_t0 = new QLabel(QObject::tr("t0, с:"));
@@ -1212,14 +1212,14 @@ MainWindow::create_fit_curve_toolbar() {
 
   QDSB_cy0->setMaximum(10.0);         QSlider_cy0->setMaximum(1000.0);
   QDSB_ca0->setMaximum(100.0);        QSlider_ca0->setMaximum(100.0);
-  QDSB_ct0->setMaximum(1000000.0);    QSlider_ct0->setMaximum(1000000.0);
-  QDSB_cw->setMaximum(10000000.0);    QSlider_cw->setMaximum(10000000.0);
+  QDSB_ct0->setMaximum(1e6);          QSlider_ct0->setMaximum(1e6);
+  QDSB_cw->setMaximum(1500);           QSlider_cw->setMaximum(1500);
   QDSB_cth->setMaximum(1.0);          QSlider_cth->setMaximum(100.0);
 
   QDSB_cy0->setMinimum(-10.0);        QSlider_cy0->setMinimum(-1000.0);
   QDSB_ca0->setMinimum(0.0);          QSlider_ca0->setMinimum(0.0);
   QDSB_ct0->setMinimum(0.0);          QSlider_ct0->setMinimum(0.0);
-  QDSB_cw->setMinimum(0.0);           QSlider_cw->setMinimum(0.0);
+  QDSB_cw->setMinimum(50);           QSlider_cw->setMinimum(50);
   QDSB_cth->setMinimum(-1.0);         QSlider_cth->setMinimum(-100.0);
 
   QDSB_cy0->setSingleStep(0.01);
@@ -1234,22 +1234,22 @@ MainWindow::create_fit_curve_toolbar() {
   QDSB_cw->setDecimals(2);
   QDSB_cth->setDecimals(2);
 
-  QDSB_cy0->setValue(c_y0 * 1000);   QSlider_cy0->setValue(c_y0 * 100000);
+  QDSB_cy0->setValue(c_y0 * 1000);   QSlider_cy0->setValue(c_y0 * 1e5);
   QDSB_ca0->setValue(c_a0 * 1000);   QSlider_ca0->setValue(c_a0 * 1000);
   QDSB_ct0->setValue(c_t0);          QSlider_ct0->setValue(c_t0);
-  QDSB_cw->setValue(c_w);            QSlider_cw->setValue(c_w);
+  QDSB_cw->setValue(c_w / (2000 * M_PI));            QSlider_cw->setValue(c_w / (2000 * M_PI));
   QDSB_cth->setValue(c_th * 1e6);    QSlider_cth->setValue(c_th * 1e8);
 
   connect(QDSB_cy0, SIGNAL(valueChanged(double)), this, SLOT(change_cy0_tune(double)));
   connect(QDSB_ca0, SIGNAL(valueChanged(double)), this, SLOT(change_ca0_tune(double)));
   connect(QDSB_ct0, SIGNAL(valueChanged(double)), this, SLOT(change_ct0_tune(double)));
-  connect(QDSB_cw, SIGNAL(valueChanged(double)), this, SLOT(change_cw_tune(double)));
+  connect(QDSB_cw,  SIGNAL(valueChanged(double)), this, SLOT(change_cw_tune(double)));
   connect(QDSB_cth, SIGNAL(valueChanged(double)), this, SLOT(change_cth_tune(double)));
 
   connect(QSlider_cy0, SIGNAL(valueChanged(int)), this, SLOT(change_cy0_rough(int)));
   connect(QSlider_ca0, SIGNAL(valueChanged(int)), this, SLOT(change_ca0_rough(int)));
   connect(QSlider_ct0, SIGNAL(valueChanged(int)), this, SLOT(change_ct0_rough(int)));
-  connect(QSlider_cw, SIGNAL(valueChanged(int)), this, SLOT(change_cw_rough(int)));
+  connect(QSlider_cw,  SIGNAL(valueChanged(int)), this, SLOT(change_cw_rough(int)));
   connect(QSlider_cth, SIGNAL(valueChanged(int)), this, SLOT(change_cth_rough(int)));
 
   gridLayout->addWidget(QLBL_y0, 0, 0);
@@ -1292,13 +1292,13 @@ MainWindow::open_fit_curve_toolbar() {
     QDSB_cy0->setValue(c_y0 * 1000);
     QDSB_ca0->setValue(c_a0 * 1000);
     QDSB_ct0->setValue(c_t0);
-    QDSB_cw->setValue(c_w);
+    QDSB_cw->setValue(c_w / (2000 * M_PI));
     QDSB_cth->setValue(c_th * 1e6);
 
-    QSlider_cy0->setValue(c_y0 * 100000);
+    QSlider_cy0->setValue(c_y0 * 1e5);
     QSlider_ca0->setValue(c_a0 * 1000);
     QSlider_ct0->setValue(c_t0);
-    QSlider_cw->setValue(c_w);
+    QSlider_cw->setValue(c_w / (2000 * M_PI));
     QSlider_cth->setValue(c_th * 1e8);
 
     QTBCurveFit->show();
