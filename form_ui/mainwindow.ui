@@ -155,6 +155,7 @@
     <addaction name="action_OpenAttenuationSignal"/>
     <addaction name="separator"/>
     <addaction name="action_save_report"/>
+    <addaction name="action_save_report_PDF"/>
     <addaction name="separator"/>
     <addaction name="action_Quit"/>
    </widget>
@@ -474,7 +475,7 @@
   </action>
   <action name="action_save_report">
    <property name="text">
-    <string>Сохранить отчет</string>
+    <string>Сохранить отчет в txt</string>
    </property>
   </action>
   <action name="action_set_n_hand">
@@ -509,6 +510,11 @@
   <action name="action_comment">
    <property name="text">
     <string>Комментарий</string>
+   </property>
+  </action>
+  <action name="action_save_report_PDF">
+   <property name="text">
+    <string>Сохранить отчет в PDF</string>
    </property>
   </action>
  </widget>

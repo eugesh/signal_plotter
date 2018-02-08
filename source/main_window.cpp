@@ -20,6 +20,7 @@
 #include <QMessageBox>
 #include <QGraphicsSceneMouseEvent>
 #include <QImage>
+#include <QPixmap>
 #include "main_window.h"
 #include "ui_mainwindow.h"
 #include "median.h"
@@ -150,6 +151,7 @@ MainWindow::MainWindow(QWidget *parent) :
   connect(ui->action_OpenRadioSignal, SIGNAL(triggered()), this, SLOT(open_csv_radio_dialog()));
   connect(ui->action_OpenAttenuationSignal, SIGNAL(triggered()), this, SLOT(open_csv_attenuation_dialog()));
   connect(ui->action_save_report, SIGNAL(triggered()), this, SLOT(save_report_dialog()));
+  connect(ui->action_save_report_PDF, SIGNAL(triggered()), this, SLOT(save_report_dialog_pdf()));
 
   connect(ui->action_smooth, SIGNAL(triggered()), this, SLOT(smooth()));
   connect(ui->action_estim_param, SIGNAL(triggered()), this, SLOT(estimate_params()));
@@ -281,7 +283,8 @@ MainWindow::~MainWindow()
 /**
  * Reaction on menu button click.
  */
-void MainWindow::open_csv_radio_dialog() {
+void
+MainWindow::open_csv_radio_dialog() {
 	path_to_radio_csv = QFileDialog::getOpenFileName(this, QObject::tr("Укажите путь к радиоимпульсу."), "./../data/", QObject::tr("(*.csv)"));
 
 	if(!path_to_radio_csv.isEmpty ()) {
@@ -295,7 +298,8 @@ void MainWindow::open_csv_radio_dialog() {
 	open_csv_attenuation_dialog();
 }
 
-void MainWindow::open_csv_attenuation_dialog() {
+void
+MainWindow::open_csv_attenuation_dialog() {
 	path_to_attenuation_csv = QFileDialog::getOpenFileName(this, QObject::tr("Укажите путь к затухающему сигналу."), path_to_radio_csv, QObject::tr("(*_CH2*);;(*.csv)"));
 
 	if(!path_to_attenuation_csv.isEmpty()) {
@@ -315,13 +319,29 @@ void MainWindow::open_csv_attenuation_dialog() {
   create_parameters_setting_dialog();
 }
 
-void MainWindow::save_report_dialog() {
+void
+MainWindow::save_report_dialog() {
   path_to_report =
       QFileDialog::getSaveFileName(this, QObject::tr("Укажите путь для сохранения."),
                                    QObject::tr("./../out/report.txt"), QObject::tr("(*.txt)"));
 
   if(!path_to_report.isEmpty ()) {
     save_report(path_to_report);
+  }
+  else {
+    QMessageBox::information(this, QObject::tr("SignalPlotter"),
+                             QObject::tr("Путь не был указан корректно."));
+  }
+}
+
+void
+MainWindow::save_report_dialog_pdf() {
+  path_to_report =
+      QFileDialog::getSaveFileName(this, QObject::tr("Укажите путь для сохранения."),
+                                   QObject::tr("./../out/report.pdf"), QObject::tr("(*.pdf)"));
+
+  if(!path_to_report.isEmpty ()) {
+    save_report_pdf(path_to_report);
   }
   else {
     QMessageBox::information(this, QObject::tr("SignalPlotter"),
@@ -994,8 +1014,8 @@ MainWindow::estimate_contour_params() {
   C0 = Ca / ((FreqParRes * 1000 / F0) * (FreqParRes * 1000 / F0) - 1);
 
   // Show message window.
-  QString scout;
-  scout = QObject::tr("Заданные параметры\n");
+  QString scout = do_report_string();
+  /*scout = QObject::tr("Заданные параметры\n");
   scout += QString(report_comment + "\n\n");
   scout += (QObject::tr("Rmeas:             ") + QString::number(Rmeas) + QObject::tr(", Ом;") + "\n");
   scout += (QObject::tr("Fnom:              ") + QString::number(FreqNominalAntenna) + QObject::tr(", кГц;") + "\n");
@@ -1010,7 +1030,7 @@ MainWindow::estimate_contour_params() {
   scout += ("La:     " + QString::number(La * 1e6) + QObject::tr(", мкГн;") + "\n");
   scout += ("C0:     " + QString::number(C0 * 1e12) + QObject::tr(", пФ;") + "\n");
   scout += (QObject::tr("F0, частота колебательного контура:     ") + QString::number(F0 / 1000) + QObject::tr(", кГц;") + "\n");
-  scout += (QObject::tr("F, частота свободных колебаний:           ") + QString::number(w / (2000 * M_PI)) + QObject::tr(", кГц") + "\n");
+  scout += (QObject::tr("F, частота свободных колебаний:           ") + QString::number(w / (2000 * M_PI)) + QObject::tr(", кГц") + "\n");*/
 
   QMessageBox::information(this, QObject::tr("Протокол измерения параметров антенны"), scout);
 
@@ -1332,6 +1352,41 @@ MainWindow::recalculate_param_curve() {
   graph_fitting_curve.xOffset = graph_attenuation.xOffset + radio_end_index * graph_attenuation.xScale;
 }
 
+QString
+MainWindow::do_report_string() {
+  // Extract folder name.
+  QStringList qsl_full_path = path_to_attenuation_csv.split("/");
+  qsl_full_path.pop_back();
+  QString folder_name = qsl_full_path.back();
+
+  // Print parameters to report;
+  QString scout;
+  scout = QObject::tr("Протокол измерения параметров антенны\n\n");
+  if(ui->action_fit_curve->isChecked())
+    scout += QObject::tr("Ручной режим.\n");
+  else
+    scout += QObject::tr("Автоматический режим.\n");
+  scout += QString(report_comment + "\n\n");
+  scout += QString(QObject::tr("Папка: ") + folder_name + ".\n\n");
+  scout += QObject::tr("Заданные параметры:\n");
+  scout += (QObject::tr("Rmeas:             ") + QString::number(Rmeas) + QObject::tr(", Ом;") + "\n");
+  scout += (QObject::tr("Fnom:              ") + QString::number(FreqNominalAntenna) + QObject::tr(", кГц;") + "\n");
+  scout += (QObject::tr("F, пар. рез.:      ") + QString::number(FreqParRes) + QObject::tr(", кГц;") + "\n\n");
+  scout += QObject::tr("Измеренные вспомогательные параметры(по экспоненте):\n");
+  scout += (QObject::tr("Umax, размах:      ") + QString::number(U_max * 1000) + QObject::tr(", мВ;") + "\n");
+  scout += (QObject::tr("Imax, размах:      ") + QString::number(I_max * 1000) + QObject::tr(", мA;") + "\n");
+  scout += (QObject::tr("Добротность:       ") + QString::number(Q) + ";\n\n");
+  scout += QObject::tr("Параметры контура:\n");
+  scout += ("Ra:     " + QString::number(Ra) + QObject::tr(", Oм;") + "\n");
+  scout += ("Ca:     " + QString::number(Ca * 1e12) + QObject::tr(", пФ;") + "\n");
+  scout += ("La:     " + QString::number(La * 1e6) + QObject::tr(", мкГн;") + "\n");
+  scout += ("C0:     " + QString::number(C0 * 1e12) + QObject::tr(", пФ;") + "\n");
+  scout += (QObject::tr("F0, частота колебательного контура:     ") + QString::number(F0 / 1000) + QObject::tr(", кГц;") + "\n");
+  scout += (QObject::tr("F, частота свободных колебаний:         ") + QString::number(f_a / 1000) + QObject::tr(", кГц") + "\n");
+
+  return scout;
+}
+
 void
 MainWindow::save_report(QString const& filepath) {
 
@@ -1344,14 +1399,9 @@ MainWindow::save_report(QString const& filepath) {
   // out.setCodec("Windows-1251");
   out.setCodec("UTF-8");
 
-  // Extract folder name.
-  QStringList qsl_full_path = path_to_attenuation_csv.split("/");
-  qsl_full_path.pop_back();
-  QString folder_name = qsl_full_path.back();
-
   // Print parameters to report;
-  QString scout;
-  scout = QObject::tr("Протокол измерения параметров антенны\n\n");
+  QString scout = do_report_string();
+  /*scout = QObject::tr("Протокол измерения параметров антенны\n\n");
   if(ui->action_fit_curve->isChecked())
     scout += QObject::tr("Ручной режим.\n");
   else
@@ -1393,6 +1443,55 @@ MainWindow::save_report(QString const& filepath) {
 
   out << scout;
 }
+
+void
+MainWindow::save_report_pdf(QString const& filepath) {
+  QPrinter printer;
+  printer.setOutputFormat(QPrinter::PdfFormat);
+  printer.setOutputFileName(filepath);
+
+  QPainter painter;
+  if (! painter.begin(&printer)) { // failed to open file
+    qWarning("failed to open file, is it writable?");
+    QMessageBox::information(this, QObject::tr("SignalPlotter"),
+                             QObject::tr("Невозможно сохранить файл. Закройте открытые копии и повторите попытку."));
+    return ;
+  }
+  // Print parameters to report;
+  QString scout = do_report_string();
+
+  painter.drawText(QRect(1, 5, 550, 350), Qt::AlignLeft, scout);
+
+  // Extract folder name.
+  QStringList qsl_full_path = path_to_attenuation_csv.split("/");
+  qsl_full_path.pop_back();
+  QString folder_name = qsl_full_path.back();
+
+  // Print parameters to report;
+  scout = QObject::tr("Протокол измерения параметров антенны\n\n");
+
+  // fillRect ( int x, int y, int width, int height, const QBrush & brush )
+  painter.fillRect(1, 1, 500, 25, QColor(QString("white")));
+
+  QFont font("Times", 10, QFont::Bold);;
+  font.setWeight(QFont::Bold);
+  font.setCapitalization(QFont::AllUppercase);
+  painter.setFont(font);
+  painter.drawText(QRect(1, 1, 750, 25), Qt::AlignCenter, scout);
+
+  QPixmap pxmap = QPixmap::grabWidget(static_cast<QWidget*>(ui->customPlot));
+  painter.drawPixmap(1, 360, pxmap.scaled(QSize(750, 500)));
+
+  painter.end();
+}
+
+/*
+  if (! printer.newPage()) {
+    qWarning("failed in flushing page to disk, disk full?");
+    return 1;
+  }
+  painter.drawText(10, 10, "Test 2");
+ */
 
 bool
 MainWindow::verify_half_periods(std::vector<unsigned int> const& zero_points) {
