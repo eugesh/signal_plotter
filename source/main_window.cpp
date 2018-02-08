@@ -1352,6 +1352,10 @@ MainWindow::save_report(QString const& filepath) {
   // Print parameters to report;
   QString scout;
   scout = QObject::tr("Протокол измерения параметров антенны\n\n");
+  if(ui->action_fit_curve->isChecked())
+    scout += QObject::tr("Ручной режим.\n");
+  else
+    scout += QObject::tr("Автоматический режим.\n");
   scout += QString(report_comment + "\n\n");
   scout += QString(QObject::tr("Папка: ") + folder_name + ".\n\n");
   scout += QObject::tr("Заданные параметры:\n");
@@ -1370,7 +1374,7 @@ MainWindow::save_report(QString const& filepath) {
   scout += (QObject::tr("F0, частота колебательного контура:     ") + QString::number(F0 / 1000) + QObject::tr(", кГц;") + "\n");
   scout += (QObject::tr("F, частота свободных колебаний:         ") + QString::number(f_a / 1000) + QObject::tr(", кГц") + "\n");
 
-  if(ui->action_fit_curve->isChecked()) {
+  /*if(ui->action_fit_curve->isChecked()) {
     scout += QObject::tr("\nПараметры, рассчитанные по параметрической кривой: \n");
 
     scout += QObject::tr("\nПараметры кривой (отладочная информация): \n");
@@ -1385,7 +1389,7 @@ MainWindow::save_report(QString const& filepath) {
                                                               .arg(f_a, 0, 'E', 21)
                                                               .arg(t0, 0, 'E', 21)
                                                               .arg(find_max(samples_attenuation_smoothed), 0, 'E', 21) + "\n");
-  }
+  }*/
 
   out << scout;
 }
