@@ -31,6 +31,9 @@
 
 const static double eps = 1e-21;
 
+/*
+ * Splits full path and returns folder path.
+ */
 QString path_from_fullname(QString const& fullpath) {
   QString filePath;
 
@@ -96,6 +99,7 @@ MainWindow::MainWindow(QWidget *parent) :
   NumOfAnalysedPeaks = 0;
   report_comment = QString("");
   t0 = 1;
+  // Parametric curve parameters.
   c_y0 = 0;
   c_w = FreqNominalAntenna;
   c_t0 = 1;
@@ -226,7 +230,6 @@ MainWindow::create_parameters_setting_dialog() {
   QDParamDialog->setWindowTitle(QObject::tr("Значения параметров"));
   QDParamDialog->setMinimumSize(250, 100);
 
-  // QVBoxLayout *layout = new QVBoxLayout;
   QGridLayout *gridLayout = new QGridLayout;
 
   QLabel *QLFreqNom = new QLabel(QObject::tr("Введите величину номинальной частоты резонанса антенны, кГц: "));
@@ -282,59 +285,6 @@ MainWindow::~MainWindow()
 
   delete ui;
 }
-
-/*
-  QFile file(Path);
-  if (!file.open(QIODevice::ReadOnly)) {
-    fprintf(stdout,"CViewer::Read : Can't read <%s>\n", qPrintable(Path)) ;
-    return ;
-  } ;
-
-  QString Path1 ;
-  QString Path2 ;
-  int step_x, step_y ;
-  int width0, height0 ;
-  double scale_coeff ;
-  int num_scales ;
-  double angle1, angle2, angle_step ;
-
-  //С‡РёС‚Р°РµРј РґР°РЅРЅС‹Рµ РёР· С„Р°Р№Р»Р°
-  {
-    QTextStream ts(&file);
-    ts>>Path1 ;
-    ts>>Path2 ;
-    ts>>step_x>>step_y ;
-    ts>>width0>>height0 ;
-    ts>>scale_coeff>>num_scales ;
-    ts>>angle1>>angle2>>angle_step ;
-    ts>>cur_session;
-
-    last_dest_path = Path2;
-
-    fprintf(stdout,"SDialogSettings::Read : Path1 = <%s>\n", qPrintable(Path1)) ;
-    fprintf(stdout,"SDialogSettings::Read : Path2  = <%s>\n", qPrintable(Path2)) ;
-    fprintf(stdout,"SDialogSettings::Read : step_x = %d ; step_y = %d\n", step_x, step_y) ;
-    fprintf(stdout,"SDialogSettings::Read : width0 = %d ; height0 = %d\n", width0, height0) ;
-    fprintf(stdout,"SDialogSettings::Read : scale_coeff = %lf ; num_scales = %d\n", scale_coeff, num_scales) ;
-    fprintf(stdout,"SDialogSettings::Read : angle1 = %lf - angle2 = %lf - angle_step = %lf\n", angle1, angle2, angle_step) ;
-  } ;
-
-  lineEdit_raster_path->setText(Path1) ;
-  lineEdit_classifier_path->setText(Path2) ;
-
-  spinBox_step_x->setValue(step_x) ;
-  spinBox_step_y->setValue(step_y) ;
-
-  spinBox_width0->setValue(width0) ;
-  spinBox_height0->setValue(height0) ;
-
-  doubleSpinBox_scale_coefficient->setValue(scale_coeff) ;
-  spinBox_num_scales->setValue(num_scales) ;
-
-  doubleSpinBox_angle1->setValue(angle1) ;
-  doubleSpinBox_angle2->setValue(angle2) ;
-  doubleSpinBox_angle_step->setValue(angle_step) ;
-*/
 
 void
 MainWindow::ReadInit(QString const& Path) {
@@ -593,14 +543,12 @@ void
 MainWindow::change_cy0_tune(double val) {
   c_y0 = val / 1000.0;
   // QSlider_cy0->setValue((int)round(val * 100));
-  // updateGraph();
   updateParametrivCurve();
 }
 
 void
 MainWindow::change_ca0_tune(double val) {
   c_a0 = val / 1000.0;
-  // updateGraph();
   updateParametrivCurve();
   // QSlider_ca0->setValue((int)round(val));
 }
@@ -608,7 +556,6 @@ MainWindow::change_ca0_tune(double val) {
 void
 MainWindow::change_cw_tune(double val) {
   c_w = val * (2000 * M_PI);
-  // updateGraph();
   updateParametrivCurve();
   // QSlider_cw->setValue((int)round(val));
 }
@@ -616,7 +563,6 @@ MainWindow::change_cw_tune(double val) {
 void
 MainWindow::change_ct0_tune(double val) {
   c_t0 = val;
-  // updateGraph();
   updateParametrivCurve();
   // QSlider_ct0->setValue((int)round(val));
 }
@@ -624,7 +570,6 @@ MainWindow::change_ct0_tune(double val) {
 void
 MainWindow::change_cth_tune(double val) {
   c_th = val / 1e6;
-  // updateGraph();
   updateParametrivCurve();
   // QSlider_cth->setValue((int)round(val * 100));
 }
@@ -635,35 +580,30 @@ MainWindow::change_cth_tune(double val) {
 void
 MainWindow::change_cy0_rough(int val) {
   c_y0 = val / 1e5;
-  // updateGraph();
   QDSB_cy0->setValue(double(val) / 100.0);
 }
 
 void
 MainWindow::change_ca0_rough(int val) {
   c_a0 = val / 1000;
-  // updateGraph();
   QDSB_ca0->setValue(val);
 }
 
 void
 MainWindow::change_cw_rough(int val) {
   c_w = val * (2 * M_PI);
-  // updateGraph();
   QDSB_cw->setValue(c_w / (2000 * M_PI));
 }
 
 void
 MainWindow::change_ct0_rough(int val) {
   c_t0 = val;
-  // updateGraph();
   QDSB_ct0->setValue(val);
 }
 
 void
 MainWindow::change_cth_rough(int val) {
   c_th = val / 1e8;
-  // updateGraph();
   QDSB_cth->setValue(double(val) / 100.0);
 }
 
@@ -791,7 +731,6 @@ MainWindow::addGraph4(Samples data, GraphParams const& g_params, QString const& 
   ui->customPlot->graph()->setData(x, y);
   ui->customPlot->graph()->setLineStyle(QCPGraph::lsLine);
   QPen graphPen;
-  // graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
   graphPen.setColor(color);
   graphPen.setWidthF(3);
   ui->customPlot->graph()->setPen(graphPen);
@@ -983,16 +922,12 @@ MainWindow::contextMenuRequest(QPoint pos)
 
   if (ui->customPlot->selectedGraphs().size() > 0)
     menu->addAction(QObject::tr("Показать выбранные кривые"), this, SLOT(showSelectedGraph()));
-    // menu->addAction("Show selected graph", this, SLOT(showSelectedGraph()));
   if (ui->customPlot->selectedGraphs().size() > 0)
     menu->addAction(QObject::tr("Скрыть выбранные кривые"), this, SLOT(hideSelectedGraph()));
-    // menu->addAction("Hide selected graph", this, SLOT(hideSelectedGraph()));
   if (ui->customPlot->selectedGraphs().size() > 0)
     menu->addAction(QObject::tr("Удалить выбранные кривые"), this, SLOT(removeSelectedGraph()));
-    // menu->addAction("Remove selected graph", this, SLOT(removeSelectedGraph()));
   if (ui->customPlot->graphCount() > 0)
     menu->addAction(QObject::tr("Удалить все кривые"), this, SLOT(removeAllGraphs()));
-    // menu->addAction("Remove all graphs", this, SLOT(removeAllGraphs()));
 
   menu->popup(ui->customPlot->mapToGlobal(pos));
 }
@@ -1112,22 +1047,6 @@ MainWindow::estimate_contour_params() {
 
   // Show message window.
   QString scout = do_report_string();
-  /*scout = QObject::tr("Заданные параметры\n");
-  scout += QString(report_comment + "\n\n");
-  scout += (QObject::tr("Rmeas:             ") + QString::number(Rmeas) + QObject::tr(", Ом;") + "\n");
-  scout += (QObject::tr("Fnom:              ") + QString::number(FreqNominalAntenna) + QObject::tr(", кГц;") + "\n");
-  scout += (QObject::tr("F, пар. рез.:     ") + QString::number(FreqParRes) + QObject::tr(", кГц;") + "\n\n");
-  scout += QObject::tr("Измеренные вспомогательные параметры(по экспоненте)\n");
-  scout += (QObject::tr("Umax, размах:     ") + QString::number(U_max * 1000) + QObject::tr(", мВ;") + "\n");
-  scout += (QObject::tr("Imax, размах:       ") + QString::number(I_max * 1000) + QObject::tr(", мA;") + "\n");
-  scout += (QObject::tr("Добротность:       ") + QString::number(Q) + ";\n\n");
-  scout += QObject::tr("Параметры контура\n");
-  scout += ("Ra:     " + QString::number(Ra) + QObject::tr(", Oм;") + "\n");
-  scout += ("Ca:     " + QString::number(Ca * 1e12) + QObject::tr(", пФ;") + "\n");
-  scout += ("La:     " + QString::number(La * 1e6) + QObject::tr(", мкГн;") + "\n");
-  scout += ("C0:     " + QString::number(C0 * 1e12) + QObject::tr(", пФ;") + "\n");
-  scout += (QObject::tr("F0, частота колебательного контура:     ") + QString::number(F0 / 1000) + QObject::tr(", кГц;") + "\n");
-  scout += (QObject::tr("F, частота свободных колебаний:           ") + QString::number(w / (2000 * M_PI)) + QObject::tr(", кГц") + "\n");*/
 
   QMessageBox::information(this, QObject::tr("Протокол измерения параметров антенны"), scout);
 
@@ -1211,23 +1130,7 @@ MainWindow::estimate_contour_params_hand() {
   }
 
   // Show message window.
-  QString scout;
-  scout = QObject::tr("Заданные параметры\n");
-  scout += QString(report_comment + "\n\n");
-  scout += (QObject::tr("Rmeas:             ") + QString::number(Rmeas) + QObject::tr(", Ом;") + "\n");
-  scout += (QObject::tr("Fnom:              ") + QString::number(FreqNominalAntenna) + QObject::tr(", кГц;") + "\n");
-  scout += (QObject::tr("F, пар. рез.:     ") + QString::number(FreqParRes) + QObject::tr(", кГц;") + "\n\n");
-  scout += QObject::tr("Измеренные вспомогательные параметры(по экспоненте)\n");
-  scout += (QObject::tr("Umax, размах:     ") + QString::number(U_max * 1000) + QObject::tr(", мВ;") + "\n");
-  scout += (QObject::tr("Imax, размах:       ") + QString::number(I_max * 1000) + QObject::tr(", мA;") + "\n");
-  scout += (QObject::tr("Добротность:       ") + QString::number(Q) + ";\n\n");
-  scout += QObject::tr("Параметры контура\n");
-  scout += ("Ra:     " + QString::number(Ra) + QObject::tr(", Oм;") + "\n");
-  scout += ("Ca:     " + QString::number(Ca * 1e12) + QObject::tr(", пФ;") + "\n");
-  scout += ("La:     " + QString::number(La * 1e6) + QObject::tr(", мкГн;") + "\n");
-  scout += ("C0:     " + QString::number(C0 * 1e12) + QObject::tr(", пФ;") + "\n");
-  scout += (QObject::tr("F0, частота колебательного контура:     ") + QString::number(F0 / 1000) + QObject::tr(", кГц;") + "\n");
-  scout += (QObject::tr("F, частота свободных колебаний:           ") + QString::number(c_w / (2000 * M_PI)) + QObject::tr(", кГц") + "\n");
+  QString scout = do_report_string();
 
   QMessageBox::information(this, QObject::tr("Протокол измерения параметров антенны"), scout);
 
@@ -1299,7 +1202,7 @@ MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq
 
 void
 MainWindow::create_fit_curve_toolbar() {
-  // y = c_y0 + c_a0 * exp(c_t0 * x) * sin(c_w * x + c_th)
+  // y = c_y0 + c_a0 * exp(-x / c_t0) * sin(c_w * (x - c_th))
   QTBCurveFit = addToolBar(tr("Curve Fit"));
   QTBCurveFit->setAllowedAreas(Qt::RightToolBarArea);
   QWidget *QWCurveFitWidget = new QWidget(this);
@@ -1307,7 +1210,6 @@ MainWindow::create_fit_curve_toolbar() {
   QGridLayout *gridLayout = new QGridLayout;
   QVBoxLayout *vertical_layout = new QVBoxLayout;
 
-  // QWCurveFitWidget->setLayout(gridLayout);
   QWCurveFitWidget->setLayout(vertical_layout);
 
   QLabel *QLBL_formulae = new QLabel("y = y0 + A0 * exp(-t / t0) * sin(2 * pi * F * (t - theta))");
@@ -1439,7 +1341,7 @@ MainWindow::recalculate_parametric_curve() {
   // Form x and y vector.
   for(unsigned int i = radio_end_index; i < samples_attenuation.size(); ++i) {
     if(i % dec_factor == 0) {
-      x.push_back(i * graph_attenuation.xScale + graph_attenuation.xOffset); // + radio_end_index * graph_attenuation.xScale);
+      x.push_back(i * graph_attenuation.xScale + graph_attenuation.xOffset);
       fitting_curve.push_back( y(x.back()) );
     }
   }
@@ -1449,6 +1351,9 @@ MainWindow::recalculate_parametric_curve() {
   graph_fitting_curve.xOffset = graph_attenuation.xOffset + radio_end_index * graph_attenuation.xScale;
 }
 
+/*
+ * Creates QString with report data.
+ */
 QString
 MainWindow::do_report_string() {
   // Extract folder name.
@@ -1618,6 +1523,16 @@ MainWindow::y(double x) {
   double i = (x - graph_attenuation.xOffset - radio_end_index * graph_attenuation.xScale) / graph_attenuation.xScale;
 
   return c_y0 + c_a0 * exp(-i / c_t0) * sin(c_w * (x - c_th));
+}
+
+void
+MainWindow::onActionAbout() {
+
+}
+
+void
+MainWindow::onActionHelp() {
+
 }
 
 #endif

@@ -106,6 +106,8 @@ private slots:;
   int estimate_contour_params();
   int estimate_contour_params_hand();
   void open_fit_curve_toolbar();
+  void onActionAbout();
+  void onActionHelp();
 
 private:;
   void create_parameters_setting_dialog();

@@ -211,10 +211,18 @@
     <addaction name="action_radio_end_hand"/>
     <addaction name="action_fit_curve"/>
    </widget>
+   <widget class="QMenu" name="menu_2">
+    <property name="title">
+     <string>Справка</string>
+    </property>
+    <addaction name="action_help"/>
+    <addaction name="action_about"/>
+   </widget>
    <addaction name="menu_Open"/>
    <addaction name="menuCursor"/>
    <addaction name="menu"/>
    <addaction name="menu_3"/>
+   <addaction name="menu_2"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="action_OpenRadioSignal">
@@ -515,6 +523,16 @@
   <action name="action_save_report_PDF">
    <property name="text">
     <string>Сохранить отчет в PDF</string>
+   </property>
+  </action>
+  <action name="action_help">
+   <property name="text">
+    <string>Инструкция</string>
+   </property>
+  </action>
+  <action name="action_about">
+   <property name="text">
+    <string>О программе</string>
    </property>
   </action>
  </widget>
