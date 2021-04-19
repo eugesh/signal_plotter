@@ -1,0 +1,13 @@
+.project
+.cproject
+.settings
+.metadata
+bin
+build
+doc/documentation
+__pycache__
+*.pyc
+*.dat
+*.pkl
+*.user
+*.user.*

@@ -41,12 +41,12 @@ find_min(std::vector<T> data) {
  * The simplest way: center.
  */
 std::vector<unsigned int> intervals2points(Intervals const& intervals) {
-	std::vector<unsigned int>points;
-	for(unsigned int i = 0; i < intervals.size(); ++i) {
-		points.push_back(intervals[i].first + (intervals[i].second - intervals[i].first) / 2);
-	}
+    std::vector<unsigned int>points;
+    for(unsigned int i = 0; i < intervals.size(); ++i) {
+        points.push_back(intervals[i].first + (intervals[i].second - intervals[i].first) / 2);
+    }
 
-	return points;
+    return points;
 }
 
 /**
@@ -197,14 +197,14 @@ find_all_zeros_indices(Samples const& data, unsigned int start, unsigned int end
 
 std::vector<unsigned int>
 sign_changes(Samples const& data, unsigned int start, unsigned int end) {
-	std::vector<unsigned int> zero_indices;
+    std::vector<unsigned int> zero_indices;
 
-	for(unsigned int i = start; i < end - 1; ++i) {
-		if(copysign(1.0, (double)data[i]) != copysign(1.0, (double)data[i+1]))
-			zero_indices.push_back(i);
-	}
+    for(unsigned int i = start; i < end - 1; ++i) {
+        if(copysign(1.0, (double)data[i]) != copysign(1.0, (double)data[i+1]))
+            zero_indices.push_back(i);
+    }
 
-	return zero_indices;
+    return zero_indices;
 }
 
 /**
@@ -445,57 +445,57 @@ estimate_quality_ls(double *a, double *b, Samples const& data, Peaks const& peak
 
 void
 half_periods_verificator(Intervals const& zero_intervals, float *max_dev, float *mean_dev) {
-	float sum = 0.0;
-	*mean_dev = 0, *max_dev = 0;
+    float sum = 0.0;
+    *mean_dev = 0, *max_dev = 0;
 
-	// Find half period mean.
-	for(unsigned int i = 0; i < zero_intervals.size() - 1; ++i) {
-		unsigned int zero_interval_left = zero_intervals[i].second - zero_intervals[i].first;
-		unsigned int zero_interval_right = zero_intervals[i + 1].second - zero_intervals[i + 1].first;
-		unsigned int half_period = zero_intervals[i + 1].first - zero_intervals[i].second;
-		unsigned int full_half_period = half_period + (zero_interval_left + zero_interval_right) / 2;
-		sum += full_half_period;
-	}
-	float mean_full_half_period = sum / (zero_intervals.size() - 1);
+    // Find half period mean.
+    for(unsigned int i = 0; i < zero_intervals.size() - 1; ++i) {
+        unsigned int zero_interval_left = zero_intervals[i].second - zero_intervals[i].first;
+        unsigned int zero_interval_right = zero_intervals[i + 1].second - zero_intervals[i + 1].first;
+        unsigned int half_period = zero_intervals[i + 1].first - zero_intervals[i].second;
+        unsigned int full_half_period = half_period + (zero_interval_left + zero_interval_right) / 2;
+        sum += full_half_period;
+    }
+    float mean_full_half_period = sum / (zero_intervals.size() - 1);
 
-	// Find max and mean deviation.
-	sum = 0.0;
-	for(unsigned int i = 0; i < zero_intervals.size() - 1; ++i) {
-		unsigned int zero_interval_left = zero_intervals[i].second - zero_intervals[i].first;
-		unsigned int zero_interval_right = zero_intervals[i + 1].second - zero_intervals[i + 1].first;
-		unsigned int half_period = zero_intervals[i + 1].first - zero_intervals[i].second;
-		float full_half_period = half_period + (zero_interval_left + zero_interval_right) / 2;
-		float cur_dev = full_half_period / mean_full_half_period;
-		sum += cur_dev;
-		if(*max_dev < cur_dev)
-			*max_dev = cur_dev;
-	}
+    // Find max and mean deviation.
+    sum = 0.0;
+    for(unsigned int i = 0; i < zero_intervals.size() - 1; ++i) {
+        unsigned int zero_interval_left = zero_intervals[i].second - zero_intervals[i].first;
+        unsigned int zero_interval_right = zero_intervals[i + 1].second - zero_intervals[i + 1].first;
+        unsigned int half_period = zero_intervals[i + 1].first - zero_intervals[i].second;
+        float full_half_period = half_period + (zero_interval_left + zero_interval_right) / 2;
+        float cur_dev = full_half_period / mean_full_half_period;
+        sum += cur_dev;
+        if(*max_dev < cur_dev)
+            *max_dev = cur_dev;
+    }
 
-	*mean_dev = sum / (zero_intervals.size() - 1);
+    *mean_dev = sum / (zero_intervals.size() - 1);
 }
 
 void
 half_periods_verificator(std::vector<unsigned int> const& zero_points, float *max_dev, float *mean_dev) {
-	float sum = 0.0;
-	*mean_dev = 0, *max_dev = 0;
-	// Find half period mean.
-	for(unsigned int i = 0; i < zero_points.size() - 1; ++i) {
-		unsigned int half_period = zero_points[i + 1] - zero_points[i];
-		sum += half_period;
-	}
-	float mean_half_period = sum / (zero_points.size() - 1);
+    float sum = 0.0;
+    *mean_dev = 0, *max_dev = 0;
+    // Find half period mean.
+    for(unsigned int i = 0; i < zero_points.size() - 1; ++i) {
+        unsigned int half_period = zero_points[i + 1] - zero_points[i];
+        sum += half_period;
+    }
+    float mean_half_period = sum / (zero_points.size() - 1);
 
-	// Find max and mean deviation.
-	sum = 0.0;
-	for(unsigned int i = 0; i < zero_points.size() - 1; ++i) {
-		unsigned int half_period = zero_points[i + 1] - zero_points[i];
-		float cur_dev = fabs(mean_half_period - float(half_period)) / mean_half_period;
-		sum += cur_dev;
-		if(*max_dev < cur_dev)
-			*max_dev = cur_dev;
-	}
+    // Find max and mean deviation.
+    sum = 0.0;
+    for(unsigned int i = 0; i < zero_points.size() - 1; ++i) {
+        unsigned int half_period = zero_points[i + 1] - zero_points[i];
+        float cur_dev = fabs(mean_half_period - float(half_period)) / mean_half_period;
+        sum += cur_dev;
+        if(*max_dev < cur_dev)
+            *max_dev = cur_dev;
+    }
 
-	*mean_dev = sum / (zero_points.size() - 1);
+    *mean_dev = sum / (zero_points.size() - 1);
 }
 
 /**

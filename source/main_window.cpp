@@ -52,25 +52,25 @@ QString path_from_fullname(QString const& fullpath) {
 template<typename T>
 T
 find_max(std::vector<T> vec) {
-	T max = vec[0];
-	for(unsigned int i = 0; i < vec.size(); ++i) {
-		if(max < vec[i])
-			max = vec[i];
-	}
+    T max = vec[0];
+    for(unsigned int i = 0; i < vec.size(); ++i) {
+        if (max < vec[i])
+            max = vec[i];
+    }
 
-	return max;
+    return max;
 }
 
 template<typename T>
 T
 find_min(std::vector<T> vec) {
-	T min = vec[0];
-	for(unsigned int i = 0; i < vec.size(); ++i) {
-		if(min > vec[i])
-			min = vec[i];
-	}
+    T min = vec[0];
+    for(unsigned int i = 0; i < vec.size(); ++i) {
+        if (min > vec[i])
+            min = vec[i];
+    }
 
-	return min;
+    return min;
 }
 
 template<typename T>
@@ -289,7 +289,7 @@ MainWindow::~MainWindow()
 void
 MainWindow::ReadInit(QString const& Path) {
   QFile file(Path);
-  if(!file.open(QIODevice::ReadOnly)) {
+  if (!file.open(QIODevice::ReadOnly)) {
     printf("CViewer::Save : there is not <%s>\n", qPrintable(Path)) ;
     return ;
   } ;
@@ -306,7 +306,7 @@ MainWindow::ReadInit(QString const& Path) {
 void
 MainWindow::SaveInit(QString const& Path) {
   QFile file(Path);
-  if(!file.open(QIODevice::WriteOnly)) {
+  if (!file.open(QIODevice::WriteOnly)) {
     printf("CViewer::Save : there is not <%s>\n", qPrintable(Path)) ;
     return ;
   } ;
@@ -325,38 +325,38 @@ MainWindow::SaveInit(QString const& Path) {
  */
 void
 MainWindow::open_csv_radio_dialog() {
-	path_to_radio_csv = QFileDialog::getOpenFileName(this, QObject::tr("Укажите путь к радиоимпульсу."), path_to_attenuation_csv, QObject::tr("(*.csv)"));
+    path_to_radio_csv = QFileDialog::getOpenFileName(this, QObject::tr("Укажите путь к радиоимпульсу."), path_to_attenuation_csv, QObject::tr("(*.csv)"));
 
-	if(!path_to_radio_csv.isEmpty ()) {
-		load_csv_radio();
-	}
-	else {
-		QMessageBox::information(this, QObject::tr("SignalPlotter"),
-														 QObject::tr("Файл не был открыт."));
-	}
+    if (!path_to_radio_csv.isEmpty ()) {
+        load_csv_radio();
+    }
+    else {
+        QMessageBox::information(this, QObject::tr("SignalPlotter"),
+                                                         QObject::tr("Файл не был открыт."));
+    }
 
-	if(ui->action_fit_curve->isChecked()) {
-	  ui->action_fit_curve->setChecked(false);
-	}
-	ui->action_fit_curve->setEnabled(false);
-	QTBCurveFit->hide();
+    if (ui->action_fit_curve->isChecked()) {
+      ui->action_fit_curve->setChecked(false);
+    }
+    ui->action_fit_curve->setEnabled(false);
+    QTBCurveFit->hide();
 
-	open_csv_attenuation_dialog();
+    open_csv_attenuation_dialog();
 }
 
 void
 MainWindow::open_csv_attenuation_dialog() {
-	path_to_attenuation_csv = QFileDialog::getOpenFileName(this, QObject::tr("Укажите путь к затухающему сигналу."),
-	                                                       path_to_radio_csv, QObject::tr("(*_CH2*);;(*.csv)"));
+    path_to_attenuation_csv = QFileDialog::getOpenFileName(this, QObject::tr("Укажите путь к затухающему сигналу."),
+                                                           path_to_radio_csv, QObject::tr("(*_CH2*);;(*.csv)"));
 
-	if(!path_to_attenuation_csv.isEmpty()) {
-		load_csv_attenuation();
-	} else {
-		QMessageBox::information(this, QObject::tr("SignalPlotter"),
-														 QObject::tr("Файл не был открыт."));
-	}
+    if (!path_to_attenuation_csv.isEmpty()) {
+        load_csv_attenuation();
+    } else {
+        QMessageBox::information(this, QObject::tr("SignalPlotter"),
+                                                         QObject::tr("Файл не был открыт."));
+    }
 
-	ui->action_smooth->setEnabled(true);
+    ui->action_smooth->setEnabled(true);
   // Disable parameter calculation option.
   ui->action_estim_param->setEnabled(false);
   // Enable manual curve fitting.
@@ -371,7 +371,7 @@ MainWindow::save_report_dialog() {
   path_to_report = QFileDialog::getSaveFileName(this, QObject::tr("Укажите путь для сохранения."),
                                                 path_to_report, QObject::tr("(*.txt)"));
 
-  if(!path_to_report.isEmpty ()) {
+  if (!path_to_report.isEmpty ()) {
     save_report(path_to_report);
   }
   else {
@@ -386,7 +386,7 @@ MainWindow::save_report_dialog_pdf() {
       QFileDialog::getSaveFileName(this, QObject::tr("Укажите путь для сохранения."),
                                    QObject::tr("./../out/report.pdf"), QObject::tr("(*.pdf)"));
 
-  if(!path_to_report.isEmpty ()) {
+  if (!path_to_report.isEmpty ()) {
     save_report_pdf(path_to_report);
   }
   else {
@@ -399,28 +399,28 @@ MainWindow::save_report_dialog_pdf() {
  * Wrapper under common .csv data loader.
  */
 void MainWindow::load_csv_radio() {
-	GraphParams g_params;
+    GraphParams g_params;
 
-	samples_radio.clear();
-	samples_radio_smoothed.clear();
-	samples_radio = load_csv(path_to_radio_csv, &g_params);
-	graph_radio = g_params;
+    samples_radio.clear();
+    samples_radio_smoothed.clear();
+    samples_radio = load_csv(path_to_radio_csv, &g_params);
+    graph_radio = g_params;
 
-	radio_end_index = find_radio_signal_termination(samples_radio);
+    radio_end_index = find_radio_signal_termination(samples_radio);
 
-	samples_radio.erase(samples_radio.begin() + radio_end_index, samples_radio.end());
+    samples_radio.erase(samples_radio.begin() + radio_end_index, samples_radio.end());
 
-	addGraph1(samples_radio, g_params, QString(QObject::tr("Радиовоздействие")), QColor(QString("green")));
+    addGraph1(samples_radio, g_params, QString(QObject::tr("Радиовоздействие")), QColor(QString("green")));
 }
 
 void MainWindow::load_csv_attenuation() {
-	GraphParams g_params;
-	samples_attenuation.clear();
-	samples_attenuation_smoothed.clear();
-	samples_attenuation = load_csv(path_to_attenuation_csv, &g_params);
-	graph_attenuation = g_params;
+    GraphParams g_params;
+    samples_attenuation.clear();
+    samples_attenuation_smoothed.clear();
+    samples_attenuation = load_csv(path_to_attenuation_csv, &g_params);
+    graph_attenuation = g_params;
 
-	addGraph2(samples_attenuation, g_params, QString(QObject::tr("Затухающий сигнал")), QColor(QString("blue")), true);
+    addGraph2(samples_attenuation, g_params, QString(QObject::tr("Затухающий сигнал")), QColor(QString("blue")), true);
 }
 
 /**
@@ -433,50 +433,50 @@ void MainWindow::load_csv_attenuation() {
  * 2, num,..."
  */
 Samples MainWindow::load_csv(QString filepath, GraphParams *g_params) {
-	Samples samples;
-	QByteArray buf;
+    Samples samples;
+    QByteArray buf;
 
-	// Open filename.
-	QFile file(filepath);
-	if(!file.open(QIODevice::ReadOnly)) {
-		printf("File %s wasn't opened.\n", filepath.toAscii().data());
-		return Samples();
-	}
+    // Open filename.
+    QFile file(filepath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        printf("File %s wasn't opened.\n", filepath.toLatin1().data());
+        return Samples();
+    }
 
-	// Skip headline.
-	buf = file.readLine();
-	// Read the second line.
-	buf = file.readLine();
-	QList<QByteArray> list = buf.split(',');
+    // Skip headline.
+    buf = file.readLine();
+    // Read the second line.
+    buf = file.readLine();
+    QList<QByteArray> list = buf.split(',');
 
-	// Set offsets and scales for each axis.
-	g_params->xOffset = list[2].toDouble();
-	g_params->xScale = list[3].toDouble();
-	g_params->yOffset = 0;
+    // Set offsets and scales for each axis.
+    g_params->xOffset = list[2].toDouble();
+    g_params->xScale = list[3].toDouble();
+    g_params->yOffset = 0;
 
-	// Load points from .csv file.
-	while (buf.size() > 2) {
-		buf = file.readLine();
-		if(buf.size() > 2) {
-			list = buf.split(',');
-			samples.push_back(list[1].toDouble());
-		}
-	}
+    // Load points from .csv file.
+    while (buf.size() > 2) {
+        buf = file.readLine();
+        if (buf.size() > 2) {
+            list = buf.split(',');
+            samples.push_back(list[1].toDouble());
+        }
+    }
 
-	file.close();
+    file.close();
 
-	// Find min max.
-	double min = 10000;
-	double max = -10000;
-	for (unsigned int i = 0; i < samples.size(); ++i){
-		if(min > samples[i])
-			min = samples[i];
-		if(max < samples[i])
-			max = samples[i];
-	}
-	g_params->yScale = (max - min) < eps ? 1 : 1 / (max - min);
+    // Find min max.
+    double min = 10000;
+    double max = -10000;
+    for (unsigned int i = 0; i < samples.size(); ++i){
+        if (min > samples[i])
+            min = samples[i];
+        if (max < samples[i])
+            max = samples[i];
+    }
+    g_params->yScale = (max - min) < eps ? 1 : 1 / (max - min);
 
-	return samples;
+    return samples;
 }
 
 void
@@ -613,29 +613,29 @@ MainWindow::change_cth_rough(int val) {
  */
 void
 MainWindow::addGraph1(Samples data, GraphParams const& g_params, QString const& message, QColor color, bool centralize) {
-	// Determine size of current plot. (number of points in graph).
-	int curSize;
-	curSize = data.size();
+    // Determine size of current plot. (number of points in graph).
+    int curSize;
+    curSize = data.size();
 
-	QVector<double> x(curSize);
-	QVector<double> y(curSize);
+    QVector<double> x(curSize);
+    QVector<double> y(curSize);
 
-	for (int i=0; i < curSize; i++)
-	{
-		x[i] = i * g_params.xScale + g_params.xOffset;
-		y[i] = data[i] * g_params.yScale + g_params.yOffset;
-	}
+    for (int i=0; i < curSize; i++)
+    {
+        x[i] = i * g_params.xScale + g_params.xOffset;
+        y[i] = data[i] * g_params.yScale + g_params.yOffset;
+    }
 
-	ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis);
-	ui->customPlot->graph()->setName(message);
-	ui->customPlot->graph()->setData(x, y);
-	ui->customPlot->graph()->setLineStyle(QCPGraph::lsLine);
-	QPen graphPen;
-	// graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
-	graphPen.setColor(color);
-	graphPen.setWidthF(1);
-	ui->customPlot->graph()->setPen(graphPen);
-	ui->customPlot->replot();
+    ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis);
+    ui->customPlot->graph()->setName(message);
+    ui->customPlot->graph()->setData(x, y);
+    ui->customPlot->graph()->setLineStyle(QCPGraph::lsLine);
+    QPen graphPen;
+    // graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
+    graphPen.setColor(color);
+    graphPen.setWidthF(1);
+    ui->customPlot->graph()->setPen(graphPen);
+    ui->customPlot->replot();
 }
 
 /**
@@ -644,39 +644,39 @@ MainWindow::addGraph1(Samples data, GraphParams const& g_params, QString const& 
  */
 void
 MainWindow::addGraph2(Samples data, GraphParams const& g_params, QString const& message, QColor color, bool centralize) {
-	// Determine size of current plot. (number of points in graph).
-	int curSize;
-	curSize = data.size();
+    // Determine size of current plot. (number of points in graph).
+    int curSize;
+    curSize = data.size();
 
-	QVector<double> x(curSize);
-	QVector<double> y(curSize);
+    QVector<double> x(curSize);
+    QVector<double> y(curSize);
 
-	for (int i=0; i < curSize; i++)
-	{
-		x[i] = i * g_params.xScale + g_params.xOffset;
-		y[i] = data[i] * g_params.yScale + g_params.yOffset;
-	}
+    for (int i=0; i < curSize; i++)
+    {
+        x[i] = i * g_params.xScale + g_params.xOffset;
+        y[i] = data[i] * g_params.yScale + g_params.yOffset;
+    }
 
-	double max = find_max(data) * g_params.yScale;
-	double min = find_min(data) * g_params.yScale;
+    double max = find_max(data) * g_params.yScale;
+    double min = find_min(data) * g_params.yScale;
 
-	if(centralize) {
+    if (centralize) {
     ui->customPlot->xAxis->setRange(g_params.xOffset - x.size() * 0.1 * g_params.xScale, 1.1 * x.size() * g_params.xScale + g_params.xOffset);
     // ui->customPlot->yAxis2->setRange(g_params.yOffset - 10 * g_params.yScale, (y.size() + 10) * g_params.yScale + g_params.yOffset);
     ui->customPlot->yAxis->setRange(1.5 * min, 1.5 * max);
-	}
+    }
 
-	// Attenuation graph has different y scale.
-	ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis2);
-	ui->customPlot->graph()->setName(message);
-	ui->customPlot->graph()->setData(x, y);
-	ui->customPlot->graph()->setLineStyle(QCPGraph::lsLine);
-	QPen graphPen;
-	// graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
-	graphPen.setColor(color);
-	graphPen.setWidthF(1);
-	ui->customPlot->graph()->setPen(graphPen);
-	ui->customPlot->replot();
+    // Attenuation graph has different y scale.
+    ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis2);
+    ui->customPlot->graph()->setName(message);
+    ui->customPlot->graph()->setData(x, y);
+    ui->customPlot->graph()->setLineStyle(QCPGraph::lsLine);
+    QPen graphPen;
+    // graphPen.setColor(QColor(rand() % 245 + 10, rand() % 245 + 10, rand() % 245 + 10));
+    graphPen.setColor(color);
+    graphPen.setWidthF(1);
+    ui->customPlot->graph()->setPen(graphPen);
+    ui->customPlot->replot();
 }
 
 /*
@@ -743,16 +743,16 @@ MainWindow::updateGraph() {
   removeAllGraphs();
 
   // Add graphs.
-  if(!samples_radio.empty())
+  if (!samples_radio.empty())
     addGraph1(samples_radio, graph_radio, QObject::tr("Радиовоздействие"), QColor(QString("green")));
-  if(!samples_attenuation.empty())
+  if (!samples_attenuation.empty())
     addGraph2(samples_attenuation, graph_attenuation, QObject::tr("Затухающий сигнал"), QColor(QString("blue")));
-  if(!samples_radio_smoothed.empty())
+  if (!samples_radio_smoothed.empty())
     addGraph1(samples_radio_smoothed, graph_radio, QObject::tr("Радиовоздействие, ФНЧ"), QColor(QString("yellow")));
-  if(!samples_attenuation_smoothed.empty())
+  if (!samples_attenuation_smoothed.empty())
     addGraph2(samples_attenuation_smoothed, graph_attenuation, QObject::tr("Затухающий сигнал, ФНЧ"), QColor(QString("red")));
 
-  if(!fitting_curve.empty() && ui->action_fit_curve->isChecked()) {
+  if (!fitting_curve.empty() && ui->action_fit_curve->isChecked()) {
     recalculate_parametric_curve();
     addGraph4(fitting_curve, graph_fitting_curve, QObject::tr("Параметрическая кривая"), QColor(QString("orange")));
   }
@@ -772,7 +772,7 @@ MainWindow::updateParametrivCurve() {
   }
 
   // Replot parametric curve.
-  if(!fitting_curve.empty() && ui->action_fit_curve->isChecked()) {
+  if (!fitting_curve.empty() && ui->action_fit_curve->isChecked()) {
     recalculate_parametric_curve();
     addGraph4(fitting_curve, graph_fitting_curve, QObject::tr("Параметрическая кривая"), QColor(QString("orange")));
   }
@@ -857,7 +857,7 @@ void MainWindow::selectionChanged()
     ui->customPlot->yAxis->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
   }
 
-  if(ui->customPlot->yAxis2->selectedParts().testFlag(QCPAxis::spAxis) || ui->customPlot->yAxis2->selectedParts().testFlag(QCPAxis::spTickLabels))
+  if (ui->customPlot->yAxis2->selectedParts().testFlag(QCPAxis::spAxis) || ui->customPlot->yAxis2->selectedParts().testFlag(QCPAxis::spTickLabels))
   {
     ui->customPlot->yAxis2->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
   }
@@ -971,31 +971,31 @@ MainWindow::removeAllGraphs()
 
 void
 MainWindow::smooth() {
-	// Smooth curves.
+    // Smooth curves.
 
-	if (!samples_radio.empty()) {
-	  // Smooth radio signal with low-pass filter.
-		samples_radio_smoothed = lp_ampl(samples_radio, graph_radio.xScale, freq_factor_to_pass * 5 * FreqNominalAntenna * 1000);
-		updateGraph();
-	}
+    if (!samples_radio.empty()) {
+      // Smooth radio signal with low-pass filter.
+        samples_radio_smoothed = lp_ampl(samples_radio, graph_radio.xScale, freq_factor_to_pass * 5 * FreqNominalAntenna * 1000);
+        updateGraph();
+    }
 
-	if(!samples_attenuation.empty()) {
-	  // Smooth oscillation signal with low-pass filter.
-		samples_attenuation_smoothed = lp_ampl(samples_attenuation, graph_attenuation.xScale, freq_factor_to_pass * FreqNominalAntenna * 1000);
+    if (!samples_attenuation.empty()) {
+      // Smooth oscillation signal with low-pass filter.
+        samples_attenuation_smoothed = lp_ampl(samples_attenuation, graph_attenuation.xScale, freq_factor_to_pass * FreqNominalAntenna * 1000);
 
-		// Find symmetry of signal relative to Ox and move. It's not precise but mostly it helps.
-		centrate_signal_ox(samples_attenuation_smoothed, 0, samples_attenuation_smoothed.size());
+        // Find symmetry of signal relative to Ox and move. It's not precise but mostly it helps.
+        centrate_signal_ox(samples_attenuation_smoothed, 0, samples_attenuation_smoothed.size());
 
-		updateGraph();
-	}
-	// Enable parameter calculation option.
-	ui->action_estim_param->setEnabled(true);
+        updateGraph();
+    }
+    // Enable parameter calculation option.
+    ui->action_estim_param->setEnabled(true);
 }
 
 int
 MainWindow::estimate_params() {
   int ret = 0;
-  if(ui->action_fit_curve->isChecked()) {
+  if (ui->action_fit_curve->isChecked()) {
     printf("estimate_contour_params_hand sig - start\n");
     ret = estimate_contour_params_hand();
   }
@@ -1010,35 +1010,35 @@ MainWindow::estimate_params() {
 int
 MainWindow::estimate_contour_params() {
   printf("estimate_contour_params\n");
-	double w0, w, b;
+    double w0, w, b;
 
-	Samples exp_curve, exp_curve_neg;
+    Samples exp_curve, exp_curve_neg;
 
-	// Estimate attenuation signal parameters: exp low, q-factor, frequency.
-	if(signal_analyzer(&t0, &b, &Q, &f_a) != 0) {
-	  return -1;
-	}
+    // Estimate attenuation signal parameters: exp low, q-factor, frequency.
+    if (signal_analyzer(&t0, &b, &Q, &f_a) != 0) {
+      return -1;
+    }
 
-	// Plot exponential asymptotes.
-	updateGraph();
-	for(unsigned int i = radio_end_index; i < samples_attenuation_smoothed.size(); ++i) {
-		exp_curve.push_back(exp(t0 * i + b));
-		exp_curve_neg.push_back(-exp(t0 * i + b));
-	}
-	GraphParams graph_exp = graph_attenuation;
-	graph_exp.xOffset = graph_attenuation.xOffset + radio_end_index * graph_attenuation.xScale;
-	addGraph3(exp_curve, graph_exp, QString(QObject::tr("Асимптота верхняя")), QColor(QString("gray")));
-	addGraph3(exp_curve_neg, graph_exp, QString(QObject::tr("Асимптота нижняя")), QColor(QString("gray")));
+    // Plot exponential asymptotes.
+    updateGraph();
+    for(unsigned int i = radio_end_index; i < samples_attenuation_smoothed.size(); ++i) {
+        exp_curve.push_back(exp(t0 * i + b));
+        exp_curve_neg.push_back(-exp(t0 * i + b));
+    }
+    GraphParams graph_exp = graph_attenuation;
+    graph_exp.xOffset = graph_attenuation.xOffset + radio_end_index * graph_attenuation.xScale;
+    addGraph3(exp_curve, graph_exp, QString(QObject::tr("Асимптота верхняя")), QColor(QString("gray")));
+    addGraph3(exp_curve_neg, graph_exp, QString(QObject::tr("Асимптота нижняя")), QColor(QString("gray")));
 
-	// Estimate Umax, Imax.
-	U_max = find_max(samples_radio) - find_min(samples_radio);
-	I_max = (exp_curve.front() - exp_curve_neg.front()) / Rmeas;
-	Ra = U_max / I_max;
+    // Estimate Umax, Imax.
+    U_max = find_max(samples_radio) - find_min(samples_radio);
+    I_max = (exp_curve.front() - exp_curve_neg.front()) / Rmeas;
+    Ra = U_max / I_max;
   w = 2 * M_PI * f_a;
-	double delta = -t0 / graph_attenuation.xScale;
-	printf("t0 = %f\n", t0);
-	printf("Amax = %f\n", find_max(Samples(samples_attenuation_smoothed.begin() + radio_end_index, samples_attenuation_smoothed.end())));
-	printf("Amax_exp = %f\n", exp_curve.front());
+    double delta = -t0 / graph_attenuation.xScale;
+    printf("t0 = %f\n", t0);
+    printf("Amax = %f\n", find_max(Samples(samples_attenuation_smoothed.begin() + radio_end_index, samples_attenuation_smoothed.end())));
+    printf("Amax_exp = %f\n", exp_curve.front());
   La = Ra / (2 * delta);
   w0 = sqrt(w * w + delta * delta);
   Ca = 1.0 / (La * w0 * w0);
@@ -1088,7 +1088,7 @@ MainWindow::estimate_contour_params_hand() {
   U_max = find_max(samples_radio) - find_min(samples_radio);
   printf("Rmeas = %f\n", Rmeas);
   I_max = (exp_curve.front() - exp_curve_neg.front()) / Rmeas;
-  if(fabs(I_max) > eps) {
+  if (fabs(I_max) > eps) {
     Ra = U_max / I_max;
   }
   else {
@@ -1097,7 +1097,7 @@ MainWindow::estimate_contour_params_hand() {
   }
 
   double delta = 0;
-  if(fabs(graph_attenuation.xScale) > eps) {
+  if (fabs(graph_attenuation.xScale) > eps) {
     delta = 1 / (c_t0 * graph_attenuation.xScale);
   }
   else {
@@ -1105,7 +1105,7 @@ MainWindow::estimate_contour_params_hand() {
     return -1;
   }
 
-  if(fabs(delta) > eps) {
+  if (fabs(delta) > eps) {
     double d = 2 * M_PI / (c_t0 * c_w * graph_attenuation.xScale);
     Q = M_PI / d;
     printf("t0 = %f\n", t0);
@@ -1155,49 +1155,49 @@ MainWindow::estimate_contour_params_hand() {
  */
 int
 MainWindow::signal_analyzer(double *a, double *b, double *q_factor, double *freq) {
-	unsigned int start = radio_end_index;
-	unsigned int finish = samples_attenuation_smoothed.size() - 1;
+    unsigned int start = radio_end_index;
+    unsigned int finish = samples_attenuation_smoothed.size() - 1;
 
-	std::vector<unsigned int> zero_points = sign_changes(samples_attenuation_smoothed, start, finish);
+    std::vector<unsigned int> zero_points = sign_changes(samples_attenuation_smoothed, start, finish);
 
-	if(zero_points.size() < 4) {
-	  QMessageBox::information(this, QObject::tr("Ошибка"), QObject::tr("Невозможно произвести рассчеты из-за малого числа пересечений с 0x."));
-	  return -1;
-	}
+    if (zero_points.size() < 4) {
+      QMessageBox::information(this, QObject::tr("Ошибка"), QObject::tr("Невозможно произвести рассчеты из-за малого числа пересечений с 0x."));
+      return -1;
+    }
 
-	Peaks all_peaks = find_all_peaks(samples_attenuation_smoothed, zero_points);
+    Peaks all_peaks = find_all_peaks(samples_attenuation_smoothed, zero_points);
 
-	Peaks real_peaks;
-	if(NumOfAnalysedPeaks > 2 && !ui->action_set_n_auto->isChecked()) {
-	  real_peaks = Peaks(all_peaks.begin(), all_peaks.begin() + NumOfAnalysedPeaks);
-	  zero_points = std::vector<unsigned int>(zero_points.begin(), zero_points.begin() + NumOfAnalysedPeaks + 1);
-	}
-	else {
-	  real_peaks = find_real_peaks(zero_points, samples_attenuation_smoothed, all_peaks, 0.3);
-	}
+    Peaks real_peaks;
+    if (NumOfAnalysedPeaks > 2 && !ui->action_set_n_auto->isChecked()) {
+      real_peaks = Peaks(all_peaks.begin(), all_peaks.begin() + NumOfAnalysedPeaks);
+      zero_points = std::vector<unsigned int>(zero_points.begin(), zero_points.begin() + NumOfAnalysedPeaks + 1);
+    }
+    else {
+      real_peaks = find_real_peaks(zero_points, samples_attenuation_smoothed, all_peaks, 0.3);
+    }
 
-	if(real_peaks.size() < 3) {
-	  printf("Error: MainWindow::signal_analyzer: real_peaks.size() < 3");
-	  QMessageBox::information(this, QObject::tr("Ошибка"), QObject::tr("Невозможно произвести расчеты из-за малого числа пересечений с Ox."));
-	  return -1;
-	}
+    if (real_peaks.size() < 3) {
+      printf("Error: MainWindow::signal_analyzer: real_peaks.size() < 3");
+      QMessageBox::information(this, QObject::tr("Ошибка"), QObject::tr("Невозможно произвести расчеты из-за малого числа пересечений с Ox."));
+      return -1;
+    }
 
-	estimate_quality_ls(a, b, samples_attenuation_smoothed, real_peaks, radio_end_index);
+    estimate_quality_ls(a, b, samples_attenuation_smoothed, real_peaks, radio_end_index);
 
-	if(!verify_half_periods(zero_points)) {
-	  fit_in_exp_bound(samples_attenuation_smoothed, samples_attenuation_smoothed, real_peaks, *a, *b, radio_end_index);
-	  updateGraph();
-	}
+    if (!verify_half_periods(zero_points)) {
+      fit_in_exp_bound(samples_attenuation_smoothed, samples_attenuation_smoothed, real_peaks, *a, *b, radio_end_index);
+      updateGraph();
+    }
 
-	theta = (zero_points.front() - radio_end_index) * graph_attenuation.xScale;
+    theta = (zero_points.front() - radio_end_index) * graph_attenuation.xScale;
 
-	*freq = estimate_frequency(real_peaks, graph_attenuation.xOffset, graph_attenuation.xScale);
+    *freq = estimate_frequency(real_peaks, graph_attenuation.xOffset, graph_attenuation.xScale);
 
-	double d = - *a / (*freq * graph_attenuation.xScale);
+    double d = - *a / (*freq * graph_attenuation.xScale);
 
-	*q_factor = M_PI / d;
+    *q_factor = M_PI / d;
 
-	return 0;
+    return 0;
 }
 
 void
@@ -1296,7 +1296,7 @@ MainWindow::create_fit_curve_toolbar() {
 
 void
 MainWindow::open_fit_curve_toolbar() {
-  if(ui->action_fit_curve->isChecked()) {
+  if (ui->action_fit_curve->isChecked()) {
     if (I_max != 0) {
       c_a0 = I_max * Rmeas / 2;
     } else {
@@ -1340,7 +1340,7 @@ MainWindow::recalculate_parametric_curve() {
 
   // Form x and y vector.
   for(unsigned int i = radio_end_index; i < samples_attenuation.size(); ++i) {
-    if(i % dec_factor == 0) {
+    if (i % dec_factor == 0) {
       x.push_back(i * graph_attenuation.xScale + graph_attenuation.xOffset);
       fitting_curve.push_back( y(x.back()) );
     }
@@ -1364,7 +1364,7 @@ MainWindow::do_report_string() {
   // Print parameters to report;
   QString scout;
   scout = QObject::tr("Протокол измерения параметров антенны\n\n");
-  if(ui->action_fit_curve->isChecked())
+  if (ui->action_fit_curve->isChecked())
     scout += QObject::tr("Ручной режим.\n");
   else
     scout += QObject::tr("Автоматический режим.\n");
@@ -1450,43 +1450,43 @@ MainWindow::save_report_pdf(QString const& filepath) {
 bool
 MainWindow::verify_half_periods(std::vector<unsigned int> const& zero_points) {
   bool ret = true;
-	float max_dev, mean_dev;
+    float max_dev, mean_dev;
 
-	half_periods_verificator(zero_points, &max_dev, &mean_dev);
+    half_periods_verificator(zero_points, &max_dev, &mean_dev);
 
-	std::vector<QPoint> xy_points;
+    std::vector<QPoint> xy_points;
 
-	for(unsigned int i = 0; i < zero_points.size(); ++i) {
-		xy_points.push_back(QPoint(zero_points[i], 0));
-	}
-	plot_points(xy_points, graph_attenuation);
+    for(unsigned int i = 0; i < zero_points.size(); ++i) {
+        xy_points.push_back(QPoint(zero_points[i], 0));
+    }
+    plot_points(xy_points, graph_attenuation);
 
-	printf("max_dev = %f, mean_dev = %f\n", max_dev, mean_dev);
+    printf("max_dev = %f, mean_dev = %f\n", max_dev, mean_dev);
 
-	if(max_dev > 0.03) {
-		QMessageBox::information(this, QObject::tr("SignalPlotter"),
-														 QObject::tr("Предупреждение: максимальное отклонение в измерении полупериодов превысило 3% и равно %1 %.").arg(max_dev * 100));
-		ret = false;
-	}
+    if (max_dev > 0.03) {
+        QMessageBox::information(this, QObject::tr("SignalPlotter"),
+                                                         QObject::tr("Предупреждение: максимальное отклонение в измерении полупериодов превысило 3% и равно %1 %.").arg(max_dev * 100));
+        ret = false;
+    }
 
-	return ret;
+    return ret;
 }
 
 void
 MainWindow::plot_points(std::vector<QPoint> const& xy_points, GraphParams const& g_params) {
-	QVector<double> x, y;
-	for(unsigned int i = 0; i < xy_points.size(); ++i){
-		x.push_back(xy_points[i].x() * g_params.xScale + g_params.xOffset);
-		y.push_back(xy_points[i].y() * g_params.yScale + g_params.yOffset);
-	}
+    QVector<double> x, y;
+    for(unsigned int i = 0; i < xy_points.size(); ++i){
+        x.push_back(xy_points[i].x() * g_params.xScale + g_params.xOffset);
+        y.push_back(xy_points[i].y() * g_params.yScale + g_params.yOffset);
+    }
 
-	ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis);
-	ui->customPlot->graph()->setName(QString("Points"));
-	ui->customPlot->graph()->setData(x, y);
-	ui->customPlot->graph()->setLineStyle(QCPGraph::lsNone);
-	ui->customPlot->graph()->setScatterStyle(QCPScatterStyle::ssCircle);
-	ui->customPlot->graph()->setPen(QPen(QBrush(Qt::red), 2));
-	ui->customPlot->replot();
+    ui->customPlot->addGraph(ui->customPlot->xAxis, ui->customPlot->yAxis);
+    ui->customPlot->graph()->setName(QString("Points"));
+    ui->customPlot->graph()->setData(x, y);
+    ui->customPlot->graph()->setLineStyle(QCPGraph::lsNone);
+    ui->customPlot->graph()->setScatterStyle(QCPScatterStyle::ssCircle);
+    ui->customPlot->graph()->setPen(QPen(QBrush(Qt::red), 2));
+    ui->customPlot->replot();
 }
 
 /*
@@ -1495,25 +1495,25 @@ MainWindow::plot_points(std::vector<QPoint> const& xy_points, GraphParams const&
 bool
 MainWindow::verify_half_periods(Intervals const& zero_intervals) {
   bool ret = true;
-	float max_dev, mean_dev;
+    float max_dev, mean_dev;
 
-	half_periods_verificator(zero_intervals, &max_dev, &mean_dev);
+    half_periods_verificator(zero_intervals, &max_dev, &mean_dev);
 
-	std::vector<QPoint> xy_points;
+    std::vector<QPoint> xy_points;
 
-	for(unsigned int i = 0; i < zero_intervals.size(); ++i) {
-		xy_points.push_back(QPoint(zero_intervals[i].first, 0));
-		xy_points.push_back(QPoint(zero_intervals[i].second, 0));
-	}
-	plot_points(xy_points, graph_attenuation);
+    for(unsigned int i = 0; i < zero_intervals.size(); ++i) {
+        xy_points.push_back(QPoint(zero_intervals[i].first, 0));
+        xy_points.push_back(QPoint(zero_intervals[i].second, 0));
+    }
+    plot_points(xy_points, graph_attenuation);
 
-	printf("max_dev = %f, mean_dev = %f\n", max_dev, mean_dev);
+    printf("max_dev = %f, mean_dev = %f\n", max_dev, mean_dev);
 
-	if(max_dev > 0.03) {
-		QMessageBox::information(this, QObject::tr("SignalPlotter"),
-														 QObject::tr("Предупреждение: отклонение в измерении полупериодов превысило 3%!"));
-		ret = false;
-	}
+    if (max_dev > 0.03) {
+        QMessageBox::information(this, QObject::tr("SignalPlotter"),
+                                                         QObject::tr("Предупреждение: отклонение в измерении полупериодов превысило 3%!"));
+        ret = false;
+    }
 
   return ret;
 }
