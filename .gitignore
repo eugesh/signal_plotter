@@ -1,4 +1,14 @@
+form_h
+.project
+.cproject
+.settings
+.metadata
 bin
 build
 doc/documentation
-form_h
+__pycache__
+*.pyc
+*.dat
+*.pkl
+*.user
+*.user.*

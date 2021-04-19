@@ -7,8 +7,8 @@
  *
  */
 
-#ifndef __MAIN_WINDOW_H__
-#define __MAIN_WINDOW_H__
+#ifndef MAIN_WINDOW_H
+#define MAIN_WINDOW_H
 
 #include <QWidget>
 #include <QObject>
@@ -30,11 +30,11 @@ class MainWindow;
 class MainWindow : public QMainWindow { //, public Ui::MainWindow {
   Q_OBJECT
 
-public:;
-  explicit MainWindow(QWidget *parent=0);
-  ~MainWindow();
+public:
+  explicit MainWindow(QWidget *parent = nullptr);
+  ~MainWindow() override;
 
-private slots:;
+private slots:
   void open_image();
   void titleDoubleClick(QMouseEvent *event);
   void axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart part);
@@ -48,10 +48,10 @@ private slots:;
   void mousePress();
   void mouseWheel();
 
-private:;
+private:
   void load_image();
 
-private:;
+private:
   Ui::MainWindow *ui;
   // Path to opened project or .png ot .tiff image.
   QString path_to_data;

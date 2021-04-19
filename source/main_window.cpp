@@ -1,6 +1,3 @@
-#ifndef MAIN_WINDOW_H
-#define MAIN_WINDOW_H
-
 #include <cmath>
 #include <cstdlib>
 #include <QtGui>
@@ -312,4 +309,3 @@ void MainWindow::removeAllGraphs()
   ui->customPlot->replot();
 }
 
-#endif
