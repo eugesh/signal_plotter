@@ -17,7 +17,9 @@
 
 MainWindow::MainWindow(QWidget *parent) :
                        QMainWindow(parent),
-                       ui(new Ui::MainWindow)
+                       ui(new Ui::MainWindow),
+                       path_to_data(""),
+                       path_to_painted_plot("")
 {
   ui->setupUi(this);
 
@@ -63,7 +65,8 @@ MainWindow::MainWindow(QWidget *parent) :
   ui->customPlot->setContextMenuPolicy(Qt::CustomContextMenu);
   // connect(ui->customPlot, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextMenuRequest(QPoint)));
 
-  connect(ui->action_OpenImage, SIGNAL(triggered()), this, SLOT(open_image()));
+  connect(ui->action_OpenImage, &QAction::triggered, this, &MainWindow::open_image);
+  connect(ui->actionSave_Plot, &QAction::triggered, this, &MainWindow::savePlot);
 
   connect(ui->horizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(updateGraph(int)));
 }
@@ -77,15 +80,15 @@ MainWindow::~MainWindow()
  * Reaction on button click.
  */
 void MainWindow::open_image() {
-  path_to_data = QFileDialog::getOpenFileName(this, tr("Укажите путь к изображению"), "/home/evgeny/data", tr("Images (*.png *.xpm *.jpg *.bmp *.jpeg)"));
+    path_to_data = QFileDialog::getOpenFileName(this, tr("Укажите путь к изображению"), path_to_data, tr("Images (*.png *.xpm *.jpg *.bmp *.jpeg)"));
 
-  if(!path_to_data.isEmpty ()) {
-      load_image();
-  } else {
-    QMessageBox::information(this, tr("SignalPlotter"),
-           tr("Файл не был открыт."));
+    if (!path_to_data.isEmpty ()) {
+        load_image();
+    } else {
+        QMessageBox::information(this, tr("SignalPlotter"),
+                                 tr("Файл не был открыт."));
            // tr("Файл не был открыт %1.").arg(path_to_data));
-  }
+    }
 }
 
 /**
@@ -309,3 +312,15 @@ void MainWindow::removeAllGraphs()
   ui->customPlot->replot();
 }
 
+void MainWindow::fitToScreen()
+{
+
+}
+
+void MainWindow::savePlot()
+{
+    path_to_painted_plot = QFileDialog::getSaveFileName(this, tr("Укажите путь для сохранения"), path_to_painted_plot + "/Plot.png", tr("Images (*.png *.xpm *.jpg *.bmp *.jpeg)"));
+
+    // bool QCustomPlot::savePng(const QString &fileName, int width, int height, double scale, int quality, int resolution, QCP::ResolutionUnit resolutionUnit)
+    ui->customPlot->savePng(path_to_painted_plot);
+}

@@ -47,14 +47,17 @@ private slots:
   void removeAllGraphs();
   void mousePress();
   void mouseWheel();
+  void fitToScreen();
+  void savePlot();
 
 private:
   void load_image();
 
 private:
   Ui::MainWindow *ui;
-  // Path to opened project or .png ot .tiff image.
+  // Path to opened project or .png or .tiff image.
   QString path_to_data;
+  QString path_to_painted_plot;
   QVector<QVector<float> > samples;
 };
 
