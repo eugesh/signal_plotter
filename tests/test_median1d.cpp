@@ -24,7 +24,7 @@ int main() {
     float sum = 0;
     for(unsigned int i=0; i < N; ++i) {
         // printf("%f ", test_ar[i]);
-        sum += abs(test_ar[i]);
+        sum += fabs(test_ar[i]);
     }
     printf("sum = %f\n", sum);
 
@@ -35,7 +35,7 @@ int main() {
     // Print out the result.
     for(unsigned int i=0; i < N; ++i) {
         // printf("%f ", test_ar_filtered[i]);
-        sum += abs(test_ar_filtered[i]);
+        sum += fabs(test_ar_filtered[i]);
     }
 
     printf("sum = %f\n", sum);

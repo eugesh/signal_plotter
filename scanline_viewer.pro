@@ -5,6 +5,7 @@ TEMPLATE = app
 
 INCLUDEPATH += custom_plot/
 INCLUDEPATH += source/
+windows: INCLUDEPATH += D:\soft\developerTools\github\eigen
 
 SOURCES += \
     source/main.cpp \

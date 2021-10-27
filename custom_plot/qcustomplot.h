@@ -2000,7 +2000,7 @@ public:
   Q_DECLARE_FLAGS(SelectableParts, SelectablePart)
   
   explicit QCPAxis(QCPAxisRect *parent, AxisType type);
-  virtual ~QCPAxis();
+  virtual ~QCPAxis() override;
   
   // getters:
   AxisType axisType() const { return mAxisType; }
