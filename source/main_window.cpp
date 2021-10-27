@@ -404,6 +404,9 @@ void MainWindow::load_csv_radio() {
     samples_radio.clear();
     samples_radio_smoothed.clear();
     samples_radio = load_csv(path_to_radio_csv, &g_params);
+    if (samples_radio.empty())
+        return;
+
     graph_radio = g_params;
 
     radio_end_index = find_radio_signal_termination(samples_radio);
@@ -448,6 +451,11 @@ Samples MainWindow::load_csv(QString filepath, GraphParams *g_params) {
     // Read the second line.
     buf = file.readLine();
     QList<QByteArray> list = buf.split(',');
+
+    if (list.size() < 4 || list.size() > 5) {
+        printf("Incorrect file format: %s.\n", filepath.toLatin1().data());
+        return Samples();
+    }
 
     // Set offsets and scales for each axis.
     g_params->xOffset = list[2].toDouble();
@@ -974,13 +982,13 @@ MainWindow::smooth() {
     // Smooth curves.
 
     if (!samples_radio.empty()) {
-      // Smooth radio signal with low-pass filter.
+        // Smooth radio signal with low-pass filter.
         samples_radio_smoothed = lp_ampl(samples_radio, graph_radio.xScale, freq_factor_to_pass * 5 * FreqNominalAntenna * 1000);
         updateGraph();
     }
 
     if (!samples_attenuation.empty()) {
-      // Smooth oscillation signal with low-pass filter.
+        // Smooth oscillation signal with low-pass filter.
         samples_attenuation_smoothed = lp_ampl(samples_attenuation, graph_attenuation.xScale, freq_factor_to_pass * FreqNominalAntenna * 1000);
 
         // Find symmetry of signal relative to Ox and move. It's not precise but mostly it helps.
