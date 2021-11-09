@@ -27,10 +27,8 @@ if (NOT CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
   set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 endif ()
 
-set (QTLIBS QtGui QtCore QtNetwork)
-find_package (Qt4 REQUIRED)
-# qt4_wrap_cpp (MOC_SOURCES ${HEADERS})
-include(${QT_USE_FILE})
+find_package(Qt5 COMPONENTS Gui Core Widgets OpenGL PrintSupport REQUIRED)
+set (QTLIBS Qt5::Gui Qt5::Core Qt5::Widgets Qt5::PrintSupport)
 
 link_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../bin")
 set (ADDON_LIBRARIES ${ADDON_LIBRARIES})
@@ -38,4 +36,3 @@ set (ADDON_LIBRARIES ${ADDON_LIBRARIES})
 add_definitions (-DG_LOG_DOMAIN="ScanlineViewer")
 add_subdirectory ("source")
 add_subdirectory ("custom_plot")
-

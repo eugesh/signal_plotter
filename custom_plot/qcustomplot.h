@@ -26,7 +26,7 @@
 #ifndef QCUSTOMPLOT_H
 #define QCUSTOMPLOT_H
 
-#include <QtCore/qglobal.h>
+//#include <QtCore/qglobal.h>
 
 // some Qt version/configuration dependent macros to include or exclude certain code paths:
 #ifdef QCUSTOMPLOT_USE_OPENGL
@@ -40,14 +40,14 @@
 #  endif
 #endif
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
+/*#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
 #  define QCP_DEVICEPIXELRATIO_SUPPORTED
 #  if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
 #    define QCP_DEVICEPIXELRATIO_FLOAT
 #  endif
-#endif
+#endif*/
 
-#include <QtCore/QObject>
+#include <QObject>
 #include <QtCore/QPointer>
 #include <QtCore/QSharedPointer>
 #include <QtCore/QTimer>
