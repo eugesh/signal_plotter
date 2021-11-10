@@ -79,6 +79,11 @@ private slots:;
   void change_ct0_rough(int);
   void change_cth_rough(int);
 
+  // Interaction with oscilloscope
+  void connect_to_device();
+  void get_radio_data();
+  void get_attenuation_data();
+
   void open_csv_radio_dialog();
   void open_csv_attenuation_dialog();
   void save_report_dialog();
@@ -93,7 +98,7 @@ private slots:;
   void addGraph3(Samples data, GraphParams const& graph_params, QString const& mes, QColor color = QColor(QString("black")), bool centralize=false); // Exp.
   void addGraph4(Samples data, GraphParams const& graph_params, QString const& mes, QColor color = QColor(QString("black")), bool centralize=false); // FitCurve.
   void updateGraph();
-  void updateParametrivCurve();
+  void updateParametricCurve();
   void contextMenuRequest(QPoint pos);
   void showSelectedGraph();
   void hideSelectedGraph();

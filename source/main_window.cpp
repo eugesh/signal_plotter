@@ -320,6 +320,18 @@ MainWindow::SaveInit(QString const& Path) {
   ts << path_to_report;
 }
 
+void MainWindow::connect_to_device() {
+
+}
+
+void MainWindow::get_radio_data() {
+
+}
+
+void MainWindow::get_attenuation_data() {
+
+}
+
 /**
  * Reaction on menu button click.
  */
@@ -551,34 +563,34 @@ void
 MainWindow::change_cy0_tune(double val) {
   c_y0 = val / 1000.0;
   // QSlider_cy0->setValue((int)round(val * 100));
-  updateParametrivCurve();
+  updateParametricCurve();
 }
 
 void
 MainWindow::change_ca0_tune(double val) {
   c_a0 = val / 1000.0;
-  updateParametrivCurve();
+  updateParametricCurve();
   // QSlider_ca0->setValue((int)round(val));
 }
 
 void
 MainWindow::change_cw_tune(double val) {
   c_w = val * (2000 * M_PI);
-  updateParametrivCurve();
+  updateParametricCurve();
   // QSlider_cw->setValue((int)round(val));
 }
 
 void
 MainWindow::change_ct0_tune(double val) {
   c_t0 = val;
-  updateParametrivCurve();
+  updateParametricCurve();
   // QSlider_ct0->setValue((int)round(val));
 }
 
 void
 MainWindow::change_cth_tune(double val) {
   c_th = val / 1e6;
-  updateParametrivCurve();
+  updateParametricCurve();
   // QSlider_cth->setValue((int)round(val * 100));
 }
 
@@ -767,7 +779,7 @@ MainWindow::updateGraph() {
 }
 
 void
-MainWindow::updateParametrivCurve() {
+MainWindow::updateParametricCurve() {
   // Remove parametric curve.
   for (int i=0; i < ui->customPlot->graphCount(); ++i)
   {

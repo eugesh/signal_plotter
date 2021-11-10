@@ -218,7 +218,17 @@
     <addaction name="action_help"/>
     <addaction name="action_about"/>
    </widget>
+   <widget class="QMenu" name="menu_device">
+    <property name="title">
+     <string>Устройство</string>
+    </property>
+    <addaction name="action_connect"/>
+    <addaction name="action_osc_data_radio"/>
+    <addaction name="action_osc_data_atten"/>
+    <addaction name="action"/>
+   </widget>
    <addaction name="menu_Open"/>
+   <addaction name="menu_device"/>
    <addaction name="menuCursor"/>
    <addaction name="menu"/>
    <addaction name="menu_3"/>
@@ -533,6 +543,26 @@
   <action name="action_about">
    <property name="text">
     <string>О программе</string>
+   </property>
+  </action>
+  <action name="action_connect">
+   <property name="text">
+    <string>Подключиться к устройству</string>
+   </property>
+  </action>
+  <action name="action_osc_data_radio">
+   <property name="text">
+    <string>Загрузить радиоимпульс</string>
+   </property>
+  </action>
+  <action name="action_osc_data_atten">
+   <property name="text">
+    <string>Загрузить затухающий сигнал</string>
+   </property>
+  </action>
+  <action name="action">
+   <property name="text">
+    <string>Задать параметры Burst</string>
    </property>
   </action>
  </widget>
